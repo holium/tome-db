@@ -20,6 +20,8 @@ const db = await Tome(api, {
 // no app = "all" apps.  A %settings-store replacement for Realm
 // no permissions: { read: 'our', create: 'our', overwrite: 'our' }
 
+// must be set to 'invited' first.  Changing to 'invited'
+// will revoke permissions for everyone not on this list?
 db.addInvites({ overwrite: ['~lomder-librun', '~zod'] })
 db.removeInvites({ overwrite: ['~zod'] })
 
@@ -48,10 +50,6 @@ res = store.get('theme')
       updated-by=@p       :: who last updated this
       created-at=@da      :: time of creation
       updated-at=@da      :: time of last update
-      :: maybe support these, if spaces-enabled apps would use them frequently
-      upvotes=(set @p)    :: set of people who have downvoted
-      downvotes=(set @p)  :: set of people who have upvoted
-      related=(set key)    :: keys of related values
   ==
 +$  value  (pair metadata @t)
 ```

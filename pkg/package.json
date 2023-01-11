@@ -1,0 +1,41 @@
+{
+    "name": "tome-db",
+    "version": "1.0.0",
+    "description": "store data in Urbit from JavaScript",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "files": [
+        "lib"
+    ],
+    "scripts": {
+        "prepublish": "tsc",
+        "test": "jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ajlamarc/tome-db.git"
+    },
+    "keywords": [
+        "typescript",
+        "urbit",
+        "database",
+        "tome-db"
+    ],
+    "author": "ajlamarc",
+    "license": "MIT",
+    "homepage": "https://github.com/ajlamarc/tome-db#readme",
+    "devDependencies": {
+        "@types/jest": "^29.2.4",
+        "jest": "^29.3.1",
+        "ts-jest": "^29.0.3",
+        "typescript": "^4.9.3"
+    },
+    "dependencies": {
+        "@urbit/http-api": "^2.3.0"
+    },
+    "jest": {
+        "transform": {
+            "^.+\\.(ts|tsx)$": "ts-jest"
+        }
+    }
+}
