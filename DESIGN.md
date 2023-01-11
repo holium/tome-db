@@ -20,8 +20,8 @@ const db = await Tome(api, {
 // no app = "all" apps.  A %settings-store replacement for Realm
 // no permissions: { read: 'our', create: 'our', overwrite: 'our' }
 
-// must be set to 'invited' first.  Changing to 'invited'
-// will revoke permissions for everyone not on this list?
+// additional invites *alongside* the permissions level.
+// if you want only this list, set level to 'our'.
 db.addInvites({ overwrite: ['~lomder-librun', '~zod'] })
 db.removeInvites({ overwrite: ['~zod'] })
 
@@ -72,8 +72,6 @@ or generate one in the frontend.
 `our`: any desk on our ship.
 
 `team`: our ship, or any moon of us.
-
-`invited`: list of @ps.
 
 `space`: all space members.
 

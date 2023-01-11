@@ -1,8 +1,10 @@
 |%
-+$  space  @t :: space name.  if no space this is 'our'
-+$  app  @t   :: app name (reduce namespace collisions).  if no app this is 'all'
-+$  key  @t   :: key name
-+$  val  @t   :: value (no metadata)
++$  space    @t         :: space name.  if no space this is 'our'
++$  app      @t         :: app name (reduce namespace collisions).  if no app this is 'all'
++$  key      @t         :: key name
++$  val      @t         :: value (no metadata)
++$  ships    (unit (set @p))
++$  invited  (unit [read=ships create=ships overwrite=ships])
 +$  metadata
   $:  created-by=@p       :: who initially stored this
       updated-by=@p       :: who last updated this
@@ -14,7 +16,6 @@
 +$  level
   $%  %our
       %team
-      [%invited ships=(set @p)]
       %space
       %open
   ==
@@ -23,7 +24,11 @@
 +$  kv       (unit (map key value))
 ::
 :: =log =feed =counter etc.
-+$  tome  (unit (map space (unit (map app [=perm =kv]))))
+:: "invited" is in addition to the basic permission level.
+::  ex. if read is %space and someone not in our space attempts to read,
+::  we will also check the read invite list before rejecting.
+::
++$  tome  (unit (map space (unit (map app [=perm =invited =kv]))))
 ::
 +$  tome-action
   $%  [%init-tome =space =app =perm]

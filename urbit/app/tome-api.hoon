@@ -105,40 +105,14 @@
   dat(state !<(state-0 vaz))
 ++  poke
   |=  [mar=mark vaz=vase]
-  ?>  =(%noun mar)
-  =+  act=!<(action vaz)
-  ?-  -.act
-      %all
-    ~&  >>>
-      ^-  spaces:r-l
-      re-abet-saz:(re-abed:realms:r-l bol [%| ~])
-    dat
-  ::
-      %host  
-    ~&  >>
-      ^-  spaces:r-l
-      re-abet-saz:(re-abed:realms:r-l bol [%| `who.act])
-    dat
-  ::
-      %space
-    =+  rel=(re-abed:realms:r-l bol [%& sap.act])
-    ?-    wat.act
-        %spaces
-      ~&  >  `spaces:r-l`re-abet-saz:rel  dat
-        %detail
-      ~&  >  `space:r-l`re-abet-det:rel  dat
-        %host
-      ~&  >  `ship`re-abet-hos:rel  dat
-        %owners
-      ~&  >  `(set ship)`re-abet-own:rel  dat
-        %pending
-      ~&  >  `(set ship)`re-abet-pen:rel  dat
-        %initiates
-      ~&  >  `(set ship)`re-abet-ini:rel  dat
-        %members
-      ~&  >  `(set ship)`re-abet-mem:rel  dat
-        %administrators
-      ~&  >  `(set ship)`re-abet-adm:rel  dat
+  =^  cards  state
+    ?+  mar  ~|(bad-tome-mark/mar !!)
+        %tome-action
+      =/  act  !<(tome-action vaz)
+      ~&  >  act
+      `state
+        %kv-action
+      `state
     ==
-  ==
+  (emil cards)
 --
