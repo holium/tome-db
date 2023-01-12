@@ -1,67 +1,88 @@
 import Urbit from '@urbit/http-api'
-import { Perm } from '../index'
+import { Tome } from '../index'
 
-interface StoreVals {
-    ship?: string
-    name?: string
-    permissions?: Perm
-}
+export class Store extends Tome {
+    protected storeSubscriptionID: number
+    protected cache: Map<string, string>
 
-export class Store {
-    protected api: Urbit
-    protected mars: boolean
-    protected perm: Perm
-    protected name: string
-    protected ship: string
+    // subscribe to all values in the store, and keep cache synced.
+    private async subscribeAll() {
+        this.storeSubscriptionID = await this.api.subscribe({
+            app: 'tome-api',
+            path: `/store/${this.space}/${this.app}`,
+            err: () => {
+                throw new Error(
+                    'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                )
+            },
+            event: () => {
+                // first event should return all current values.
+                // next events should return updates
+            },
+            quit: this.subscribeAll,
+        })
+    }
 
-    private static async initStore(api: Urbit, name: string, perm: Perm) {
+    private constructor(
+        api?: Urbit,
+        tomeShip?: string,
+        thisShip?: string,
+        space?: string,
+        app?: string,
+        preload?: boolean
+    ) {
+        if (typeof api !== 'undefined') {
+            super(api, tomeShip, thisShip, space, app, false)
+            if (preload) {
+                this.subscribeAll()
+            }
+        } else {
+            super()
+        }
+    }
+
+    private static async initStorePoke(
+        api: Urbit,
+        ship: string,
+        space: string,
+        app: string
+    ) {
         await api.poke({
             app: 'tome-api',
             mark: 'tome-action',
             json: {
                 'init-store': {
-                    store: name,
-                    perm: perm,
+                    space: space,
+                    app: app,
                 },
             },
+            ship: ship,
             onError: (error) => {
-                console.error(error)
+                throw new Error(
+                    `Tome: Initializing key-value store on ship ${ship} failed: ${error}.  Make sure the ship and Tome agent are both running.`
+                )
             },
         })
     }
 
-    // watch our store, or a foreign store.
-    // on update: update state in this class?
-    // should return the store's contents on the initial watch
-    private static async watchStore() {}
-
-    private constructor(api?: Urbit, vals?: StoreVals) {
-        this.mars = typeof api !== 'undefined'
-        if (this.mars) {
-            this.api = api
-            this.perm = vals.permissions
-                ? vals.permissions
-                : { read: 'our', write: 'our' }
-            this.ship = vals.ship ? vals.ship : api.ship
-            this.name = vals.name ? vals.name : api.desk
-        } else {
-            this.name = 'tome-db'
+    public static async initStore(
+        api?: Urbit,
+        tomeShip?: string,
+        thisShip?: string,
+        space?: string,
+        app?: string,
+        preload?: boolean
+    ) {
+        const mars = typeof api !== 'undefined'
+        if (mars) {
+            // poke to init store
+            if (tomeShip === thisShip) {
+                await Store.initStorePoke(api, tomeShip, space, app)
+                // await Store.initStorePoke...
+            }
+            return new Store(api, tomeShip, thisShip, space, app, preload)
         }
-    }
-
-    static async create(api?: Urbit, vals?: StoreVals): Promise<Store> {
-        await Store.initStore(api, vals.name, vals.permissions)
-        await Store.watchStore()
-        return new Store(api, vals)
-    }
-
-    /**
-     * Load a foreign ship's store.
-     *
-     */
-    static async load(api: Urbit, ship: string, name: string): Promise<Store> {
-        await Store.watchStore()
-        return new Store(api, { ship: ship, name: name })
+        return new Store()
     }
 
     /**
@@ -151,8 +172,11 @@ export class Store {
 
     /**
      * Retrieve the value associated with a specific key in the store.
+     * @param key  The key to retrieve.
+     * @param allowCachedValue  Whether we can check for cached values first.
+     * If false, we will always check Urbit for the latest value.
      */
-    public get(key: string): string {
+    public get(key: string, allowCachedValue: boolean = true): string {
         if (!key) {
             console.error('missing key parameter')
             return ''
@@ -211,5 +235,17 @@ export class Store {
             //         return new Map()
             //     })
         }
+    }
+
+    public canCreate() {
+        console.error(
+            'Cannot check permissions on subclasses of Tome. Use the base class instead.'
+        )
+    }
+
+    public canOverwrite() {
+        console.error(
+            'Cannot check permissions on subclasses of Tome. Use the base class instead.'
+        )
     }
 }

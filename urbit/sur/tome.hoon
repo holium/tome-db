@@ -2,16 +2,9 @@
 +$  space    @t         :: space name.  if no space this is 'our'
 +$  app      @t         :: app name (reduce namespace collisions).  if no app this is 'all'
 +$  key      @t         :: key name
-+$  val      @t         :: value (no metadata)
++$  value    @t         :: value (JSON encoded as a string)
 +$  ships    (unit (set @p))
 +$  invited  (unit [read=ships create=ships overwrite=ships])
-+$  metadata
-  $:  created-by=@p       :: who initially stored this
-      updated-by=@p       :: who last updated this
-      created-at=@da      :: time of creation
-      updated-at=@da      :: time of last update
-  ==
-+$  value  (pair metadata val)
 ::
 +$  level
   $%  %our

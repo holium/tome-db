@@ -7,7 +7,7 @@ const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
 const db = await Tome(api, {
-    ship: '~lomder-librun'
+    ship: 'lomder-librun' // sig will be automatically removed
     space: 'Realm Forerunners',
     app: 'Lexicon',
     permissions: { read: 'space', create: 'space', overwrite: 'invited' },
@@ -20,12 +20,10 @@ const db = await Tome(api, {
 // no app = "all" apps.  A %settings-store replacement for Realm
 // no permissions: { read: 'our', create: 'our', overwrite: 'our' }
 
-// additional invites *alongside* the permissions level.
-// if you want only this list, set level to 'our'.
 db.addInvites({ overwrite: ['~lomder-librun', '~zod'] })
 db.removeInvites({ overwrite: ['~zod'] })
 
-const store = db.kvstore()
+const store = db.keyvalue()
 
 store.set('theme', 'dark')
 res = store.get('theme')
@@ -36,26 +34,9 @@ res = store.get('theme')
 
 ## Backend Design
 
-```hoon
-:: permissions:   {space: {app: [...permissions]}}
-:: kv:            {space: {app: {...keys, ...values}}
-:: log:           {space: {app: <log>}
-:: feed:          {space: {app: <feed>}
+See sur/tome.hoon for context on backend data structures.
 
-+$  space  @t :: space name.  if no space this is 'our'
-+$  app  @t   :: app name (reduce namespace collisions).  if no app this is 'all'
-+$  key  @t   :: key name
-+$  metadata
-  $:  created-by=@p       :: who initially stored this
-      updated-by=@p       :: who last updated this
-      created-at=@da      :: time of creation
-      updated-at=@da      :: time of last update
-  ==
-+$  value  (pair metadata @t)
-```
-
-Apps require unique "keys" in the kvstore: can maybe get away with a title or user-specified key,
-or generate one in the frontend.
+Apps require unique "keys" in their kvstore. If users are directly specifying keys, make sure they know which ones aren't already used
 
 ## Permissioning:
 
@@ -76,3 +57,7 @@ or generate one in the frontend.
 `space`: all space members.
 
 `open`: anyone on the network.
+
+`invited`: This is **not** a real permissions level. Apps maintain a list of invites for the different types, which are used in addition to the permission level. To use only that list, set the level to `our`.
+
+Future work could be to split this into separate whitelists / blacklists.

@@ -1,4 +1,6 @@
+type Level = 'our' | 'team' | 'space' | 'open'
 export interface Perm {
-    read: 'desk' | 'our' | 'team' | 'any'
-    write: 'desk' | 'our' | 'team' | 'any'
+    read: Level
+    create: Level
+    overwrite: Level
 }
