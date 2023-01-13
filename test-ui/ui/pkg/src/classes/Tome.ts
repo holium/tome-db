@@ -96,7 +96,7 @@ export class Tome {
      * @param options Optional ship, space, app, and permissions for initializing a Tome.
      * @returns A new Tome instance.
      */
-    static async init(api?: Urbit, options?: TomeOptions): Promise<Tome> {
+    static async init(api?: Urbit, options: TomeOptions = {}): Promise<Tome> {
         const mars = typeof api !== 'undefined'
         if (mars) {
             let tomeShip = options.ship ? options.ship : api.ship
