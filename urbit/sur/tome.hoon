@@ -13,15 +13,24 @@
       %open
   ==
 ::
++$  meta
+  $:  created-by=@p
+      created-at=@da
+      updated-by=@p
+      updated-at=@da
+  ==
+::
 +$  perm     [read=level create=level overwrite=level]
-+$  kv       (unit (map key json-value))
++$  kv       (map key json-value)
++$  kv-meta  (map key meta)
++$  store    (unit (pair kv kv-meta))
 ::
 :: =log =feed =counter etc.
 :: "invited" is in addition to the basic permission level.
 ::  ex. if read is %space and someone not in our space attempts to read,
 ::  we will also check the read invite list before rejecting.
 ::
-+$  tome  (unit (map space (unit (map app [=perm =invited =kv]))))
++$  tome  (unit (map space (unit (map app [=perm =invited =store]))))
 ::
 +$  tome-action
   $%  [%init-tome =space =app =perm]

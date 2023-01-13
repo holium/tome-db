@@ -67,7 +67,7 @@ export class Store extends Tome {
             app: agent,
             mark: tomeMark,
             json: {
-                'init-store': {
+                'init-kv': {
                     space: space,
                     app: app,
                 },
@@ -130,7 +130,7 @@ export class Store extends Tome {
                 app: agent,
                 mark: storeMark,
                 json: {
-                    'set-store': {
+                    'set-value': {
                         space: this.space,
                         app: this.app,
                         key: key,
@@ -168,7 +168,7 @@ export class Store extends Tome {
                 app: agent,
                 mark: storeMark,
                 json: {
-                    'remove-store': {
+                    'remove-value': {
                         space: this.space,
                         app: this.app,
                         key: key,
@@ -200,7 +200,7 @@ export class Store extends Tome {
                 app: agent,
                 mark: storeMark,
                 json: {
-                    'clear-store': {
+                    'clear-kv': {
                         space: this.space,
                         app: this.app,
                     },
