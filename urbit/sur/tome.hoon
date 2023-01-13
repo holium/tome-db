@@ -1,8 +1,8 @@
 |%
-+$  space    @t         :: space name.  if no space this is 'our'
-+$  app      @t         :: app name (reduce namespace collisions).  if no app this is 'all'
-+$  key      @t         :: key name
-+$  value    @t         :: value (JSON encoded as a string)
++$  space         @t         :: space name.  if no space this is 'our'
++$  app           @t         :: app name (reduce namespace collisions).  if no app this is 'all'
++$  key           @t         :: key name
++$  json-value    [%s @t]    :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
 +$  ships    (unit (set @p))
 +$  invited  (unit [read=ships create=ships overwrite=ships])
 ::
@@ -14,7 +14,7 @@
   ==
 ::
 +$  perm     [read=level create=level overwrite=level]
-+$  kv       (unit (map key value))
++$  kv       (unit (map key json-value))
 ::
 :: =log =feed =counter etc.
 :: "invited" is in addition to the basic permission level.

@@ -4,3 +4,10 @@ export interface Perm {
     create: Level
     overwrite: Level
 }
+
+export interface TomeOptions {
+    ship?: string
+    space?: string
+    app?: string
+    permissions?: Perm
+}

@@ -1,12 +1,6 @@
 import Urbit from '@urbit/http-api'
-import { Perm, Store } from '../index'
-
-interface TomeOptions {
-    ship?: string
-    space?: string
-    app?: string
-    permissions?: Perm
-}
+import { Perm, Store, TomeOptions } from '../index'
+import { agent, tomeMark } from './constants'
 
 export class Tome {
     protected api: Urbit
@@ -30,8 +24,8 @@ export class Tome {
         perm: Perm
     ) {
         await api.poke({
-            app: 'tome-api',
-            mark: 'tome-action',
+            app: agent,
+            mark: tomeMark,
             json: {
                 'init-tome': {
                     space: space,
@@ -50,7 +44,7 @@ export class Tome {
 
     private watchPerms = async () => {
         const id = await this.api.subscribe({
-            app: 'tome-api',
+            app: agent,
             path: `/perm/${this.space}/${this.app}/${this.thisShip}`,
             err: () => {
                 throw new Error(
@@ -97,10 +91,15 @@ export class Tome {
         }
     }
 
-    static async init(api?: Urbit, vals?: TomeOptions): Promise<Tome> {
+    /**
+     * @param api The optional Urbit connection to be used for requests.
+     * @param options Optional ship, space, app, and permissions for initializing a Tome.
+     * @returns A new Tome instance.
+     */
+    static async init(api?: Urbit, options?: TomeOptions): Promise<Tome> {
         const mars = typeof api !== 'undefined'
         if (mars) {
-            let tomeShip = vals.ship ? vals.ship : api.ship
+            let tomeShip = options.ship ? options.ship : api.ship
             if (tomeShip.startsWith('~')) {
                 tomeShip = tomeShip.slice(1) // remove leading sig
             }
@@ -109,10 +108,10 @@ export class Tome {
             // overwrite it so subscriptions will go to the right place
             api.ship = tomeShip
 
-            const space = vals.space ? vals.space : 'our'
-            const app = vals.app ? vals.app : 'all'
-            const perm = vals.permissions
-                ? vals.permissions
+            const space = options.space ? options.space : 'our'
+            const app = options.app ? options.app : 'all'
+            const perm = options.permissions
+                ? options.permissions
                 : ({ read: 'our', create: 'our', overwrite: 'our' } as const)
             if (tomeShip === thisShip) {
                 // this is our tome, so create it
@@ -133,7 +132,7 @@ export class Tome {
                 // NACK if Tome DNE, or we don't have read permissions.
                 const getPermsAndInitTome = async () => {
                     const id = await api.subscribe({
-                        app: 'tome-api',
+                        app: agent,
                         path: `/perm/${space}/${app}/${thisShip}`,
                         err: () => {
                             throw new Error(
@@ -168,14 +167,15 @@ export class Tome {
     }
 
     /**
-     * Initialize or retrieve the keyvalue store for this Tome.
+     * Initialize or retrieve the keyvalue Store for this Tome.
      *
-     * @param preload  Whether the frontend should subscribe to and cache all data in the store.
+     * @param preload  Whether the frontend should stay subscribed to and cache all data / updates from the store.
      *  If false, the frontend will access values from Urbit only when requested, which may take longer.
+     * @returns A Store instance.
      */
     public async keyvalue(preload: boolean = true): Promise<Store> {
         if (this.mars) {
-            const store = await Store.initStore(
+            return await Store.initStore(
                 this.api,
                 this.tomeShip,
                 this.thisShip,
@@ -183,16 +183,21 @@ export class Tome {
                 this.app,
                 preload
             )
-            return store
         } else {
             return Store.initStore()
         }
     }
 
+    /**
+     * Whether the current ship has permission to create new entries in this Tome, or overwrite it's own entries.
+     */
     public canCreate(): boolean | void {
         return this._canCreate
     }
 
+    /**
+     * Whether the current ship has permission to overwrite or delete any entry in this Tome.
+     */
     public canOverwrite(): boolean | void {
         return this._canOverwrite
     }
