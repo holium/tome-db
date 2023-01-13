@@ -10,7 +10,7 @@
   ++  json
     =,  dejs:format
     |=  jon=json
-    =*  levels  (su (perk [%our %team %invited %space %open ~]))
+    =*  levels  (su (perk [%our %team %space %open ~]))
     ^-  tome-action
     %.  jon
     %-  of

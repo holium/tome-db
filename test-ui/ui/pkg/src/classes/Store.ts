@@ -134,7 +134,7 @@ export class Store extends Tome {
                         space: this.space,
                         app: this.app,
                         key: key,
-                        val: value,
+                        value: value,
                     },
                 },
                 ship: this.tomeShip,

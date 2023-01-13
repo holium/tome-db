@@ -2,7 +2,8 @@
 +$  space         @t         :: space name.  if no space this is 'our'
 +$  app           @t         :: app name (reduce namespace collisions).  if no app this is 'all'
 +$  key           @t         :: key name
-+$  json-value    [%s @t]    :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
++$  value         @t
++$  json-value    [%s value] :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
 +$  ships    (unit (set @p))
 +$  invited  (unit [read=ships create=ships overwrite=ships])
 ::
@@ -38,7 +39,7 @@
   ==
 ::
 +$  kv-action
-  $%  [%set-value =space =app =key =val]
+  $%  [%set-value =space =app =key =value]
       [%remove-value =space =app =key]
       [%clear-kv =space =app]
   ==
