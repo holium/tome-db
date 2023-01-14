@@ -6,37 +6,39 @@ import Tome from '@holium/tome-db'
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-const db = await Tome(api, {
+// If we're running in a space, Tome should find the space, app, and ship associated and set those by default.  Going to need some tuning on the defaults here (likely contact our spaces agent).
+const db = await Tome.init(api, {
     ship: 'lomder-librun' // sig will be automatically removed
     space: 'Realm Forerunners',
-    app: 'Lexicon',
-    permissions: { read: 'space', create: 'space', overwrite: 'invited' },
-})  // optional ship, space name, app, and permissions.
+    app: 'Lexicon', // "app", "agent", "desk" are all synonymous here. This is for keeping data separate from other applications / desks.
+    permissions: { read: 'space', write: 'our', overwrite: 'our' }, // this is just a default to use for subclasses.  It's not persisted in Urbit
+})
 
 // if no api, it uses localStorage instead.
 
+// current defaults:
 // no ship = our ship
 // no space = "our" space (personal space?)
 // no app = "all" apps.  A %settings-store replacement for Realm
-// no permissions: { read: 'our', create: 'our', overwrite: 'our' }
+// no permissions: { read: 'space', create: 'our', overwrite: 'our' }
 
-db.addInvites({ overwrite: ['~lomder-librun', '~zod'] })
-db.removeInvites({ overwrite: ['~zod'] })
+const appPreferences = db.keyvalue({
+    bucket: 'app.preferences',
+    permissions: ..., // if not set, uses the Tome specified permissions
+    preload: true, // preload and cache the bucket values.  (Improve response time.)
+})
 
-const store = db.keyvalue()
+// use the 'def' bucket if none is specified.
+const kv = db.keyvalue()
 
-store.set('theme', 'dark')
-res = store.get('theme')
+appPreferences.set('theme', 'dark')
+res = appPreferences.get('theme')
 //  remove, clear, all..
-
-// TODO methods for adding upvotes, downvotes, links, etc. if supported
 ```
 
 ## Backend Design
 
 See sur/tome.hoon for context on backend data structures.
-
-Apps require unique "keys" in their kvstore. If users are directly specifying keys, make sure they know which ones aren't already used
 
 ## Permissioning:
 
@@ -44,9 +46,9 @@ Apps require unique "keys" in their kvstore. If users are directly specifying ke
 
 `read`: can view everything in the store, log, feed, etc.
 
-`create`: can add to the store, log, feed. Edit or delete _your own_ values, if supported.
+`write`: can add to the store, log, feed. Edit or delete _your own_ values, if supported.
 
-`overwrite`: can add, edit, or delete anything as supported.
+`admin`: can add, edit, or delete anything as supported.
 
 ### Permission levels:
 
@@ -58,6 +60,5 @@ Apps require unique "keys" in their kvstore. If users are directly specifying ke
 
 `open`: anyone on the network.
 
-`invited`: This is **not** a real permissions level. Apps maintain a list of invites for the different types, which are used in addition to the permission level. To use only that list, set the level to `our`.
-
-Future work could be to split this into separate whitelists / blacklists.
+Invites are stored as separate whitelists / blacklists, and used in addition to the specified permission level.
+To use only a list of invited peers, set the relevant permission level to `our`.

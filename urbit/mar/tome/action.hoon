@@ -14,8 +14,8 @@
     ^-  tome-action
     %.  jon
     %-  of
-    :~  init-tome/(ot ~[space/so app/so perm/(ot ~[read/levels create/levels overwrite/levels])])
-        init-kv/(ot ~[space/so app/so])
+    :~  init-tome/(ot ~[space/so app/so])
+        init-kv/(ot ~[space/so app/so bucket/so perm/(ot ~[read/levels write/levels admin/levels])])
     ==
   --
 ++  grad  %noun

@@ -1,5 +1,5 @@
 import Urbit from '@urbit/http-api'
-import { Tome } from '../index'
+import { Perm, Tome } from '../index'
 import { agent, storeMark, tomeMark } from './constants'
 
 export class Store extends Tome {
@@ -8,12 +8,15 @@ export class Store extends Tome {
     // then we know we can use the cache.
     private loaded: boolean
     private cache: Map<string, string>
+    private bucket: string
+    private writer: boolean
+    private admin: boolean
 
     // subscribe to all values in the store, and keep cache synced.
     private async subscribeAll() {
         this.storeSubscriptionID = await this.api.subscribe({
             app: agent,
-            path: `/store/${this.space}/${this.app}`,
+            path: this.basePath(),
             err: () => {
                 throw new Error(
                     'Tome: the key-value store being used has been removed, or your access has been revoked.'
@@ -44,10 +47,17 @@ export class Store extends Tome {
         thisShip?: string,
         space?: string,
         app?: string,
-        preload?: boolean
+        bucket?: string,
+        perm?: Perm,
+        preload?: boolean,
+        writer?: boolean,
+        admin?: boolean
     ) {
         if (typeof api !== 'undefined') {
-            super(api, tomeShip, thisShip, space, app, false)
+            super(api, tomeShip, thisShip, space, app, perm)
+            this.bucket = bucket
+            this.writer = writer
+            this.admin = admin
             if (preload) {
                 this.loaded = false
                 this.subscribeAll()
@@ -57,11 +67,13 @@ export class Store extends Tome {
         }
     }
 
-    private static async initStorePoke(
+    private static async initStoreBucketPoke(
         api: Urbit,
         ship: string,
         space: string,
-        app: string
+        app: string,
+        bucket: string,
+        perm: Perm
     ) {
         await api.poke({
             app: agent,
@@ -70,6 +82,8 @@ export class Store extends Tome {
                 'init-kv': {
                     space: space,
                     app: app,
+                    bucket: bucket,
+                    perm: perm,
                 },
             },
             ship: ship,
@@ -87,15 +101,46 @@ export class Store extends Tome {
         thisShip?: string,
         space?: string,
         app?: string,
+        bucket?: string,
+        perm?: Perm,
         preload?: boolean
     ) {
         const mars = typeof api !== 'undefined'
         if (mars) {
             // poke to init store
             if (tomeShip === thisShip) {
-                await Store.initStorePoke(api, tomeShip, space, app)
+                await Store.initStoreBucketPoke(
+                    api,
+                    tomeShip,
+                    space,
+                    app,
+                    bucket,
+                    perm
+                )
+                return new Store(
+                    api,
+                    tomeShip,
+                    thisShip,
+                    space,
+                    app,
+                    bucket,
+                    perm,
+                    preload,
+                    true,
+                    true
+                )
             }
-            return new Store(api, tomeShip, thisShip, space, app, preload)
+            //
+            return new Store(
+                api,
+                tomeShip,
+                thisShip,
+                space,
+                app,
+                bucket,
+                perm,
+                preload
+            )
         }
         return new Store()
     }
@@ -118,7 +163,7 @@ export class Store extends Tome {
 
         if (!this.mars) {
             try {
-                localStorage.setItem(`${this.space}/${this.app}/${key}`, value)
+                localStorage.setItem(this.basePath(key), value)
             } catch (error) {
                 console.error(error)
                 return false
@@ -133,6 +178,7 @@ export class Store extends Tome {
                     'set-value': {
                         space: this.space,
                         app: this.app,
+                        bucket: this.bucket,
                         key: key,
                         value: value,
                     },
@@ -149,6 +195,7 @@ export class Store extends Tome {
             })
         }
     }
+
     /**
      * Remove a specific key-value pair from the store.
      * @param key The key to remove.
@@ -161,7 +208,7 @@ export class Store extends Tome {
         }
 
         if (!this.mars) {
-            localStorage.removeItem(`${this.space}/${this.app}/${key}`)
+            localStorage.removeItem(this.basePath(key))
             return true
         } else {
             await this.api.poke({
@@ -171,6 +218,7 @@ export class Store extends Tome {
                     'remove-value': {
                         space: this.space,
                         app: this.app,
+                        bucket: this.bucket,
                         key: key,
                     },
                 },
@@ -193,6 +241,7 @@ export class Store extends Tome {
      */
     public async clear(): Promise<boolean> {
         if (!this.mars) {
+            // TODO - if we're only wiping a bucket, this might be the wrong method.
             localStorage.clear()
             return true
         } else {
@@ -203,6 +252,7 @@ export class Store extends Tome {
                     'clear-kv': {
                         space: this.space,
                         app: this.app,
+                        bucket: this.bucket,
                     },
                 },
                 ship: this.tomeShip,
@@ -235,9 +285,7 @@ export class Store extends Tome {
         }
 
         if (!this.mars) {
-            const value = localStorage.getItem(
-                `${this.space}/${this.app}/${key}`
-            )
+            const value = localStorage.getItem(this.basePath(key))
             if (value === null) {
                 console.error(`key ${key} not found`)
                 return undefined
@@ -262,10 +310,7 @@ export class Store extends Tome {
                 return value
             } else {
                 await this.api
-                    .subscribeOnce(
-                        agent,
-                        `/store/${this.space}/${this.app}/${key}`
-                    )
+                    .subscribeOnce(agent, this.basePath(key))
                     .then((value: string) => {
                         this.cache.set(key, value)
                         return value
@@ -287,10 +332,10 @@ export class Store extends Tome {
         if (!this.mars) {
             const map: Map<string, string> = new Map()
             const len = localStorage.length
-            const startIndex = `${this.space}/${this.app}/`.length
+            const startIndex = this.basePath().length + 1
             for (let i = 0; i < len; i++) {
                 const key = localStorage.key(i)
-                if (key.startsWith(`${this.space}/${this.app}/`)) {
+                if (key.startsWith(this.basePath() + '/')) {
                     const keyName = key.substring(startIndex) // get key without prefix
                     map.set(keyName, localStorage.getItem(key))
                 }
@@ -307,14 +352,14 @@ export class Store extends Tome {
                     return this.cache
                 }
                 await this.api
-                    .subscribeOnce(agent, `/store/${this.space}/${this.app}`)
+                    .subscribeOnce(agent, this.basePath())
                     .then((data: JSON) => {
                         this.cache = new Map(Object.entries(data))
                         return this.cache
                     })
                     .catch(() => {
                         console.error(
-                            `Store ${this.space}/${this.app} not found`
+                            `Bucket ${this.space}/${this.app}/${this.bucket} not found`
                         )
                         return new Map()
                     })
@@ -322,15 +367,19 @@ export class Store extends Tome {
         }
     }
 
-    public canCreate() {
-        throw new Error(
-            'Cannot check permissions on subclasses of Tome. Use the base class instead.'
-        )
+    private basePath(key?: string): string {
+        let path = `/kv/${this.space}/${this.app}/${this.bucket}`
+        if (key) {
+            path += `/${key}`
+        }
+        return path
     }
 
-    public canOverwrite() {
-        throw new Error(
-            'Cannot check permissions on subclasses of Tome. Use the base class instead.'
-        )
+    public isWriter(): boolean {
+        return this.writer
+    }
+
+    public isAdmin(): boolean {
+        return this.admin
     }
 }

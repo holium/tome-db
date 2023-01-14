@@ -11,10 +11,8 @@ export function App() {
         const testing = async () => {
             const db = await Tome.init(api)
             console.log(db)
-            console.log(db.canCreate())
-            console.log(db.canOverwrite())
 
-            const store = await db.keyvalue(false)
+            const store = await db.keyvalue({ preload: false })
             console.log(store)
         }
         testing()
