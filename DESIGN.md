@@ -1,5 +1,15 @@
 ## Client Design
 
+In the actual settings for a Realm space I'd like to eventually be able to set Tome's permissions like so:
+
+`permissions: { visible: 'space', new: 'our' }`
+
+Visible: who is allowed to know the Tome exists for a space, whether it has stores / logs / feeds, and what the names of them are. Visible does not mean they can actually read the values associated, however.
+
+New: Who is allowed to create new apps and buckets in our space. In the default case, `our`, the space owner must download an app for it to be available to others. With a list of invites, any invited users could use an app in the space, and they would be allowed to initialize the necessary buckets for it to work.
+
+New gives any of the listed ships ability to download apps that store arbitrary data on the host ship, so it should be admins only. This could tie into admins for a space.
+
 ```js
 import Tome from '@holium/tome-db'
 
@@ -11,7 +21,7 @@ const db = await Tome.init(api, {
     ship: 'lomder-librun' // sig will be automatically removed
     space: 'Realm Forerunners',
     app: 'Lexicon', // "app", "agent", "desk" are all synonymous here. This is for keeping data separate from other applications / desks.
-    permissions: { read: 'space', write: 'our', overwrite: 'our' }, // this is just a default to use for subclasses.  It's not persisted in Urbit
+    permissions: { read: 'space', write: 'our', overwrite: 'our' }, // this is just a default to use for subclasses.  It's not persisted in Urbit.
 })
 
 // if no api, it uses localStorage instead.
@@ -28,7 +38,7 @@ const appPreferences = db.keyvalue({
     preload: true, // preload and cache the bucket values.  (Improve response time.)
 })
 
-// use the 'def' bucket if none is specified.
+// use 'def' as bucket name if none is specified.
 const kv = db.keyvalue()
 
 appPreferences.set('theme', 'dark')
