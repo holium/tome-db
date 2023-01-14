@@ -160,7 +160,7 @@ export class Tome {
                 this.app,
                 options.bucket ? options.bucket : 'def',
                 options.permissions ? options.permissions : this.perm,
-                options.preload ? options.preload : true
+                options.preload !== undefined ? options.preload : true
             )
         } else {
             return Store.initStore()

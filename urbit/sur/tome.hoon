@@ -1,5 +1,3 @@
-/+  *mip
-::
 |%
 +$  space         @t         :: space name.  if no space this is 'our'
 +$  app           @t         :: app name (reduce namespace collisions).  if no app this is 'all'

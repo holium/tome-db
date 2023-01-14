@@ -77,7 +77,8 @@
   |=  =path
   ~>  %bout.[0 '%tome-api +on-watch']
   ^-  (quip card _this)
-  `this
+  =^  cards  state  abet:(peer:eng path)
+  [cards this]
   ::
   ++  on-fail
     ~>  %bout.[0 '%tome-api +on-fail']
@@ -104,6 +105,17 @@
   ^+  dat
   ?>  ?=([%0 *] q.vaz)
   dat(state !<(state-0 vaz))
+::  +peer: handle on-watch
+::
+++  peer
+  |=  pol=(pole knot)
+  ^+  dat
+  ?+    pol  ~|(bad-watch-path/pol !!)
+      [%kv space=@ app=@ bucket=@ rest=*]
+    =^  cards  state
+      kv-abet:(kv-peer:(kv-abed:kv [space.pol app.pol bucket.pol]) rest.pol)
+    (emil cards)
+  ==
 ++  poke
   |=  [mar=mark vaz=vase]
   =^  cards  state
@@ -127,7 +139,6 @@
       ==
         %kv-action
       =/  act  !<(kv-action vaz)
-      ::  everyone is using td, should I just save it in the core?
       =*  do  kv-abet:(kv-poke:(kv-abed:kv [space.act app.act bucket.act]) act)
       ?-  -.act
           %set-value
@@ -155,6 +166,8 @@
           caz=(list card)
       ==
   +*  kv  .
+  ++  kv-emit  |=(c=card kv(caz [c caz]))
+  ++  kv-emil  |=(lc=(list card) kv(caz (welp lc caz)))
   ++  kv-abet
     ^-  (quip card _state)
     =.  store.td  (~(put by store.td) b [per whi bla meta data])
@@ -175,10 +188,24 @@
       meta  meta.st
       data  data.st
     ==
+  ++  kv-peer
+    |=  [rest=(pole knot)]
+    ^+  kv
+    ?+    rest  ~|(bad-kv-watch-path/rest !!)
+      ::   [%perm ~]
+      :: %-  kv-emit
+      :: [%give %fact ~ %perm-update ...]
+        [%data %all ~]
+      %-  kv-emit
+      [%give %fact ~ %json !>(o+data)]
+        [%data %key k=@t ~]
+      %-  kv-emit
+      [%give %fact ~ %json !>((~(got by data) k.rest))]
+    ==
   ++  kv-poke
     |=  a=kv-action
     ^+  kv
-    ?+  -.a  !!
+    ?-  -.a
         %set-value
       =+  cm=(~(gut by meta) key.a ~)
       ?~  cm
@@ -188,6 +215,13 @@
       ::  this value already exists, so update its metadata
       =+  nm=[created-by.cm src.bol created-at.cm now.bol]
       kv(meta (~(put by meta) key.a nm), data (~(put by data) key.a [%s value.a]))
+        %remove-value
+      =+  cm=(~(gut by meta) key.a ~)
+      ?~  cm
+        kv
+      kv(meta (~(del by meta) key.a), data (~(del by data) key.a))
+        %clear-kv
+      kv(meta *kv-meta, data *kv-data)
     ==
   --
 --

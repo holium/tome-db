@@ -38,7 +38,24 @@ res = appPreferences.get('theme')
 
 ## Backend Design
 
-See sur/tome.hoon for context on backend data structures.
+### Subscriptions
+
+Where `type` is one of `kv`, `log`, `feed`, etc:
+
+`/${type}/${space}/${app}/${bucket}/perm`: Get whether you are a writer and/or admin.
+NACK if can't read. Kicks after the first response.
+
+If a poke errors, you should check this again to see if your privileges have been revoked.
+
+`/kv/${space}/${app}/${bucket}/data/all`: Get all values and live updates.
+
+`/kv/${space}/${app}/${bucket}/data/key/${key}`: Get the value of a key.
+
+These don't exist yet:
+
+`/kv/${space}/${app}/${bucket}/meta/all`: Get all metadata and live updates.
+
+`/kv/${space}/${app}/${bucket}/meta/key/${key}`: Get the metadata of a key.
 
 ## Permissioning:
 

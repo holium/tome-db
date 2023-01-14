@@ -16,7 +16,7 @@ export class Store extends Tome {
     private async subscribeAll() {
         this.storeSubscriptionID = await this.api.subscribe({
             app: agent,
-            path: this.basePath(),
+            path: this.subscribePath(),
             err: () => {
                 throw new Error(
                     'Tome: the key-value store being used has been removed, or your access has been revoked.'
@@ -58,6 +58,7 @@ export class Store extends Tome {
             this.bucket = bucket
             this.writer = writer
             this.admin = admin
+            this.cache = new Map()
             if (preload) {
                 this.loaded = false
                 this.subscribeAll()
@@ -163,7 +164,7 @@ export class Store extends Tome {
 
         if (!this.mars) {
             try {
-                localStorage.setItem(this.basePath(key), value)
+                localStorage.setItem(this.subscribePath(key), value)
             } catch (error) {
                 console.error(error)
                 return false
@@ -208,7 +209,7 @@ export class Store extends Tome {
         }
 
         if (!this.mars) {
-            localStorage.removeItem(this.basePath(key))
+            localStorage.removeItem(this.subscribePath(key))
             return true
         } else {
             await this.api.poke({
@@ -285,7 +286,7 @@ export class Store extends Tome {
         }
 
         if (!this.mars) {
-            const value = localStorage.getItem(this.basePath(key))
+            const value = localStorage.getItem(this.subscribePath(key))
             if (value === null) {
                 console.error(`key ${key} not found`)
                 return undefined
@@ -309,8 +310,8 @@ export class Store extends Tome {
                 }
                 return value
             } else {
-                await this.api
-                    .subscribeOnce(agent, this.basePath(key))
+                return await this.api
+                    .subscribeOnce(agent, this.subscribePath(key))
                     .then((value: string) => {
                         this.cache.set(key, value)
                         return value
@@ -332,10 +333,10 @@ export class Store extends Tome {
         if (!this.mars) {
             const map: Map<string, string> = new Map()
             const len = localStorage.length
-            const startIndex = this.basePath().length + 1
+            const startIndex = this.subscribePath().length + 1
             for (let i = 0; i < len; i++) {
                 const key = localStorage.key(i)
-                if (key.startsWith(this.basePath() + '/')) {
+                if (key.startsWith(this.subscribePath() + '/')) {
                     const keyName = key.substring(startIndex) // get key without prefix
                     map.set(keyName, localStorage.getItem(key))
                 }
@@ -352,7 +353,7 @@ export class Store extends Tome {
                     return this.cache
                 }
                 await this.api
-                    .subscribeOnce(agent, this.basePath())
+                    .subscribeOnce(agent, this.subscribePath())
                     .then((data: JSON) => {
                         this.cache = new Map(Object.entries(data))
                         return this.cache
@@ -367,10 +368,12 @@ export class Store extends Tome {
         }
     }
 
-    private basePath(key?: string): string {
-        let path = `/kv/${this.space}/${this.app}/${this.bucket}`
+    private subscribePath(key?: string): string {
+        let path = `/kv/${this.space}/${this.app}/${this.bucket}/data/`
         if (key) {
-            path += `/${key}`
+            path += `key/${key}`
+        } else {
+            path += 'all'
         }
         return path
     }
