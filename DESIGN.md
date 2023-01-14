@@ -18,7 +18,7 @@ api.ship = window.ship
 
 // If we're running in a space, Tome should find the space, app, and ship associated and set those by default.  Going to need some tuning on the defaults here (likely contact our spaces agent).
 const db = await Tome.init(api, {
-    ship: 'lomder-librun' // sig will be automatically removed
+    ship: 'lomder-librun', // sig will be automatically removed
     space: 'Realm Forerunners',
     app: 'Lexicon', // "app", "agent", "desk" are all synonymous here. This is for keeping data separate from other applications / desks.
     permissions: { read: 'space', write: 'our', overwrite: 'our' }, // this is just a default to use for subclasses.  It's not persisted in Urbit.
