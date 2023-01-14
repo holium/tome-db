@@ -23,8 +23,8 @@
   ==
 ::
 +$  perm     [read=level write=level admin=level]
-+$  kv       (map key json-value)
-+$  kv-meta  (map key meta)
++$  kv       (unit (map key json-value))
++$  kv-meta  (unit (map key meta))
 +$  store    (unit (map bucket [=perm whitelist=invited blacklist=invited meta=kv-meta data=kv]))
 ::
 :: =log =feed =counter etc.
