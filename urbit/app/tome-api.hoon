@@ -1,13 +1,14 @@
 ::  a space agent skeleton
-/-  *station, *tome
+/-  *tome
 /+  r-l=realm-lib
 /+  verb, dbug, defa=default-agent
+/+  *mip
 ::
 |%
 ::
 +$  versioned-state  $%(state-0)
 ::
-+$  state-0  [%0 =tome]
++$  state-0  [%0 tome=(mip space app tome-data)]
 ::
 ::
 ::  boilerplate
@@ -109,10 +110,83 @@
     ?+  mar  ~|(bad-tome-mark/mar !!)
         %tome-action
       =/  act  !<(tome-action vaz)
-      ~&  >  act
-      `state
+      ?-  -.act
+          %init-tome
+        ?.  =(our.bol src.bol)  ~|('no-foreign-init-tome' !!)
+        ?:  (~(has bi tome) space.act app.act)
+          `state
+        `state(tome (~(put bi tome) space.act app.act *tome-data))
+          %init-kv
+        :: todo should I do this in the nested core?
+        ?.  =(our.bol src.bol)  ~|('no-foreign-init-kv' !!)
+        =+  td=(~(got bi tome) space.act app.act)
+        ?:  (~(has by store.td) bucket.act)
+          `state
+        =.  store.td  (~(put by store.td) bucket.act [perm.act ~ ~ *kv-meta *kv-data])
+        `state(tome (~(put bi tome) space.act app.act td))
+      ==
         %kv-action
-      `state
+      =/  act  !<(kv-action vaz)
+      ::  everyone is using td, should I just save it in the core?
+      =*  do  kv-abet:(kv-poke:(kv-abed:kv [space.act app.act bucket.act]) act)
+      ?-  -.act
+          %set-value
+        do
+          %remove-value
+        do
+          %clear-kv
+        do
+      ==
     ==
   (emil cards)
+::
+::  +kv: keyvalue engine
+::
+++  kv
+  |_  $:  s=space
+          a=app
+          b=bucket
+          per=perm
+          whi=invited
+          bla=invited
+          meta=kv-meta
+          data=kv-data
+          caz=(list card)
+      ==
+  +*  kv  .
+  ++  kv-abet
+    ^-  (quip card _state)
+    =+  td=(~(got bi tome) s a)
+    =.  store.td  (~(put by store.td) b [per whi bla meta data])
+    [(flop caz) state(tome (~(put bi tome) s a td))]
+  ::
+  ++  kv-abed
+    |=  [s=space a=app b=bucket]
+    =+  td=(~(got bi tome) s a)
+    =+  st=(~(got by store.td) b)
+    %=  kv
+      s     s
+      a     a
+      b     b
+      per   perm.st
+      whi   whitelist.st
+      bla   blacklist.st
+      meta  meta.st
+      data  data.st
+    ==
+  ++  kv-poke
+    |=  a=kv-action
+    ^+  kv
+    ?+  -.a  !!
+        %set-value
+      =+  cm=(~(gut by meta) key.a ~)
+      ?~  cm
+        ::  this value is new, so create new metadata entry alongside it
+        =+  nm=[src.bol src.bol now.bol now.bol]
+        kv(meta (~(put by meta) key.a nm), data (~(put by data) key.a [%s value.a]))
+      ::  this value already exists, so update its metadata
+      =+  nm=[created-by.cm src.bol created-at.cm now.bol]
+      kv(meta (~(put by meta) key.a nm), data (~(put by data) key.a [%s value.a]))
+    ==
+  --
 --

@@ -13,6 +13,8 @@ export function App() {
             console.log(db)
 
             const store = await db.keyvalue({ preload: false })
+            await store.set('foo', 'bar')
+
             console.log(store)
         }
         testing()
