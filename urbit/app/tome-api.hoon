@@ -146,6 +146,7 @@
   |_  $:  s=space
           a=app
           b=bucket
+          td=tome-data
           per=perm
           whi=invited
           bla=invited
@@ -156,7 +157,6 @@
   +*  kv  .
   ++  kv-abet
     ^-  (quip card _state)
-    =+  td=(~(got bi tome) s a)
     =.  store.td  (~(put by store.td) b [per whi bla meta data])
     [(flop caz) state(tome (~(put bi tome) s a td))]
   ::
@@ -168,6 +168,7 @@
       s     s
       a     a
       b     b
+      td    td
       per   perm.st
       whi   whitelist.st
       bla   blacklist.st
