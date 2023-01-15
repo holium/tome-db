@@ -90,7 +90,7 @@ export class Store extends Tome {
             ship: ship,
             onError: (error) => {
                 throw new Error(
-                    `Tome: Initializing key-value store on ship ${ship} failed: ${error}.  Make sure the ship and Tome agent are both running.`
+                    `Tome: Initializing key-value store on ship ${ship} failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
                 )
             },
         })
@@ -172,6 +172,7 @@ export class Store extends Tome {
             }
         } else {
             // maybe set in the cache, return, and poke / retry as necesssary?
+            let success = false
             await this.api.poke({
                 app: agent,
                 mark: storeMark,
@@ -187,13 +188,13 @@ export class Store extends Tome {
                 ship: this.tomeShip,
                 onSuccess: () => {
                     this.cache.set(key, value)
-                    return true
+                    success = true
                 },
                 onError: () => {
                     console.error('Failed to set key-value pair in the Store.')
-                    return false
                 },
             })
+            return success
         }
     }
 
@@ -212,6 +213,7 @@ export class Store extends Tome {
             localStorage.removeItem(this.subscribePath(key))
             return true
         } else {
+            let success = false
             await this.api.poke({
                 app: agent,
                 mark: storeMark,
@@ -226,13 +228,13 @@ export class Store extends Tome {
                 ship: this.tomeShip,
                 onSuccess: () => {
                     this.cache.delete(key)
-                    return true
+                    success = true
                 },
                 onError: (error) => {
                     console.error(error)
-                    return false
                 },
             })
+            return success
         }
     }
 
@@ -246,6 +248,7 @@ export class Store extends Tome {
             localStorage.clear()
             return true
         } else {
+            let success = false
             await this.api.poke({
                 app: agent,
                 mark: storeMark,
@@ -259,13 +262,13 @@ export class Store extends Tome {
                 ship: this.tomeShip,
                 onSuccess: () => {
                     this.cache.clear()
-                    return true
+                    success = true
                 },
                 onError: () => {
                     console.error('Failed to clear Store')
-                    return false
                 },
             })
+            return success
         }
     }
 
@@ -368,6 +371,7 @@ export class Store extends Tome {
         }
     }
 
+    // TODO: localStorage could probably use a simpler path than this.
     private subscribePath(key?: string): string {
         let path = `/kv/${this.space}/${this.app}/${this.bucket}/data/`
         if (key) {

@@ -32,7 +32,7 @@ export class Tome {
             ship: ship,
             onError: (error) => {
                 throw new Error(
-                    `Tome: Initializing Tome on ship ${ship} failed: ${error}.  Make sure the ship and Tome agent are both running.`
+                    `Tome: Initializing Tome on ship ${ship} failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
                 )
             },
         })
