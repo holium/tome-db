@@ -76,6 +76,7 @@ export class Store extends Tome {
         bucket: string,
         perm: Perm
     ) {
+        // do I have perms for this? should check somewhere.
         await api.poke({
             app: agent,
             mark: tomeMark,
@@ -89,6 +90,7 @@ export class Store extends Tome {
             },
             ship: ship,
             onError: (error) => {
+                // check and update current perms if they're wrong.
                 throw new Error(
                     `Tome: Initializing key-value store on ship ${ship} failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
                 )
@@ -320,7 +322,6 @@ export class Store extends Tome {
 
     // TODO - does this have race conditions?
     private async _getValueFromUrbit(key: string): Promise<string> {
-        let result = undefined
         return await this.api
             .subscribe({
                 app: agent,
@@ -331,18 +332,17 @@ export class Store extends Tome {
                     )
                 },
                 event: (value: string) => {
-                    this.cache.set(key, value)
-                    result = value
+                    if (value !== null) {
+                        this.cache.set(key, value)
+                    } else {
+                        this.cache.delete(key)
+                    }
                 },
                 quit: () => this._getValueFromUrbit(key),
             })
             .then(async (id) => {
                 await this.api.unsubscribe(id)
-                if (result === null) {
-                    console.error(`key ${key} not found`)
-                    result = undefined
-                }
-                return result
+                return this.cache.get(key)
             })
     }
 
@@ -374,20 +374,31 @@ export class Store extends Tome {
                 if (useCache) {
                     return this.cache
                 }
-                return await this.api
-                    .subscribeOnce(agent, this.subscribePath())
-                    .then((data: JSON) => {
-                        this.cache = new Map(Object.entries(data))
-                        return this.cache
-                    })
-                    .catch(() => {
-                        console.error(
-                            `Bucket ${this.space}/${this.app}/${this.bucket} not found`
-                        )
-                        return new Map()
-                    })
+                return await this._getAllFromUrbit()
             }
         }
+    }
+
+    // TODO - does this have race conditions?
+    private async _getAllFromUrbit(): Promise<Map<string, string>> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.subscribePath(),
+                err: () => {
+                    throw new Error(
+                        'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                    )
+                },
+                event: (data: JSON) => {
+                    this.cache = new Map(Object.entries(data))
+                },
+                quit: () => this._getAllFromUrbit(),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return this.cache
+            })
     }
 
     // TODO: localStorage could probably use a simpler path than this.
@@ -401,10 +412,16 @@ export class Store extends Tome {
         return path
     }
 
+    /**
+     * Whether the current ship has permission to create new entries in this Tome, or overwrite it's own entries.
+     */
     public isWriter(): boolean {
         return this.writer
     }
 
+    /**
+     * Whether the current ship has permission to overwrite or delete any entry in this Tome.
+     */
     public isAdmin(): boolean {
         return this.admin
     }

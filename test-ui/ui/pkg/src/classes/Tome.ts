@@ -104,7 +104,7 @@ export class Tome {
                 return new Tome(api, tomeShip, thisShip, space, app, perm)
             } else {
                 return new Tome(api, tomeShip, thisShip, space, app, perm)
-                // get our create and overwrite permissions.
+                // get our writer and admin permissions.
                 // NACK if Tome DNE, or we don't have read permissions.
                 // const getPermsAndInitTome = async () => {
                 //     const id = await api.subscribe({
@@ -165,23 +165,5 @@ export class Tome {
         } else {
             return Store.initStore()
         }
-    }
-
-    /**
-     * Whether the current ship has permission to create new entries in this Tome, or overwrite it's own entries.
-     */
-    public isWriter(): boolean {
-        throw new Error(
-            'Access permissions are available on subclasses of Tome.'
-        )
-    }
-
-    /**
-     * Whether the current ship has permission to overwrite or delete any entry in this Tome.
-     */
-    public isAdmin(): boolean {
-        throw new Error(
-            'Access permissions are available on subclasses of Tome.'
-        )
     }
 }

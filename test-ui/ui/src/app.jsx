@@ -14,19 +14,24 @@ const store = await db.keyvalue({
 let success = await store.set('key', 'value')
 console.log(success)
 
+success = await store.set('foo', 'bar')
+console.log(success)
+
 // success = await store.remove('key')
 // console.log(success)
 
-const res = await store.get('foo', false)
-console.log(res)
+// const res = await store.get('foo', false)
+// console.log(res)
 
 // const res2 = await store.clear()
 // console.log(res2)
 // const res = await store.get('foo')
 // console.log(res)
 
-// const all = await store.all()
-// console.log(all)
+const all = await store.all()
+console.log(all)
+
+console.log(store)
 
 export function App() {
     return (
