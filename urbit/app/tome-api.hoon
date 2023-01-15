@@ -203,25 +203,44 @@
       [%give %fact ~ %json !>((~(gut by data) k.rest ~))]
     ==
   ++  kv-poke
-    |=  a=kv-action
+    |=  act=kv-action
     ^+  kv
-    ?-  -.a
+    =,  enjs:format
+    ::  right now live updates only go to the subscribeAll endpoint
+    =/  pas  ~[/kv/[s]/[a]/[b]/data/all]
+    ?-  -.act
         %set-value
-      =+  cm=(~(gut by meta) key.a ~)
-      ?~  cm
-        ::  this value is new, so create new metadata entry alongside it
-        =+  nm=[src.bol src.bol now.bol now.bol]
-        kv(meta (~(put by meta) key.a nm), data (~(put by data) key.a [%s value.a]))
-      ::  this value already exists, so update its metadata
-      =+  nm=[created-by.cm src.bol created-at.cm now.bol]
-      kv(meta (~(put by meta) key.a nm), data (~(put by data) key.a [%s value.a]))
+      ::  equivalent value is already set, do nothing.
+      ?:  =(s+value.act (~(gut by data) key.act ~))
+        kv
+      =+  cm=(~(gut by meta) key.act ~)
+      =/  nm
+        ?~  cm
+          ::  this value is new, so create new metadata entry alongside it
+          [src.bol src.bol now.bol now.bol]
+        ::  this value already exists, so update its metadata
+        [created-by.cm src.bol created-at.cm now.bol]
+      %=  kv
+        meta  (~(put by meta) key.act nm)
+        data  (~(put by data) key.act s+value.act)
+        caz   [[%give %fact pas %json !>((pairs ~[[key.act s+value.act]]))] caz]
+      ==
         %remove-value
-      =+  cm=(~(gut by meta) key.a ~)
+      =+  cm=(~(gut by meta) key.act ~)
       ?~  cm
         kv
-      kv(meta (~(del by meta) key.a), data (~(del by data) key.a))
+      %=  kv
+        meta  (~(del by meta) key.act)
+        data  (~(del by data) key.act)
+        caz   [[%give %fact pas %json !>((pairs ~[[key.act ~]]))] caz]
+      ==
         %clear-kv
-      kv(meta *kv-meta, data *kv-data)
+      :: TODO check if kv is already empty
+      %=  kv
+        meta  *kv-meta
+        data  *kv-data
+        caz   [[%give %fact pas %json !>((pairs ~))] caz]
+      ==
     ==
   --
 --

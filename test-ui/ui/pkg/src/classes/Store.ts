@@ -28,6 +28,10 @@ export class Store extends Tome {
                     this.loaded = true
                 } else {
                     const entries = Object.entries(data)
+                    if (entries.length === 0) {
+                        // received an empty object, clear the cache.
+                        this.cache.clear()
+                    }
                     for (const [key, value] of entries) {
                         if (value === null) {
                             this.cache.delete(key)

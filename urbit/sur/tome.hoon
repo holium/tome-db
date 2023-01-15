@@ -1,7 +1,7 @@
 |%
-+$  space         @t         :: space name.  if no space this is 'our'
-+$  app           @t         :: app name (reduce namespace collisions).  if no app this is 'all'
-+$  bucket        @t         :: bucket name (with its own permissions).  if no bucket this is 'def'
++$  space         @tas       :: space name.  if no space this is 'our'
++$  app           @tas       :: app name (reduce namespace collisions).  if no app this is 'all'
++$  bucket        @tas       :: bucket name (with its own permissions).  if no bucket this is 'def'
 +$  key           @t         :: key name
 +$  value         @t
 +$  json-value    [%s value] :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
