@@ -20,8 +20,8 @@ console.log(success)
 // success = await store.remove('key')
 // console.log(success)
 
-// const res = await store.get('foo', false)
-// console.log(res)
+const res = await store.get('monker', false)
+console.log(res)
 
 // const res2 = await store.clear()
 // console.log(res2)

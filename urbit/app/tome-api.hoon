@@ -248,15 +248,14 @@
       :: [%give %fact ~ %perm-update ...]
         [%data %all ~]
       %-  kv-emit
-      [%give %fact ~ %json !>(o+data)]
+      [%give %fact ~ %kv-update !>(`kv-update`[%all data])]
         [%data %key k=@t ~]
       %-  kv-emit
-      [%give %fact ~ %json !>((~(gut by data) k.rest ~))]
+      [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
     ==
   ++  kv-poke
     |=  act=kv-action
     ^+  kv
-    =,  enjs:format
     ::  right now live updates only go to the subscribeAll endpoint
     =/  pas  ~[/kv/[s]/[a]/[b]/data/all]
     ?-  -.act
@@ -280,7 +279,7 @@
       %=  kv
         meta  (~(put by meta) key.act nm)
         data  (~(put by data) key.act s+value.act)
-        caz   [[%give %fact pas %json !>((pairs ~[[key.act s+value.act]]))] caz]
+        caz   [[%give %fact pas %kv-update !>(`kv-update`[%set key.act value.act])] caz]
       ==
       ::
         %remove-value
@@ -293,7 +292,7 @@
       %=  kv
         meta  (~(del by meta) key.act)
         data  (~(del by data) key.act)
-        caz   [[%give %fact pas %json !>((pairs ~[[key.act ~]]))] caz]
+        caz   [[%give %fact pas %kv-update !>(`kv-update`[%remove key.act])] caz]
       ==
       ::
         %clear-kv
@@ -304,7 +303,7 @@
       %=  kv
         meta  *kv-meta
         data  *kv-data
-        caz   [[%give %fact pas %json !>((pairs ~))] caz]
+        caz   [[%give %fact pas %kv-update !>(`kv-update`[%clear ~])] caz]
       ==
     ==
   --

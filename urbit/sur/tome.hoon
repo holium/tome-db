@@ -44,5 +44,13 @@
       [%remove-value =space =app =bucket =key]
       [%clear-kv =space =app =bucket]
   ==
+::
++$  kv-update
+  $%  [%set =key =value]
+      [%remove =key]
+      [%clear ~]
+      [%get value=?(~ json-value)]
+      [%all data=kv-data]
+  ==
 --
 
