@@ -5,8 +5,8 @@
 +$  key           @t         :: key name
 +$  value         @t
 +$  json-value    [%s value] :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
-+$  ships    (unit (set @p))
-+$  invited  (unit [read=ships write=ships admin=ships])
++$  ships    (set @p)
++$  invited  [read=ships write=ships admin=ships]
 ::
 +$  level
   $%  %our

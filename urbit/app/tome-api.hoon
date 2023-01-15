@@ -134,7 +134,7 @@
         =+  td=(~(got bi tome) space.act app.act)
         ?:  (~(has by store.td) bucket.act)
           `state
-        =.  store.td  (~(put by store.td) bucket.act [perm.act ~ ~ *kv-meta *kv-data])
+        =.  store.td  (~(put by store.td) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
         `state(tome (~(put bi tome) space.act app.act td))
       ==
         %kv-action
@@ -188,11 +188,62 @@
       meta  meta.st
       data  data.st
     ==
+  ::  +kv-perm: check permissions, return true if allowed
+  ::
+  ++  kv-perm
+    |=  [act=?(%read %create %overwrite)]
+    ^-  ?
+    ?-  act
+        %read
+      ?:  (~(has in read.whi) src.bol)  %.y
+      ?:  (~(has in read.bla) src.bol)  %.n
+      ?-  read.per
+          %our
+        =(our.bol src.bol)
+          %team
+        (team:title our.bol src.bol)
+          %space
+        :: TODO check if in the space
+        %.y
+          %open
+        %.y
+      ==
+        %create
+      ?:  (~(has in write.whi) src.bol)  %.y
+      ?:  (~(has in write.bla) src.bol)  %.n
+      ?-  write.per
+          %our
+        =(our.bol src.bol)
+          %team
+        (team:title our.bol src.bol)
+          %space
+        :: TODO check if in the space
+        %.y
+          %open
+        %.y
+      ==
+        %overwrite
+      ?:  (~(has in admin.whi) src.bol)  %.y
+      ?:  (~(has in admin.bla) src.bol)  %.n
+      ?-  admin.per
+          %our
+        =(our.bol src.bol)
+          %team
+        (team:title our.bol src.bol)
+          %space
+        :: TODO check if in the space
+        %.y
+          %open
+        %.y
+      ==
+    ==
+  ::
   ++  kv-peer
     |=  [rest=(pole knot)]
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
       ::   [%perm ~]
+      ::   ~[[key.act s+value.act]]
       :: %-  kv-emit
       :: [%give %fact ~ %perm-update ...]
         [%data %all ~]
@@ -211,31 +262,45 @@
     ?-  -.act
         %set-value
       ::  equivalent value is already set, do nothing.
-      ?:  =(s+value.act (~(gut by data) key.act ~))
-        kv
+      ?:  =(s+value.act (~(gut by data) key.act ~))  kv
       =+  cm=(~(gut by meta) key.act ~)
+      =/  lvl
+        ?~  cm
+          %create
+        ?:(=(src.bol created-by.cm) %create %overwrite)
+      ?>  (kv-perm lvl)
+      ::
       =/  nm
         ?~  cm
           ::  this value is new, so create new metadata entry alongside it
           [src.bol src.bol now.bol now.bol]
         ::  this value already exists, so update its metadata
         [created-by.cm src.bol created-at.cm now.bol]
+      ::
       %=  kv
         meta  (~(put by meta) key.act nm)
         data  (~(put by data) key.act s+value.act)
         caz   [[%give %fact pas %json !>((pairs ~[[key.act s+value.act]]))] caz]
       ==
+      ::
         %remove-value
       =+  cm=(~(gut by meta) key.act ~)
       ?~  cm
         kv
+      =/  lvl  ?:(=(src.bol created-by.cm) %create %overwrite)
+      ?>  (kv-perm lvl)
+      ::
       %=  kv
         meta  (~(del by meta) key.act)
         data  (~(del by data) key.act)
         caz   [[%give %fact pas %json !>((pairs ~[[key.act ~]]))] caz]
       ==
+      ::
         %clear-kv
-      :: TODO check if kv is already empty
+      :: TODO check if kv is already empty for no-op
+      ::
+      ::  could check if all values are ours for %create perm level, but that's overkill
+      ?>  (kv-perm %overwrite)
       %=  kv
         meta  *kv-meta
         data  *kv-data
