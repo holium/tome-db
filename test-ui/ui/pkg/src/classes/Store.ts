@@ -165,11 +165,11 @@ export class Store extends Tome {
         if (!this.mars) {
             try {
                 localStorage.setItem(this.subscribePath(key), value)
+                return true
             } catch (error) {
                 console.error(error)
                 return false
             }
-            return true
         } else {
             // maybe set in the cache, return, and poke / retry as necesssary?
             await this.api.poke({
@@ -352,7 +352,7 @@ export class Store extends Tome {
                 if (useCache) {
                     return this.cache
                 }
-                await this.api
+                return await this.api
                     .subscribeOnce(agent, this.subscribePath())
                     .then((data: JSON) => {
                         this.cache = new Map(Object.entries(data))

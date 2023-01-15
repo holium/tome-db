@@ -18,6 +18,9 @@ export function App() {
 
             const res = await store.get('foo')
             console.log(res)
+
+            const all = await store.all()
+            console.log(all)
         }
         testing()
     }, [])
