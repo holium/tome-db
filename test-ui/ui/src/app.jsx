@@ -8,25 +8,25 @@ api.ship = window.ship
 
 const db = await Tome.init(api)
 const store = await db.keyvalue({
-    preload: true,
+    preload: false,
 })
 
 let success = await store.set('key', 'value')
 console.log(success)
 
-success = await store.remove('key')
-console.log(success)
+// success = await store.remove('key')
+// console.log(success)
 
-// const res = await store.get('key')
-// console.log(res)
+const res = await store.get('foo', false)
+console.log(res)
 
 // const res2 = await store.clear()
 // console.log(res2)
 // const res = await store.get('foo')
 // console.log(res)
 
-const all = await store.all()
-console.log(all)
+// const all = await store.all()
+// console.log(all)
 
 export function App() {
     return (

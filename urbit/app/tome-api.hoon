@@ -85,7 +85,7 @@
     on-fail:def
   ::
   ++  on-leave
-    ~>  %bout.[0 '%tome-api +on-init']
+    ~>  %bout.[0 '%tome-api +on-leave']
     on-leave:def
   --
 |_  [bol=bowl:gall dek=(list card)]
@@ -200,7 +200,7 @@
       [%give %fact ~ %json !>(o+data)]
         [%data %key k=@t ~]
       %-  kv-emit
-      [%give %fact ~ %json !>((~(got by data) k.rest))]
+      [%give %fact ~ %json !>((~(gut by data) k.rest ~))]
     ==
   ++  kv-poke
     |=  a=kv-action

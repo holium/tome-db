@@ -276,7 +276,7 @@ export class Store extends Tome {
      * Retrieve the value associated with a specific key in the store.
      * @param key  The key to retrieve.
      * @param allowCachedValue  Whether we can check for cached values first.
-     * If false, we will always check Urbit for the latest value.
+     * If false, we will always check Urbit for the latest value. Default is true.
      * @returns The string value associated with the key, or undefined if the key does not exist.
      */
     public async get(
@@ -313,18 +313,37 @@ export class Store extends Tome {
                 }
                 return value
             } else {
-                return await this.api
-                    .subscribeOnce(agent, this.subscribePath(key))
-                    .then((value: string) => {
-                        this.cache.set(key, value)
-                        return value
-                    })
-                    .catch(() => {
-                        console.error(`key ${key} not found`)
-                        return undefined
-                    })
+                return await this._getValueFromUrbit(key)
             }
         }
+    }
+
+    // TODO - does this have race conditions?
+    private async _getValueFromUrbit(key: string): Promise<string> {
+        let result = undefined
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.subscribePath(key),
+                err: () => {
+                    throw new Error(
+                        'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                    )
+                },
+                event: (value: string) => {
+                    this.cache.set(key, value)
+                    result = value
+                },
+                quit: () => this._getValueFromUrbit(key),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                if (result === null) {
+                    console.error(`key ${key} not found`)
+                    result = undefined
+                }
+                return result
+            })
     }
 
     /**
