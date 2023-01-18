@@ -1,4 +1,5 @@
 /-  *tome
+/+  tomelib
 |_  act=kv-action
 ++  grow
   |%
@@ -7,16 +8,7 @@
 ++  grab
   |%
   ++  noun  kv-action
-  ++  json
-    =,  dejs:format
-    |=  jon=json
-    ^-  kv-action
-    %.  jon
-    %-  of
-    :~  set-value/(ot ~[space/so app/so bucket/so key/so value/so])
-        remove-value/(ot ~[space/so app/so bucket/so key/so])
-        clear-kv/(ot ~[space/so app/so bucket/so])
-    ==
+  ++  json  kv-action:dejs:tomelib
   --
 ++  grad  %noun
 --

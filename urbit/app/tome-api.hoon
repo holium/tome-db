@@ -239,7 +239,7 @@
     ==
   ::
   ++  kv-peer
-    |=  [rest=(pole knot)]
+    |=  rest=(pole knot)
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
       ::   [%perm ~]

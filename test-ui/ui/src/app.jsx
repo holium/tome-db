@@ -1,37 +1,36 @@
 import React from 'react'
 import Urbit from '@urbit/http-api'
 import Tome from '../pkg/src/index'
-// import Tome from 'tome-db'
 
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-const db = await Tome.init(api)
-const store = await db.keyvalue({
-    preload: true,
+const result = await api.thread({
+    inputMark: 'json',
+    outputMark: 'json',
+    threadName: 'poke-tunnel',
+    body: {
+        ship: '~bus',
+        json: JSON.stringify({
+            'set-value': {
+                space: 'our',
+                app: 'all',
+                bucket: 'def',
+                key: 'monker',
+                value: 'banan',
+            },
+        }),
+    },
+}).catch((e) => { 
+    return undefined
 })
+console.log(result === undefined)
+console.log(result)
 
-let success = await store.set('monker', 'banan')
-console.log(success)
-
-// success = await store.set('foo', 'bar')
-// console.log(success)
-
-// success = await store.remove('key')
-// console.log(success)
-
-const res = await store.get('monker', false)
-console.log(res)
-
-// const res2 = await store.clear()
-// console.log(res2)
-// const res = await store.get('foo')
-// console.log(res)
-
-const clear = await store.clear()
-console.log(clear)
-
-console.log(store)
+// const db = await Tome.init(api)
+// const store = await db.keyvalue({
+//     preload: true,
+// })
 
 export function App() {
     return (

@@ -1,4 +1,5 @@
 /-  *tome
+/+  tomelib
 |_  upd=kv-update
 ++  grab
   |%
@@ -7,16 +8,7 @@
 ++  grow
   |%
   ++  noun  upd
-  ++  json
-    =,  enjs:format
-    ^-  ^json
-    ?-  -.upd
-        %set      (frond key.upd s+value.upd)
-        %remove   (frond key.upd ~)
-        %clear    (pairs ~)
-        %get      value.upd
-        %all      o+data.upd
-    ==
+  ++  json  (kv-update:enjs:tomelib upd)
   --
 ++  grad  %noun
 --
