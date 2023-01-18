@@ -5,32 +5,16 @@ import Tome from '../pkg/src/index'
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-const result = await api.thread({
-    inputMark: 'json',
-    outputMark: 'json',
-    threadName: 'poke-tunnel',
-    body: {
-        ship: '~bus',
-        json: JSON.stringify({
-            'set-value': {
-                space: 'our',
-                app: 'all',
-                bucket: 'def',
-                key: 'monker',
-                value: 'banan',
-            },
-        }),
-    },
-}).catch((e) => { 
-    return undefined
+const db = await Tome.init(api,
+    {
+    ship: 'bus',
 })
-console.log(result === undefined)
-console.log(result)
+const store = await db.keyvalue({
+    preload: false,
+})
 
-// const db = await Tome.init(api)
-// const store = await db.keyvalue({
-//     preload: true,
-// })
+const result = await store.set('foo', 'bar')
+console.log(result)
 
 export function App() {
     return (
