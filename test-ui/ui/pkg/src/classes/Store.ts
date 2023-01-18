@@ -137,7 +137,7 @@ export class Store extends Tome {
                     true
                 )
             }
-            //
+            // TODO could let certain ships init with tunneled poke
             return new Store(
                 api,
                 tomeShip,
@@ -179,27 +179,57 @@ export class Store extends Tome {
         } else {
             // maybe set in the cache, return, and poke / retry as necesssary?
             let success = false
-            await this.api.poke({
-                app: agent,
-                mark: storeMark,
-                json: {
-                    'set-value': {
-                        space: this.space,
-                        app: this.app,
-                        bucket: this.bucket,
-                        key: key,
-                        value: value,
+            if (this.tomeShip === this.thisShip) {
+                await this.api.poke({
+                    app: agent,
+                    mark: storeMark,
+                    json: {
+                        'set-value': {
+                            space: this.space,
+                            app: this.app,
+                            bucket: this.bucket,
+                            key: key,
+                            value: value,
+                        },
                     },
-                },
-                ship: this.tomeShip,
-                onSuccess: () => {
+                    ship: this.tomeShip,
+                    onSuccess: () => {
+                        this.cache.set(key, value)
+                        success = true
+                    },
+                    onError: () => {
+                        console.error('Failed to set key-value pair in the Store.')
+                    },
+                })
+            } else {
+                // Tunnel poke to Tome ship
+                const result = await this.api
+                    .thread({
+                        inputMark: 'json',
+                        outputMark: 'json',
+                        threadName: 'poke-tunnel',
+                        body: {
+                            ship: this.tomeShip,
+                            json: JSON.stringify({
+                                'set-value': {
+                                    space: this.space,
+                                    app: this.app,
+                                    bucket: this.bucket,
+                                    key: key,
+                                    value: value,
+                                },
+                            }),
+                        },
+                    })
+                    .catch((e) => {
+                        console.error('Failed to add key-value pair to the Store.')
+                        return undefined
+                    })
+                success = result === 'success'
+                if (success) {
                     this.cache.set(key, value)
-                    success = true
-                },
-                onError: () => {
-                    console.error('Failed to set key-value pair in the Store.')
-                },
-            })
+                }
+            }
             return success
         }
     }
@@ -220,26 +250,55 @@ export class Store extends Tome {
             return true
         } else {
             let success = false
-            await this.api.poke({
-                app: agent,
-                mark: storeMark,
-                json: {
-                    'remove-value': {
-                        space: this.space,
-                        app: this.app,
-                        bucket: this.bucket,
-                        key: key,
+            if (this.tomeShip === this.thisShip) {
+                await this.api.poke({
+                    app: agent,
+                    mark: storeMark,
+                    json: {
+                        'remove-value': {
+                            space: this.space,
+                            app: this.app,
+                            bucket: this.bucket,
+                            key: key,
+                        },
                     },
-                },
-                ship: this.tomeShip,
-                onSuccess: () => {
+                    ship: this.tomeShip,
+                    onSuccess: () => {
+                        this.cache.delete(key)
+                        success = true
+                    },
+                    onError: (error) => {
+                        console.error(error)
+                    },
+                })
+            } else {
+                // Tunnel poke to Tome ship
+                const result = await this.api
+                    .thread({
+                        inputMark: 'json',
+                        outputMark: 'json',
+                        threadName: 'poke-tunnel',
+                        body: {
+                            ship: this.tomeShip,
+                            json: JSON.stringify({
+                                'remove-value': {
+                                    space: this.space,
+                                    app: this.app,
+                                    bucket: this.bucket,
+                                    key: key,
+                                },
+                            }),
+                        },
+                    })
+                    .catch((e) => {
+                        console.error('Failed to remove key-value pair from the Store.')
+                        return undefined
+                    })
+                success = result === 'success'
+                if (success) {
                     this.cache.delete(key)
-                    success = true
-                },
-                onError: (error) => {
-                    console.error(error)
-                },
-            })
+                }
+            }
             return success
         }
     }
@@ -255,25 +314,55 @@ export class Store extends Tome {
             return true
         } else {
             let success = false
-            await this.api.poke({
-                app: agent,
-                mark: storeMark,
-                json: {
-                    'clear-kv': {
-                        space: this.space,
-                        app: this.app,
-                        bucket: this.bucket,
+            if (this.tomeShip === this.thisShip) {
+                await this.api.poke({
+                    app: agent,
+                    mark: storeMark,
+                    json: {
+                        'clear-kv': {
+                            space: this.space,
+                            app: this.app,
+                            bucket: this.bucket,
+                        },
                     },
-                },
-                ship: this.tomeShip,
-                onSuccess: () => {
+                    ship: this.tomeShip,
+                    onSuccess: () => {
+                        this.cache.clear()
+                        success = true
+                    },
+                    onError: () => {
+                        console.error('Failed to clear Store')
+                    },
+                })
+            } else {
+                // Tunnel poke to Tome ship
+                const result = await this.api
+                    .thread({
+                        inputMark: 'json',
+                        outputMark: 'json',
+                        threadName: 'poke-tunnel',
+                        body: {
+                            ship: this.tomeShip,
+                            json: JSON.stringify({
+                                'clear-kv': {
+                                    space: this.space,
+                                    app: this.app,
+                                    bucket: this.bucket,
+                                },
+                            }),
+                        },
+                    })
+                    .catch((e) => {
+                        console.error(
+                            'Failed to clear Store.'
+                        )
+                        return undefined
+                    })
+                success = result === 'success'
+                if (success) {
                     this.cache.clear()
-                    success = true
-                },
-                onError: () => {
-                    console.error('Failed to clear Store')
-                },
-            })
+                }
+            }
             return success
         }
     }
