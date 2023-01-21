@@ -1,6 +1,6 @@
 import Urbit from '@urbit/http-api'
 import { Perm, Tome } from '../index'
-import { agent, storeMark, tomeMark } from './constants'
+import { agent, storeMark, tomeMark, localKvPrefix } from './constants'
 
 export class Store extends Tome {
     private storeSubscriptionID: number
@@ -170,7 +170,7 @@ export class Store extends Tome {
 
         if (!this.mars) {
             try {
-                localStorage.setItem(this.subscribePath(key), value)
+                localStorage.setItem(localKvPrefix + key, value)
                 return true
             } catch (error) {
                 console.error(error)
@@ -246,7 +246,7 @@ export class Store extends Tome {
         }
 
         if (!this.mars) {
-            localStorage.removeItem(this.subscribePath(key))
+            localStorage.removeItem(localKvPrefix + key)
             return true
         } else {
             let success = false
@@ -384,7 +384,7 @@ export class Store extends Tome {
         }
 
         if (!this.mars) {
-            const value = localStorage.getItem(this.subscribePath(key))
+            const value = localStorage.getItem(localKvPrefix + key)
             if (value === null) {
                 console.error(`key ${key} not found`)
                 return undefined
@@ -448,10 +448,10 @@ export class Store extends Tome {
         if (!this.mars) {
             const map: Map<string, string> = new Map()
             const len = localStorage.length
-            const startIndex = this.subscribePath().length + 1
+            const startIndex = localKvPrefix.length
             for (let i = 0; i < len; i++) {
                 const key = localStorage.key(i)
-                if (key.startsWith(this.subscribePath() + '/')) {
+                if (key.startsWith(localKvPrefix)) {
                     const keyName = key.substring(startIndex) // get key without prefix
                     map.set(keyName, localStorage.getItem(key))
                 }
