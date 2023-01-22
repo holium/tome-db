@@ -200,8 +200,8 @@
       ?-  read.per
           %our
         =(our.bol src.bol)
-          %team
-        (team:title our.bol src.bol)
+          %moon
+        (moon:title our.bol src.bol)
           %space
         :: TODO check if in the space
         %.y
@@ -214,8 +214,8 @@
       ?-  write.per
           %our
         =(our.bol src.bol)
-          %team
-        (team:title our.bol src.bol)
+          %moon
+        (moon:title our.bol src.bol)
           %space
         :: TODO check if in the space
         %.y
@@ -228,8 +228,8 @@
       ?-  admin.per
           %our
         =(our.bol src.bol)
-          %team
-        (team:title our.bol src.bol)
+          %moon
+        (moon:title our.bol src.bol)
           %space
         :: TODO check if in the space
         %.y

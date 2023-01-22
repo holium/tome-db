@@ -10,7 +10,7 @@
 ::
 +$  level
   $%  %our
-      %team
+      %moon
       %space
       %open
   ==

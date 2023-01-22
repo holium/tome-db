@@ -8,6 +8,15 @@ api.ship = window.ship
 const db = await Tome.init(api)
 const local_db = await Tome.init()
 
+// const test = await api.subscribe({
+//     app: 'spaces',
+//     path: '/current',
+//     event: (data) => {
+//         console.log('Received event: ' + JSON.stringify(data))
+//     },
+// })
+
+
 const testStore = async (db) => {
     const store = await db.keyvalue()
     console.log(
