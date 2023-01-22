@@ -185,6 +185,7 @@ export class Store extends Tome {
                     mark: storeMark,
                     json: {
                         'set-value': {
+                            ship: this.tomeShip,
                             space: this.space,
                             app: this.app,
                             bucket: this.bucket,
@@ -212,6 +213,7 @@ export class Store extends Tome {
                             ship: this.tomeShip,
                             json: JSON.stringify({
                                 'set-value': {
+                                    ship: this.tomeShip,
                                     space: this.space,
                                     app: this.app,
                                     bucket: this.bucket,
@@ -256,6 +258,7 @@ export class Store extends Tome {
                     mark: storeMark,
                     json: {
                         'remove-value': {
+                            ship: this.tomeShip,
                             space: this.space,
                             app: this.app,
                             bucket: this.bucket,
@@ -282,6 +285,7 @@ export class Store extends Tome {
                             ship: this.tomeShip,
                             json: JSON.stringify({
                                 'remove-value': {
+                                    ship: this.tomeShip,
                                     space: this.space,
                                     app: this.app,
                                     bucket: this.bucket,
@@ -320,6 +324,7 @@ export class Store extends Tome {
                     mark: storeMark,
                     json: {
                         'clear-kv': {
+                            ship: this.tomeShip,
                             space: this.space,
                             app: this.app,
                             bucket: this.bucket,
@@ -345,6 +350,7 @@ export class Store extends Tome {
                             ship: this.tomeShip,
                             json: JSON.stringify({
                                 'clear-kv': {
+                                    ship: this.tomeShip,
                                     space: this.space,
                                     app: this.app,
                                     bucket: this.bucket,
@@ -496,7 +502,7 @@ export class Store extends Tome {
 
     // TODO: localStorage could probably use a simpler path than this.
     private subscribePath(key?: string): string {
-        let path = `/kv/${this.space}/${this.app}/${this.bucket}/data/`
+        let path = `/kv/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/data/`
         if (key) {
             path += `key/${key}`
         } else {

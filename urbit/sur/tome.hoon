@@ -34,15 +34,15 @@
 ::
 +$  tome-data   [=store]
 ::
-+$  tome-action
++$  tome-action  :: these can only be done by the host, so we don't include the ship for now.
   $%  [%init-tome =space =app]
       [%init-kv =space =app =bucket =perm]
   ==
 ::
 +$  kv-action
-  $%  [%set-value =space =app =bucket =key =value]
-      [%remove-value =space =app =bucket =key]
-      [%clear-kv =space =app =bucket]
+  $%  [%set-value ship=@t =space =app =bucket =key =value]
+      [%remove-value ship=@t =space =app =bucket =key]
+      [%clear-kv ship=@t =space =app =bucket]
   ==
 ::
 +$  kv-update

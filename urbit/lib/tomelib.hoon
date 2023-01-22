@@ -7,9 +7,9 @@
     ^-  ^kv-action
     %.  jon
     %-  of
-    :~  set-value/(ot ~[space/so app/so bucket/so key/so value/so])
-        remove-value/(ot ~[space/so app/so bucket/so key/so])
-        clear-kv/(ot ~[space/so app/so bucket/so])
+    :~  set-value/(ot ~[ship/so space/so app/so bucket/so key/so value/so])
+        remove-value/(ot ~[ship/so space/so app/so bucket/so key/so])
+        clear-kv/(ot ~[ship/so space/so app/so bucket/so])
     ==
   --
 ++  enjs  =,  enjs:format

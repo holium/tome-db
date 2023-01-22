@@ -91,3 +91,10 @@ Visible: who is allowed to know the Tome exists for a space, whether it has stor
 New: Who is allowed to create new apps and buckets in our space. In the default case, `our`, the space owner must download an app for it to be available to others. With a list of invites, any invited users could use an app in the space, and they would be allowed to initialize the necessary buckets for it to work.
 
 New gives any of the listed ships ability to download apps that store arbitrary data on the host ship, so it should be admins only. This could tie into admins for a space.
+
+
+### Random notes
+
+`@p` provided in a subscription path includes the `~`.
+
+`@p` in a poke does not.

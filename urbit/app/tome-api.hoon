@@ -1,5 +1,5 @@
 ::  a space agent skeleton
-/-  *tome
+/-  *tome, s-p=spaces-path
 /+  r-l=realm-lib
 /+  verb, dbug, defa=default-agent
 /+  *mip
@@ -8,7 +8,7 @@
 ::
 +$  versioned-state  $%(state-0)
 ::
-+$  state-0  [%0 tome=(mip space app tome-data)]
++$  state-0  [%0 tome=(mip path:s-p app tome-data)]
 ::
 ::
 ::  boilerplate
@@ -111,9 +111,10 @@
   |=  pol=(pole knot)
   ^+  dat
   ?+    pol  ~|(bad-watch-path/pol !!)
-      [%kv space=@ app=@ bucket=@ rest=*]
+      [%kv ship=@ space=@ app=@ bucket=@ rest=*]
+    =/  ship  `@p`(slav %p ship.pol)
     =^  cards  state
-      kv-abet:(kv-peer:(kv-abed:kv [space.pol app.pol bucket.pol]) rest.pol)
+      kv-abet:(kv-peer:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
     (emil cards)
   ==
 ++  poke
@@ -125,21 +126,22 @@
       ?-  -.act
           %init-tome
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-tome' !!)
-        ?:  (~(has bi tome) space.act app.act)
+        ?:  (~(has bi tome) [our.bol space.act] app.act)
           `state
-        `state(tome (~(put bi tome) space.act app.act *tome-data))
+        `state(tome (~(put bi tome) [our.bol space.act] app.act *tome-data))
           %init-kv
         :: todo should I do this in the nested core?
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-kv' !!)
-        =+  td=(~(got bi tome) space.act app.act)
-        ?:  (~(has by store.td) bucket.act)
+        =+  tod=(~(got bi tome) [our.bol space.act] app.act)
+        ?:  (~(has by store.tod) bucket.act)
           `state
-        =.  store.td  (~(put by store.td) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
-        `state(tome (~(put bi tome) space.act app.act td))
+        =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
+        `state(tome (~(put bi tome) [our.bol space.act] app.act tod))
       ==
         %kv-action
-      =/  act  !<(kv-action vaz)
-      =*  do  kv-abet:(kv-poke:(kv-abed:kv [space.act app.act bucket.act]) act)
+      =/  act     !<(kv-action vaz)
+      =/  ship    `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      =*  do      kv-abet:(kv-poke:(kv-abed:kv [ship space.act app.act bucket.act]) act)
       ?-  -.act
           %set-value
         do
@@ -154,10 +156,11 @@
 ::  +kv: keyvalue engine
 ::
 ++  kv
-  |_  $:  s=space
-          a=app
-          b=bucket
-          td=tome-data
+  |_  $:  shi=ship
+          spa=space
+          =app
+          buc=bucket
+          tod=tome-data
           per=perm
           whi=invited
           bla=invited
@@ -170,23 +173,24 @@
   ++  kv-emil  |=(lc=(list card) kv(caz (welp lc caz)))
   ++  kv-abet
     ^-  (quip card _state)
-    =.  store.td  (~(put by store.td) b [per whi bla meta data])
-    [(flop caz) state(tome (~(put bi tome) s a td))]
+    =.  store.tod  (~(put by store.tod) buc [per whi bla meta data])
+    [(flop caz) state(tome (~(put bi tome) [shi spa] app tod))]
   ::
   ++  kv-abed
-    |=  [s=space a=app b=bucket]
-    =+  td=(~(got bi tome) s a)
-    =+  st=(~(got by store.td) b)
+    |=  [p=ship s=space a=^app b=bucket]
+    =+  tod=(~(got bi tome) [p s] a)
+    =+  sto=(~(got by store.tod) b)
     %=  kv
-      s     s
-      a     a
-      b     b
-      td    td
-      per   perm.st
-      whi   whitelist.st
-      bla   blacklist.st
-      meta  meta.st
-      data  data.st
+      shi   p
+      spa   s
+      app   a
+      buc   b
+      tod   tod
+      per   perm.sto
+      whi   whitelist.sto
+      bla   blacklist.sto
+      meta  meta.sto
+      data  data.sto
     ==
   ::  +kv-perm: check permissions, return true if allowed
   ::
@@ -253,11 +257,17 @@
       %-  kv-emit
       [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
     ==
+  ::
+  ::  cm = current metadata
+  ::  nm = new metadata
+  ::
   ++  kv-poke
     |=  act=kv-action
     ^+  kv
     ::  right now live updates only go to the subscribeAll endpoint
-    =/  pas  ~[/kv/[s]/[a]/[b]/data/all]
+    =/  pp   `@tas`(scot %p shi) :: planet for path
+    =/  pax  ~[/kv/[pp]/[spa]/[app]/[buc]/data/all]
+    ~&  >>  pax
     ?-  -.act
         %set-value
       ::  equivalent value is already set, do nothing.
@@ -279,7 +289,7 @@
       %=  kv
         meta  (~(put by meta) key.act nm)
         data  (~(put by data) key.act s+value.act)
-        caz   [[%give %fact pas %kv-update !>(`kv-update`[%set key.act value.act])] caz]
+        caz   [[%give %fact pax %kv-update !>(`kv-update`[%set key.act value.act])] caz]
       ==
       ::
         %remove-value
@@ -292,7 +302,7 @@
       %=  kv
         meta  (~(del by meta) key.act)
         data  (~(del by data) key.act)
-        caz   [[%give %fact pas %kv-update !>(`kv-update`[%remove key.act])] caz]
+        caz   [[%give %fact pax %kv-update !>(`kv-update`[%remove key.act])] caz]
       ==
       ::
         %clear-kv
@@ -303,7 +313,7 @@
       %=  kv
         meta  *kv-meta
         data  *kv-data
-        caz   [[%give %fact pas %kv-update !>(`kv-update`[%clear ~])] caz]
+        caz   [[%give %fact pax %kv-update !>(`kv-update`[%clear ~])] caz]
       ==
     ==
   --
