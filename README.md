@@ -6,11 +6,12 @@ import Tome from '@holium/tome-db'
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-// If we're running in a space, Tome should find the space, app, and ship associated and set those by default.  Going to need some tuning on the defaults here (likely contact our spaces agent).
-const db = await Tome.init(api, {
+// If we're running in a space, Tome finds the space and ship associated and sets those by default.
+// If ship and space are hardcoded, the Tome is "locked" i.e. will throw an error if changed to outside the correct space. (maybe useful for DAO tools?)
+// "app", "agent", "desk" are all synonymous here. This keeps data separate from other applications / desks.  If not set, it's a "free-for-all" a la Settings Store.
+const db = await Tome.init(api, app: 'Lexicon', {
     ship: 'lomder-librun', // sig will be automatically removed
     space: 'Realm Forerunners',
-    app: 'Lexicon', // "app", "agent", "desk" are all synonymous here. This is for keeping data separate from other applications / desks.
     permissions: { read: 'space', write: 'our', overwrite: 'our' }, // this is just a default to use for subclasses.  It's not persisted in Urbit.
 })
 
@@ -25,10 +26,10 @@ const db = await Tome.init(api, {
 const appPreferences = db.keyvalue({
     bucket: 'app.preferences',
     permissions: ..., // if not set, uses the Tome specified permissions
-    preload: true, // preload and cache the bucket values.  (Improve response time.)
+    preload: true, // preload and cache the bucket values.  (Improves response time.)
 })
 
-// use 'def' as bucket name if none is specified.
+// uses 'def' as bucket name if none is specified.
 const kv = db.keyvalue()
 
 appPreferences.set('theme', 'dark')
@@ -47,15 +48,15 @@ NACK if can't read. Kicks after the first response.
 
 If a poke errors, you should check this again to see if your privileges have been revoked.
 
-`/kv/${space}/${app}/${bucket}/data/all`: Get all values and live updates.
+`/kv/~${ship}/${space}/${app}/${bucket}/data/all`: Get all values and live updates.
 
-`/kv/${space}/${app}/${bucket}/data/key/${key}`: Get the value of a key.
+`/kv/~${ship}/${space}/${app}/${bucket}/data/key/${key}`: Get the value of a key.
 
 These don't exist yet:
 
-`/kv/${space}/${app}/${bucket}/meta/all`: Get all metadata and live updates.
+`/kv/~${ship}/${space}/${app}/${bucket}/meta/all`: Get all metadata and live updates.
 
-`/kv/${space}/${app}/${bucket}/meta/key/${key}`: Get the metadata of a key.
+`/kv/~${ship}/${space}/${app}/${bucket}/meta/key/${key}`: Get the metadata of a key.
 
 ## Permissioning:
 

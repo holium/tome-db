@@ -11,6 +11,7 @@ export class Tome {
     protected space: string
     protected app: string
     protected perm: Perm
+    protected locked: boolean // if true, Tome is locked to the initial ship and space.
 
     protected permissionSubscriptionID: number
 
@@ -61,7 +62,8 @@ export class Tome {
         thisShip?: string,
         space?: string,
         app?: string,
-        perm?: Perm
+        perm?: Perm,
+        locked?: boolean
     ) {
         this.mars = typeof api !== 'undefined'
         if (this.mars) {
@@ -71,6 +73,7 @@ export class Tome {
             this.space = space
             this.app = app
             this.perm = perm
+            this.locked = locked
         } else {
             this.app = 'tome-db'
         }
@@ -84,16 +87,34 @@ export class Tome {
     static async init(api?: Urbit, options: TomeOptions = {}): Promise<Tome> {
         const mars = typeof api !== 'undefined'
         if (mars) {
-            let tomeShip = options.ship ? options.ship : api.ship
+            let locked = false
+            let tomeShip = api.ship
+            let space = 'our'
+            if (options.ship && options.space) {
+                locked = true
+                tomeShip = options.ship
+                space = options.space
+            } else {
+                // not explicitly set, so get them from %spaces
+                try {
+                    const current = await api.scry({
+                        app: 'spaces',
+                        path: '/current',
+                    })
+                    const spacePath = current.current.path.split('/')
+                    tomeShip = spacePath[1]
+                    space = spacePath[2]
+                } catch (e) {
+                    console.warn('Tome: no current space found. Is Realm installed / configured?')
+                    console.warn("Tome: falling back to current ship and 'our' space.")
+                }
+            }
             if (tomeShip.startsWith('~')) {
                 tomeShip = tomeShip.slice(1) // remove leading sig
             }
             // save api.ship so we know who we are.
             const thisShip = api.ship
-            // overwrite it so subscriptions will go to the right place
-            api.ship = tomeShip
 
-            const space = options.space ? options.space : 'our'
             const app = options.app ? options.app : 'all'
             const perm = options.permissions
                 ? options.permissions
@@ -101,9 +122,9 @@ export class Tome {
             if (tomeShip === thisShip) {
                 // this is our tome, so create it
                 await Tome.initTomePoke(api, tomeShip, space, app)
-                return new Tome(api, tomeShip, thisShip, space, app, perm)
+                return new Tome(api, tomeShip, thisShip, space, app, perm, locked)
             } else {
-                return new Tome(api, tomeShip, thisShip, space, app, perm)
+                return new Tome(api, tomeShip, thisShip, space, app, perm, locked)
                 // get our writer and admin permissions.
                 // NACK if Tome DNE, or we don't have read permissions.
                 // const getPermsAndInitTome = async () => {
@@ -152,6 +173,17 @@ export class Tome {
      */
     public async keyvalue(options: StoreOptions = {}): Promise<Store> {
         if (this.mars) {
+            let permissions = options.permissions
+                ? options.permissions
+                : this.perm
+            if (this.app === 'all') {
+                console.warn('Tome: Permissions on `all` are ignored. Using `our` instead...')
+                permissions = {
+                    read: 'our',
+                    write: 'our',
+                    admin: 'our',
+                } as const
+            }
             return await Store.initStore(
                 this.api,
                 this.tomeShip,
@@ -159,8 +191,9 @@ export class Tome {
                 this.space,
                 this.app,
                 options.bucket ? options.bucket : 'def',
-                options.permissions ? options.permissions : this.perm,
-                options.preload !== undefined ? options.preload : true
+                permissions,
+                options.preload !== undefined ? options.preload : true,
+                this.locked
             )
         } else {
             return Store.initStore()

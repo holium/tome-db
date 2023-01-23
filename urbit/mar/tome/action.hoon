@@ -16,6 +16,7 @@
     %-  of
     :~  init-tome/(ot ~[space/so app/so])
         init-kv/(ot ~[space/so app/so bucket/so perm/(ot ~[read/levels write/levels admin/levels])])
+        watch-kv/(ot ~[ship/so space/so app/so bucket/so])
     ==
   --
 ++  grad  %noun

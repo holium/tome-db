@@ -8,7 +8,7 @@
 ::
 +$  versioned-state  $%(state-0)
 ::
-+$  state-0  [%0 tome=(mip path:s-p app tome-data)]
++$  state-0  [%0 tome=(mip path:s-p app tome-data) subs=(set path)]
 ::
 ::
 ::  boilerplate
@@ -129,6 +129,7 @@
         ?:  (~(has bi tome) [our.bol space.act] app.act)
           `state
         `state(tome (~(put bi tome) [our.bol space.act] app.act *tome-data))
+      ::
           %init-kv
         :: todo should I do this in the nested core?
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-kv' !!)
@@ -137,6 +138,17 @@
           `state
         =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
         `state(tome (~(put bi tome) [our.bol space.act] app.act tod))
+      ::
+          %watch-kv
+        =/  pp      `@tas`(cat 3 '~' ship.act) :: planet for path
+        =/  ship    `@p`(slav %p `@t`(cat 3 '~' ship.act))
+        =/  pax     /kv/[pp]/[space.act]/[app.act]/[bucket.act]/data/all
+        ?<  =(our.bol ship)
+        ::
+        ?:  (~(has in subs) pax)  `state
+        :_  state(subs (~(put in subs) pax))
+        [%pass pax %agent [ship %tome-api] %watch pax]~
+      ::
       ==
         %kv-action
       =/  act     !<(kv-action vaz)
@@ -148,6 +160,8 @@
           %remove-value
         do
           %clear-kv
+        do
+          %verify-kv
         do
       ==
     ==
@@ -267,7 +281,6 @@
     ::  right now live updates only go to the subscribeAll endpoint
     =/  pp   `@tas`(scot %p shi) :: planet for path
     =/  pax  ~[/kv/[pp]/[spa]/[app]/[buc]/data/all]
-    ~&  >>  pax
     ?-  -.act
         %set-value
       ::  equivalent value is already set, do nothing.
@@ -315,6 +328,10 @@
         data  *kv-data
         caz   [[%give %fact pax %kv-update !>(`kv-update`[%clear ~])] caz]
       ==
+        %verify-kv
+      :: The bucket must exist to get this far, so we just need to verify read permissions.
+      ?>  (kv-perm %read)
+      kv
     ==
   --
 --

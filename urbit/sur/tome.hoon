@@ -37,12 +37,15 @@
 +$  tome-action  :: these can only be done by the host, so we don't include the ship for now.
   $%  [%init-tome =space =app]
       [%init-kv =space =app =bucket =perm]
+      [%watch-kv ship=@t =space =app =bucket] :: this is for a foreign store
+      :: [%unwatch-kv ship=@t =space =app =bucket] someday...
   ==
 ::
 +$  kv-action
   $%  [%set-value ship=@t =space =app =bucket =key =value]
       [%remove-value ship=@t =space =app =bucket =key]
       [%clear-kv ship=@t =space =app =bucket]
+      [%verify-kv ship=@t =space =app =bucket]
   ==
 ::
 +$  kv-update

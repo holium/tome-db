@@ -4,9 +4,13 @@ import { agent, storeMark, tomeMark, localKvPrefix } from './constants'
 
 export class Store extends Tome {
     private storeSubscriptionID: number
+    private currentSubscriptionID: number
     // if preload is set, loaded will be set to true once the initial subscription state has been received.
     // then we know we can use the cache.
+    private preload: boolean
     private loaded: boolean
+    private active: boolean // if false, we are switching spaces
+
     private cache: Map<string, string>
     private bucket: string
     private writer: boolean
@@ -45,6 +49,64 @@ export class Store extends Tome {
         })
     }
 
+    // this seems like pretty dirty update method, is there a better way?
+    private async _wipeAndChangeSpace(tomeShip: string, space: string) {
+        if (this.storeSubscriptionID) {
+            await this.api.unsubscribe(this.storeSubscriptionID)
+        }
+        this.tomeShip = tomeShip
+        this.space = space
+        this.cache = new Map()
+        if (this.preload) {
+            this.loaded = false
+            await this.subscribeAll()
+        }
+
+        if (this.tomeShip === this.thisShip) {
+            await Store.initBucket(
+                this.api,
+                this.tomeShip,
+                this.space,
+                this.app,
+                this.bucket,
+                this.perm
+            )
+            this.writer = true
+            this.admin = true
+        } else {
+            // check perms
+        }
+        this.active = true
+    }
+
+    private async watchCurrentSpace() {
+        this.currentSubscriptionID = await this.api.subscribe({
+            app: 'spaces',
+            path: '/current',
+            err: () => {
+                // Is this the right error?
+                throw new Error(
+                    'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                )
+            },
+            event: async (current: JSON) => {
+                const spacePath = current.current.path.split('/')
+                const tomeShip = spacePath[1].slice(1)
+                const space = spacePath[2]
+                if (tomeShip !== this.tomeShip || space !== this.space) {
+                    if (this.locked) {
+                        throw new Error(
+                            'Tome: the space has been switched for a locked Tome.'
+                        )
+                    }
+                    this.active = false
+                    await this._wipeAndChangeSpace(tomeShip, space)
+                }
+            },
+            quit: this.watchCurrentSpace,
+        })
+    }
+
     private constructor(
         api?: Urbit,
         tomeShip?: string,
@@ -54,25 +116,29 @@ export class Store extends Tome {
         bucket?: string,
         perm?: Perm,
         preload?: boolean,
+        locked?: boolean,
         writer?: boolean,
         admin?: boolean
     ) {
         if (typeof api !== 'undefined') {
-            super(api, tomeShip, thisShip, space, app, perm)
+            super(api, tomeShip, thisShip, space, app, perm, locked)
             this.bucket = bucket
             this.writer = writer
             this.admin = admin
             this.cache = new Map()
+            this.preload = preload
             if (preload) {
                 this.loaded = false
                 this.subscribeAll()
             }
+            this.watchCurrentSpace()
+            this.active = true
         } else {
             super()
         }
     }
 
-    private static async initStoreBucketPoke(
+    private static async initBucket(
         api: Urbit,
         ship: string,
         space: string,
@@ -102,6 +168,73 @@ export class Store extends Tome {
         })
     }
 
+    private static async startWatchingBucket(
+        api: Urbit,
+        thisShip: string,
+        tomeShip: string,
+        space: string,
+        app: string,
+        bucket: string
+    ) {
+        // do I have perms for this? should check somewhere.
+        await api.poke({
+            app: agent,
+            mark: tomeMark,
+            json: {
+                'watch-kv': {
+                    ship: tomeShip,
+                    space: space,
+                    app: app,
+                    bucket: bucket,
+                },
+            },
+            ship: thisShip,
+            onError: (error) => {
+                // check and update current perms if they're wrong.
+                throw new Error(
+                    `Tome: Initializing store watch failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
+                )
+            },
+        })
+    }
+
+    private static async checkExistsAndCanRead(
+        api: Urbit,
+        ship: string,
+        space: string,
+        app: string,
+        bucket: string
+    ) {
+        // Tunnel poke to Tome ship
+        const result = await api
+            .thread({
+                inputMark: 'json',
+                outputMark: 'json',
+                threadName: 'poke-tunnel',
+                body: {
+                    ship: ship,
+                    json: JSON.stringify({
+                        'verify-kv': {
+                            ship: ship,
+                            space: space,
+                            app: app,
+                            bucket: bucket,
+                        },
+                    }),
+                },
+            })
+            .catch((e) => {
+                console.error('Failed to verify Store.')
+                return undefined
+            })
+        const success = result === 'success'
+        if (!success) {
+            throw new Error(
+                'Tome: the requested Tome bucket does not exist, or you do not have permission to access the store.'
+            )
+        }
+    }
+
     public static async initStore(
         api?: Urbit,
         tomeShip?: string,
@@ -110,15 +243,16 @@ export class Store extends Tome {
         app?: string,
         bucket?: string,
         perm?: Perm,
-        preload?: boolean
+        preload?: boolean,
+        locked?: boolean
     ) {
         const mars = typeof api !== 'undefined'
         if (mars) {
             // poke to init store
             if (tomeShip === thisShip) {
-                await Store.initStoreBucketPoke(
+                await Store.initBucket(
                     api,
-                    tomeShip,
+                    thisShip,
                     space,
                     app,
                     bucket,
@@ -133,11 +267,13 @@ export class Store extends Tome {
                     bucket,
                     perm,
                     preload,
+                    locked,
                     true,
                     true
                 )
             }
-            // TODO could let certain ships init with tunneled poke
+            await Store.checkExistsAndCanRead(api, tomeShip, space, app, bucket)
+            await Store.startWatchingBucket(api, thisShip, tomeShip, space, app, bucket)
             return new Store(
                 api,
                 tomeShip,
@@ -146,7 +282,8 @@ export class Store extends Tome {
                 app,
                 bucket,
                 perm,
-                preload
+                preload,
+                locked
             )
         }
         return new Store()
@@ -177,6 +314,7 @@ export class Store extends Tome {
                 return false
             }
         } else {
+            await this.waitForActive()
             // maybe set in the cache, return, and poke / retry as necesssary?
             let success = false
             if (this.tomeShip === this.thisShip) {
@@ -199,7 +337,9 @@ export class Store extends Tome {
                         success = true
                     },
                     onError: () => {
-                        console.error('Failed to set key-value pair in the Store.')
+                        console.error(
+                            'Failed to set key-value pair in the Store.'
+                        )
                     },
                 })
             } else {
@@ -224,7 +364,9 @@ export class Store extends Tome {
                         },
                     })
                     .catch((e) => {
-                        console.error('Failed to add key-value pair to the Store.')
+                        console.error(
+                            'Failed to add key-value pair to the Store.'
+                        )
                         return undefined
                     })
                 success = result === 'success'
@@ -251,6 +393,7 @@ export class Store extends Tome {
             localStorage.removeItem(localKvPrefix + key)
             return true
         } else {
+            await this.waitForActive()
             let success = false
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
@@ -295,7 +438,9 @@ export class Store extends Tome {
                         },
                     })
                     .catch((e) => {
-                        console.error('Failed to remove key-value pair from the Store.')
+                        console.error(
+                            'Failed to remove key-value pair from the Store.'
+                        )
                         return undefined
                     })
                 success = result === 'success'
@@ -317,6 +462,7 @@ export class Store extends Tome {
             localStorage.clear()
             return true
         } else {
+            await this.waitForActive()
             let success = false
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
@@ -359,9 +505,7 @@ export class Store extends Tome {
                         },
                     })
                     .catch((e) => {
-                        console.error(
-                            'Failed to clear Store.'
-                        )
+                        console.error('Failed to clear Store.')
                         return undefined
                     })
                 success = result === 'success'
@@ -397,6 +541,7 @@ export class Store extends Tome {
             }
             return value
         } else {
+            await this.waitForActive()
             // first check cache if allowed
             if (allowCachedValue) {
                 const value = this.cache.get(key)
@@ -404,7 +549,7 @@ export class Store extends Tome {
                     return value
                 }
             }
-            if (this.storeSubscriptionID) {
+            if (this.preload) {
                 while (!this.loaded) {
                     await new Promise((resolve) => setTimeout(resolve, 100))
                 }
@@ -464,7 +609,8 @@ export class Store extends Tome {
             }
             return map
         } else {
-            if (this.storeSubscriptionID) {
+            await this.waitForActive()
+            if (this.preload) {
                 while (!this.loaded) {
                     await new Promise((resolve) => setTimeout(resolve, 100))
                 }
@@ -523,5 +669,14 @@ export class Store extends Tome {
      */
     public isAdmin(): boolean {
         return this.admin
+    }
+
+    private waitForActive(): Promise<void> {
+        return new Promise((resolve) => {
+            while (!this.active) {
+                setTimeout(() => {}, 50)
+            }
+            resolve()
+        })
     }
 }
