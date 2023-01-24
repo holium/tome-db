@@ -117,6 +117,29 @@
       kv-abet:(kv-peer:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
     (emil cards)
   ==
+::  +dude: handle on-agent
+::
+++  dude
+  |=  [pol=(pole knot) sig=sign:agent:gall]
+  ^+  dat
+  ~&  >>  sig
+  =^  cards  state
+    ?+    pol  ~|(bad-dude-wire/pol !!)
+        [%kv ship=@ space=@ app=@ bucket=@ %data %all ~]
+      ::  local store should already have 
+      =/  ship  `@p`(slav %p ship.pol)
+      ?+    -.sig  `state
+        %kick  kv-abet:kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol])
+        %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
+      ::
+          %watch-ack
+        %.  `state
+        ?~(p.sig same (slog leaf/"%tome-kv nack" ~))
+      ==
+    ==
+  (emil cards)
+::  +poke: handle on-poke
+::
 ++  poke
   |=  [mar=mark vaz=vase]
   =^  cards  state
@@ -140,14 +163,8 @@
         `state(tome (~(put bi tome) [our.bol space.act] app.act tod))
       ::
           %watch-kv
-        =/  pp      `@tas`(cat 3 '~' ship.act) :: planet for path
-        =/  ship    `@p`(slav %p `@t`(cat 3 '~' ship.act))
-        =/  pax     /kv/[pp]/[space.act]/[app.act]/[bucket.act]/data/all
-        ?<  =(our.bol ship)
-        ::
-        ?:  (~(has in subs) pax)  `state
-        :_  state(subs (~(put in subs) pax))
-        [%pass pax %agent [ship %tome-api] %watch pax]~
+        `state
+        :: kv-abet:kv-view:kv
       ::
       ==
         %kv-action
@@ -189,6 +206,7 @@
     ^-  (quip card _state)
     =.  store.tod  (~(put by store.tod) buc [per whi bla meta data])
     [(flop caz) state(tome (~(put bi tome) [shi spa] app tod))]
+  ::  +kv-abed: initialize nested core.  only works when the map entries already exist
   ::
   ++  kv-abed
     |=  [p=ship s=space a=^app b=bucket]
@@ -206,6 +224,25 @@
       meta  meta.sto
       data  data.sto
     ==
+  ::  +kv-view: watch foreign kv
+  ::
+  ++  kv-view
+    ^+  kv
+    ?<  =(our.bol shi)
+    =/  pp    `@tas`(scot %p shi) :: planet for path
+    =/  pax   /kv/[pp]/[spa]/[app]/[buc]/data/all
+    ::
+    ?:  (~(has in subs) pax)  kv
+    =.  subs  (~(put in subs) pax)  :: does this even work?
+    (kv-emit [%pass pax %agent [shi %tome-api] %watch pax])
+  ::  +kv-dude: handle foreign kv update
+  ::
+  ++  kv-dude
+    |=  cag=cage
+    ^+  kv
+    ?<  =(our.bol shi)
+    ~&  >  cag
+    kv
   ::  +kv-perm: check permissions, return true if allowed
   ::
   ++  kv-perm
@@ -319,8 +356,7 @@
       ==
       ::
         %clear-kv
-      :: TODO check if kv is already empty for no-op
-      ::
+      ?~  meta  kv  :: nothing to clear
       ::  could check if all values are ours for %create perm level, but that's overkill
       ?>  (kv-perm %overwrite)
       %=  kv

@@ -15,7 +15,7 @@ export class Tome {
 
     protected permissionSubscriptionID: number
 
-    private static async initTomePoke(
+    protected static async initTomePoke(
         api: Urbit,
         ship: string,
         space: string,

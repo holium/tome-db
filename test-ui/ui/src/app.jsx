@@ -5,8 +5,11 @@ import Tome from '../pkg/src/index'
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-const db = await Tome.init(api)
-const local_db = await Tome.init()
+const db = await Tome.init(api, {
+    ship: 'bus',
+    space: 'our',
+})
+// const local_db = await Tome.init()
 
 // const test = await api.subscribe({
 //     app: 'spaces',
@@ -52,8 +55,8 @@ const testStore = async (db) => {
 console.warn('Using an Urbit Backend: \n\n')
 await testStore(db)
 
-console.warn('Using Local Storage: \n\n')
-await testStore(local_db)
+// console.warn('Using Local Storage: \n\n')
+// await testStore(local_db)
 
 
 
