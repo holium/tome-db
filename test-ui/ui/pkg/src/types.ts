@@ -8,7 +8,6 @@ export interface Perm {
 export interface TomeOptions {
     ship?: string
     space?: string
-    app?: string
     permissions?: Perm
 }
 

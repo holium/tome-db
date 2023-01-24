@@ -238,22 +238,33 @@
     (kv-emit [%pass pax %agent [shi %tome-api] %watch pax])
   ::  +kv-dude: handle foreign kv update
   ::
-  ::  TODO do I need to re-emit these updates to my subscribers? (frontend) probably.
   ++  kv-dude
     |=  cag=cage
     ^+  kv
     ?<  =(our.bol shi)
     ?+  p.cag  ~|('bad-kv-dude' !!)
         %kv-update
-      =/  upd  !<(kv-update q.cag)
-      ?+  -.upd  ~|('bad-kv-update' !!)
+      =/  upd     !<(kv-update q.cag)
+      =/  pp      `@tas`(scot %p shi) :: planet for path
+      =/  pax     ~[/kv/[pp]/[spa]/[app]/[buc]/data/all]
+      ?+  -.upd   ~|('bad-kv-update' !!)
           %set
-        kv(data (~(put by data) key.upd s+value.upd))
+        %=  kv
+          data  (~(put by data) key.upd s+value.upd)
+          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+        ==
           %remove
-        kv(data (~(del by data) key.upd))
+        %=  kv
+          data  (~(del by data) key.upd)
+          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+        ==
           %clear
-        kv(data *kv-data)
+        %=  kv
+          data  *kv-data
+          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+        ==
           %all
+        ::  convert update json to map somehow and merge
         ~&  >>>  upd
         kv
       ==

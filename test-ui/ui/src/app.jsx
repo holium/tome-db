@@ -6,6 +6,7 @@ const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
 const db = await Tome.init(api)
+const store = await db.keyvalue()
 // const local_db = await Tome.init()
 
 // const test = await api.subscribe({
@@ -17,8 +18,7 @@ const db = await Tome.init(api)
 // })
 
 const testStore = async () => {
-    const store = await db.keyvalue()
-    await store.set('monkey', 'brain')
+    await store.set('foo', 'bar')
     await store.set('charlie', 'echo')
 
     let resp = await store.all()
@@ -49,14 +49,20 @@ const testStore = async () => {
     // )
 }
 
-console.warn('Using an Urbit Backend: \n\n')
-await testStore()
+// console.warn('Using an Urbit Backend: \n\n')
+// await testStore()
 
 // console.warn('Using Local Storage: \n\n')
 // await testStore(local_db)
+async function addKV() {
+    const rand = Math.random().toString().substring(2, 8)
+    await store.set(rand, 'foo')
+}
 
 export function App() {
     return (
-        <main className="flex items-center justify-center min-h-screen"></main>
+        <main className="flex items-center justify-center min-h-screen">
+            <button onClick={addKV}>add something!</button>
+        </main>
     )
 }

@@ -13,8 +13,6 @@ export class Tome {
     protected perm: Perm
     protected locked: boolean // if true, Tome is locked to the initial ship and space.
 
-    protected permissionSubscriptionID: number
-
     protected static async initTomePoke(
         api: Urbit,
         ship: string,
@@ -65,10 +63,15 @@ export class Tome {
 
     /**
      * @param api The optional Urbit connection to be used for requests.
-     * @param options Optional ship, space, app, and permissions for initializing a Tome.
+     * @param app An optional app name to be used for requests. Defaults to `'all'`.
+     * @param options Optional ship, space, and permissions for initializing a Tome.
      * @returns A new Tome instance.
      */
-    static async init(api?: Urbit, options: TomeOptions = {}): Promise<Tome> {
+    static async init(
+        api?: Urbit,
+        app?: string,
+        options: TomeOptions = {}
+    ): Promise<Tome> {
         const mars = typeof api !== 'undefined'
         if (mars) {
             let locked = false
@@ -108,8 +111,9 @@ export class Tome {
             }
             // save api.ship so we know who we are.
             const thisShip = api.ship
-
-            const app = options.app ? options.app : 'all'
+            if (app === undefined) {
+                app = 'all'
+            }
             let perm = options.permissions
                 ? options.permissions
                 : ({ read: 'space', write: 'our', admin: 'our' } as const)
@@ -133,9 +137,9 @@ export class Tome {
             let permissions = options.permissions
                 ? options.permissions
                 : this.perm
-            if (this.app === 'all') {
+            if (this.app === 'all' && this.tomeShip === this.thisShip) {
                 console.warn(
-                    'Tome: Permissions on `all` are ignored. Using `our` instead...'
+                    'KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
                 )
                 permissions = {
                     read: 'our',

@@ -27,6 +27,7 @@ export class Store extends Tome {
                 )
             },
             event: (data: JSON) => {
+                console.log(data)
                 if (!this.loaded) {
                     this.cache = new Map(Object.entries(data))
                     this.loaded = true
@@ -63,7 +64,7 @@ export class Store extends Tome {
                 : ({ read: 'unset', write: 'unset', admin: 'unset' } as const)
 
         // if not ours, we need to make sure we have access first.
-        if (this.tomeShip !== this.thisShip) {
+        if (tomeShip !== this.thisShip) {
             await Store.checkExistsAndCanRead(
                 this.api,
                 tomeShip,
@@ -82,10 +83,9 @@ export class Store extends Tome {
             perm
         )
         // if not us, we want Hoon side to start a subscription.
-        if (this.tomeShip !== this.thisShip) {
+        if (tomeShip !== this.thisShip) {
             await Store.startWatchingBucket(
                 this.api,
-                this.thisShip,
                 tomeShip,
                 space,
                 this.app,
@@ -201,8 +201,7 @@ export class Store extends Tome {
 
     private static async startWatchingBucket(
         api: Urbit,
-        thisShip: string,
-        tomeShip: string,
+        ship: string,
         space: string,
         app: string,
         bucket: string
@@ -213,7 +212,7 @@ export class Store extends Tome {
             mark: tomeMark,
             json: {
                 'watch-kv': {
-                    ship: tomeShip,
+                    ship: ship,
                     space: space,
                     app: app,
                     bucket: bucket,
@@ -301,14 +300,7 @@ export class Store extends Tome {
                 write: 'unset',
                 admin: 'unset',
             })
-            await Store.startWatchingBucket(
-                api,
-                thisShip,
-                tomeShip,
-                space,
-                app,
-                bucket
-            )
+            await Store.startWatchingBucket(api, tomeShip, space, app, bucket)
             return new Store(
                 api,
                 tomeShip,
