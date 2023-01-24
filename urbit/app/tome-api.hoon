@@ -146,25 +146,27 @@
     ?+  mar  ~|(bad-tome-mark/mar !!)
         %tome-action
       =/  act  !<(tome-action vaz)
+      =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
       ?-  -.act
           %init-tome
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-tome' !!)
-        ?:  (~(has bi tome) [our.bol space.act] app.act)
+        ?:  (~(has bi tome) [ship space.act] app.act)
           `state
-        `state(tome (~(put bi tome) [our.bol space.act] app.act *tome-data))
+        `state(tome (~(put bi tome) [ship space.act] app.act *tome-data))
       ::
           %init-kv
-        :: todo should I do this in the nested core?
+      ::  %init-kv expects a %init-tome to have already been processed.
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-kv' !!)
-        =+  tod=(~(got bi tome) [our.bol space.act] app.act)
+        =+  tod=(~(got bi tome) [ship space.act] app.act)
         ?:  (~(has by store.tod) bucket.act)
           `state
         =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
-        `state(tome (~(put bi tome) [our.bol space.act] app.act tod))
+        `state(tome (~(put bi tome) [ship space.act] app.act tod))
       ::
+      ::  TODO consider making this a kv-action
           %watch-kv
-        `state
-        :: kv-abet:kv-view:kv
+        ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
+        kv-abet:kv-view:(kv-abed:kv [ship space.act app.act bucket.act])
       ::
       ==
         %kv-action
@@ -224,11 +226,10 @@
       meta  meta.sto
       data  data.sto
     ==
-  ::  +kv-view: watch foreign kv
+  ::  +kv-view: start watching foreign kv
   ::
   ++  kv-view
     ^+  kv
-    ?<  =(our.bol shi)
     =/  pp    `@tas`(scot %p shi) :: planet for path
     =/  pax   /kv/[pp]/[spa]/[app]/[buc]/data/all
     ::
@@ -253,10 +254,10 @@
       ?:  (~(has in read.whi) src.bol)  %.y
       ?:  (~(has in read.bla) src.bol)  %.n
       ?-  read.per
+          %unset
+        %.n
           %our
         =(our.bol src.bol)
-          %moon
-        (moon:title our.bol src.bol)
           %space
         :: TODO check if in the space
         %.y
@@ -267,10 +268,10 @@
       ?:  (~(has in write.whi) src.bol)  %.y
       ?:  (~(has in write.bla) src.bol)  %.n
       ?-  write.per
+          %unset
+        %.n
           %our
         =(our.bol src.bol)
-          %moon
-        (moon:title our.bol src.bol)
           %space
         :: TODO check if in the space
         %.y
@@ -281,10 +282,10 @@
       ?:  (~(has in admin.whi) src.bol)  %.y
       ?:  (~(has in admin.bla) src.bol)  %.n
       ?-  admin.per
+          %unset
+        %.n
           %our
         =(our.bol src.bol)
-          %moon
-        (moon:title our.bol src.bol)
           %space
         :: TODO check if in the space
         %.y

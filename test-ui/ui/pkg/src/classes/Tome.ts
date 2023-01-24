@@ -26,6 +26,7 @@ export class Tome {
             mark: tomeMark,
             json: {
                 'init-tome': {
+                    ship: ship,
                     space: space,
                     app: app,
                 },
@@ -38,23 +39,6 @@ export class Tome {
             },
         })
     }
-
-    // private watchPerms = async () => {
-    //     const id = await this.api.subscribe({
-    //         app: agent,
-    //         path: `/perm/${this.space}/${this.app}/${this.thisShip}`,
-    //         err: () => {
-    //             throw new Error(
-    //                 'Tome: the requested Tome has since been removed, or your access has been revoked.'
-    //             )
-    //         },
-    //         event: (event: { create: boolean; overwrite: boolean }) => {
-    //             this._canCreate = event.create
-    //             this._canOverwrite = event.overwrite
-    //         },
-    //     })
-    //     this.permissionSubscriptionID = id
-    // }
 
     protected constructor(
         api?: Urbit,
@@ -90,24 +74,34 @@ export class Tome {
             let locked = false
             let tomeShip = api.ship
             let space = 'our'
+
+            // verify that spaces agent is installed and configured
+            try {
+                const current = await api.scry({
+                    app: 'spaces',
+                    path: '/current',
+                })
+                const spacePath = current.current.path.split('/')
+                tomeShip = spacePath[1]
+                space = spacePath[2]
+            } catch (e) {
+                console.warn(
+                    'Tome: no current space found. Is Realm installed / configured?'
+                )
+                console.warn(
+                    "Tome: falling back to current ship and 'our' space."
+                )
+            }
+
             if (options.ship && options.space) {
+                if (options.ship !== tomeShip || options.space !== space) {
+                    throw new Error(
+                        'Tome: you are not in the set ship and space.'
+                    )
+                }
                 locked = true
                 tomeShip = options.ship
                 space = options.space
-            } else {
-                // not explicitly set, so get them from %spaces
-                try {
-                    const current = await api.scry({
-                        app: 'spaces',
-                        path: '/current',
-                    })
-                    const spacePath = current.current.path.split('/')
-                    tomeShip = spacePath[1]
-                    space = spacePath[2]
-                } catch (e) {
-                    console.warn('Tome: no current space found. Is Realm installed / configured?')
-                    console.warn("Tome: falling back to current ship and 'our' space.")
-                }
             }
             if (tomeShip.startsWith('~')) {
                 tomeShip = tomeShip.slice(1) // remove leading sig
@@ -116,48 +110,11 @@ export class Tome {
             const thisShip = api.ship
 
             const app = options.app ? options.app : 'all'
-            const perm = options.permissions
+            let perm = options.permissions
                 ? options.permissions
                 : ({ read: 'space', write: 'our', admin: 'our' } as const)
-            if (tomeShip === thisShip) {
-                // this is our tome, so create it
-                await Tome.initTomePoke(api, tomeShip, space, app)
-                return new Tome(api, tomeShip, thisShip, space, app, perm, locked)
-            } else {
-                return new Tome(api, tomeShip, thisShip, space, app, perm, locked)
-                // get our writer and admin permissions.
-                // NACK if Tome DNE, or we don't have read permissions.
-                // const getPermsAndInitTome = async () => {
-                //     const id = await api.subscribe({
-                //         app: agent,
-                //         path: `/perm/${space}/${app}/${thisShip}`,
-                //         err: () => {
-                //             throw new Error(
-                //                 'Tome: the requested Tome does not exist, or you do not have permission to access it.'
-                //             )
-                //         },
-                //         event: async (event: {
-                //             create: boolean
-                //             overwrite: boolean
-                //         }) => {
-                //             // close the subscription.  We will re-subscribe for permission updates in the class instance
-                //             await api.unsubscribe(id)
-                //             return new Tome(
-                //                 api,
-                //                 tomeShip,
-                //                 thisShip,
-                //                 space,
-                //                 app,
-                //                 perm,
-                //                 event.create,
-                //                 event.overwrite
-                //             )
-                //         },
-                //         quit: getPermsAndInitTome,
-                //     })
-                // }
-                // await getPermsAndInitTome()
-            }
+            await Tome.initTomePoke(api, tomeShip, space, app)
+            return new Tome(api, tomeShip, thisShip, space, app, perm, locked)
         }
         return new Tome()
     }
@@ -177,7 +134,9 @@ export class Tome {
                 ? options.permissions
                 : this.perm
             if (this.app === 'all') {
-                console.warn('Tome: Permissions on `all` are ignored. Using `our` instead...')
+                console.warn(
+                    'Tome: Permissions on `all` are ignored. Using `our` instead...'
+                )
                 permissions = {
                     read: 'our',
                     write: 'our',

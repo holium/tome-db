@@ -72,8 +72,6 @@ These don't exist yet:
 
 `our`: any desk on our ship.
 
-`moon`: our ship, or any moon of us.
-
 `space`: all space members.
 
 `open`: anyone on the network.

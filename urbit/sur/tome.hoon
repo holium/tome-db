@@ -10,9 +10,9 @@
 ::
 +$  level
   $%  %our
-      %moon
       %space
       %open
+      %unset
   ==
 ::
 +$  meta
@@ -34,9 +34,9 @@
 ::
 +$  tome-data   [=store]
 ::
-+$  tome-action  :: these can only be done by the host, so we don't include the ship for now.
-  $%  [%init-tome =space =app]
-      [%init-kv =space =app =bucket =perm]
++$  tome-action
+  $%  [%init-tome ship=@t =space =app]
+      [%init-kv ship=@t =space =app =bucket =perm]
       [%watch-kv ship=@t =space =app =bucket] :: this is for a foreign store
       :: [%unwatch-kv ship=@t =space =app =bucket] someday...
   ==

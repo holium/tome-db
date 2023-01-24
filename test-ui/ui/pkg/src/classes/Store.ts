@@ -51,9 +51,48 @@ export class Store extends Tome {
 
     // this seems like pretty dirty update method, is there a better way?
     private async _wipeAndChangeSpace(tomeShip: string, space: string) {
+        this.active = false
         if (this.storeSubscriptionID) {
             await this.api.unsubscribe(this.storeSubscriptionID)
         }
+        // changing the top level tome, so we reinitialize
+        await Tome.initTomePoke(this.api, tomeShip, space, this.app)
+        const perm =
+            tomeShip === this.thisShip
+                ? this.perm
+                : ({ read: 'unset', write: 'unset', admin: 'unset' } as const)
+
+        // if not ours, we need to make sure we have access first.
+        if (this.tomeShip !== this.thisShip) {
+            await Store.checkExistsAndCanRead(
+                this.api,
+                tomeShip,
+                space,
+                this.app,
+                this.bucket
+            )
+        }
+        // that succeeded, whether ours or not initialize the bucket.
+        await Store.initBucket(
+            this.api,
+            tomeShip,
+            space,
+            this.app,
+            this.bucket,
+            perm
+        )
+        // if not us, we want Hoon side to start a subscription.
+        if (this.tomeShip !== this.thisShip) {
+            await Store.startWatchingBucket(
+                this.api,
+                this.thisShip,
+                tomeShip,
+                space,
+                this.app,
+                this.bucket
+            )
+        }
+
         this.tomeShip = tomeShip
         this.space = space
         this.cache = new Map()
@@ -63,14 +102,6 @@ export class Store extends Tome {
         }
 
         if (this.tomeShip === this.thisShip) {
-            await Store.initBucket(
-                this.api,
-                this.tomeShip,
-                this.space,
-                this.app,
-                this.bucket,
-                this.perm
-            )
             this.writer = true
             this.admin = true
         } else {
@@ -99,7 +130,6 @@ export class Store extends Tome {
                             'Tome: the space has been switched for a locked Tome.'
                         )
                     }
-                    this.active = false
                     await this._wipeAndChangeSpace(tomeShip, space)
                 }
             },
@@ -131,6 +161,7 @@ export class Store extends Tome {
                 this.loaded = false
                 this.subscribeAll()
             }
+            // only do if %spaces exists
             this.watchCurrentSpace()
             this.active = true
         } else {
@@ -152,6 +183,7 @@ export class Store extends Tome {
             mark: tomeMark,
             json: {
                 'init-kv': {
+                    ship: ship,
                     space: space,
                     app: app,
                     bucket: bucket,
@@ -248,16 +280,8 @@ export class Store extends Tome {
     ) {
         const mars = typeof api !== 'undefined'
         if (mars) {
-            // poke to init store
             if (tomeShip === thisShip) {
-                await Store.initBucket(
-                    api,
-                    thisShip,
-                    space,
-                    app,
-                    bucket,
-                    perm
-                )
+                await Store.initBucket(api, thisShip, space, app, bucket, perm)
                 return new Store(
                     api,
                     tomeShip,
@@ -273,7 +297,19 @@ export class Store extends Tome {
                 )
             }
             await Store.checkExistsAndCanRead(api, tomeShip, space, app, bucket)
-            await Store.startWatchingBucket(api, thisShip, tomeShip, space, app, bucket)
+            await Store.initBucket(api, thisShip, space, app, bucket, {
+                read: 'unset',
+                write: 'unset',
+                admin: 'unset',
+            })
+            await Store.startWatchingBucket(
+                api,
+                thisShip,
+                tomeShip,
+                space,
+                app,
+                bucket
+            )
             return new Store(
                 api,
                 tomeShip,
@@ -646,7 +682,6 @@ export class Store extends Tome {
             })
     }
 
-    // TODO: localStorage could probably use a simpler path than this.
     private subscribePath(key?: string): string {
         let path = `/kv/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/data/`
         if (key) {
@@ -669,6 +704,13 @@ export class Store extends Tome {
      */
     public isAdmin(): boolean {
         return this.admin
+    }
+
+    /**
+     * Whether the current store is active.  Useful for showing a loading screen?
+     */
+    public isActive(): boolean {
+        return this.active
     }
 
     private waitForActive(): Promise<void> {

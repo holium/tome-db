@@ -5,10 +5,7 @@ import Tome from '../pkg/src/index'
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-const db = await Tome.init(api, {
-    ship: 'bus',
-    space: 'our',
-})
+const db = await Tome.init(api)
 // const local_db = await Tome.init()
 
 // const test = await api.subscribe({
@@ -19,7 +16,6 @@ const db = await Tome.init(api, {
 //     },
 // })
 
-
 const testStore = async (db) => {
     const store = await db.keyvalue()
     console.log(
@@ -29,7 +25,10 @@ const testStore = async (db) => {
     await store.set('charlie', 'david')
 
     let resp = await store.all()
-    console.log('Values currently in the key-value store: ' + JSON.stringify(Object.fromEntries(resp)))
+    console.log(
+        'Values currently in the key-value store: ' +
+            JSON.stringify(Object.fromEntries(resp))
+    )
 
     console.log("Attempting to retrieve a missing value 'zulu'")
     let value = await store.get('zulu')
@@ -57,23 +56,6 @@ await testStore(db)
 
 // console.warn('Using Local Storage: \n\n')
 // await testStore(local_db)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 export function App() {
     return (
