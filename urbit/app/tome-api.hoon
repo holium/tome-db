@@ -62,10 +62,11 @@
     [~ ~]
   ::
   ++  on-agent
-    |=  [wir=wire sig=sign:agent:gall]
+    |=  [pol=(pole knot) sig=sign:agent:gall]
     ~>  %bout.[0 '%tome-api +on-agent']
     ^-  (quip card _this)
-    `this
+    =^  cards  state  abet:(dude:eng pol sig)
+    [cards this]
   ::
   ++  on-arvo
     |=  [wir=wire sig=sign-arvo]
@@ -122,7 +123,6 @@
 ++  dude
   |=  [pol=(pole knot) sig=sign:agent:gall]
   ^+  dat
-  ~&  >>  sig
   =^  cards  state
     ?+    pol  ~|(bad-dude-wire/pol !!)
         [%kv ship=@ space=@ app=@ bucket=@ %data %all ~]
@@ -238,12 +238,26 @@
     (kv-emit [%pass pax %agent [shi %tome-api] %watch pax])
   ::  +kv-dude: handle foreign kv update
   ::
+  ::  TODO do I need to re-emit these updates to my subscribers? (frontend) probably.
   ++  kv-dude
     |=  cag=cage
     ^+  kv
     ?<  =(our.bol shi)
-    ~&  >  cag
-    kv
+    ?+  p.cag  ~|('bad-kv-dude' !!)
+        %kv-update
+      =/  upd  !<(kv-update q.cag)
+      ?+  -.upd  ~|('bad-kv-update' !!)
+          %set
+        kv(data (~(put by data) key.upd s+value.upd))
+          %remove
+        kv(data (~(del by data) key.upd))
+          %clear
+        kv(data *kv-data)
+          %all
+        ~&  >>>  upd
+        kv
+      ==
+    ==
   ::  +kv-perm: check permissions, return true if allowed
   ::
   ++  kv-perm

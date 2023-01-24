@@ -190,7 +190,6 @@ export class Store extends Tome {
                     perm: perm,
                 },
             },
-            ship: ship,
             onError: (error) => {
                 // check and update current perms if they're wrong.
                 throw new Error(
@@ -220,7 +219,7 @@ export class Store extends Tome {
                     bucket: bucket,
                 },
             },
-            ship: thisShip,
+            // ship: thisShip,
             onError: (error) => {
                 // check and update current perms if they're wrong.
                 throw new Error(
@@ -281,7 +280,7 @@ export class Store extends Tome {
         const mars = typeof api !== 'undefined'
         if (mars) {
             if (tomeShip === thisShip) {
-                await Store.initBucket(api, thisShip, space, app, bucket, perm)
+                await Store.initBucket(api, tomeShip, space, app, bucket, perm)
                 return new Store(
                     api,
                     tomeShip,
@@ -297,7 +296,7 @@ export class Store extends Tome {
                 )
             }
             await Store.checkExistsAndCanRead(api, tomeShip, space, app, bucket)
-            await Store.initBucket(api, thisShip, space, app, bucket, {
+            await Store.initBucket(api, tomeShip, space, app, bucket, {
                 read: 'unset',
                 write: 'unset',
                 admin: 'unset',
@@ -367,7 +366,7 @@ export class Store extends Tome {
                             value: value,
                         },
                     },
-                    ship: this.tomeShip,
+                    // ship: this.tomeShip,
                     onSuccess: () => {
                         this.cache.set(key, value)
                         success = true
@@ -444,7 +443,7 @@ export class Store extends Tome {
                             key: key,
                         },
                     },
-                    ship: this.tomeShip,
+                    // ship: this.tomeShip,
                     onSuccess: () => {
                         this.cache.delete(key)
                         success = true
@@ -512,7 +511,7 @@ export class Store extends Tome {
                             bucket: this.bucket,
                         },
                     },
-                    ship: this.tomeShip,
+                    // ship: this.tomeShip,
                     onSuccess: () => {
                         this.cache.clear()
                         success = true
