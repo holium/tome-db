@@ -264,9 +264,10 @@
           caz   [[%give %fact pax %kv-update !>(upd)] caz]
         ==
           %all
-        ::  convert update json to map somehow and merge
-        ~&  >>>  upd
-        kv
+        %=  kv
+          data  data.upd
+          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+        ==
       ==
     ==
   ::  +kv-perm: check permissions, return true if allowed

@@ -27,7 +27,6 @@ export class Store extends Tome {
                 )
             },
             event: (data: JSON) => {
-                console.log(data)
                 if (!this.loaded) {
                     this.cache = new Map(Object.entries(data))
                     this.loaded = true
