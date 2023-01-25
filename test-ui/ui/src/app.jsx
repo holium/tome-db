@@ -10,8 +10,8 @@ const store = await db.keyvalue()
 // const local_db = await Tome.init()
 
 // const test = await api.subscribe({
-//     app: 'spaces',
-//     path: '/current',
+//     app: 'tome-api',
+//     path: '/kv/~zod/our/all/def/perm',
 //     event: (data) => {
 //         console.log('Received event: ' + JSON.stringify(data))
 //     },
@@ -26,7 +26,7 @@ const testStore = async () => {
         'Values currently in the key-value store: ' +
             JSON.stringify(Object.fromEntries(resp))
     )
-    // await store.clear()
+    await store.clear()
 
     // console.log("Attempting to retrieve a missing value 'zulu'")
     // let value = await store.get('zulu')
@@ -49,7 +49,9 @@ const testStore = async () => {
     // )
 }
 
-// console.warn('Using an Urbit Backend: \n\n')
+console.warn('Using an Urbit Backend: \n\n')
+await testStore()
+console.log(await store.all())
 // await testStore()
 
 // console.warn('Using Local Storage: \n\n')

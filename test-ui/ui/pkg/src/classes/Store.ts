@@ -23,7 +23,7 @@ export class Store extends Tome {
             path: this.subscribePath(),
             err: () => {
                 throw new Error(
-                    'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                    'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
                 )
             },
             event: (data: JSON) => {
@@ -60,9 +60,9 @@ export class Store extends Tome {
         const perm =
             tomeShip === this.thisShip
                 ? this.perm
-                : ({ read: 'unset', write: 'unset', admin: 'unset' } as const)
+                : ({ read: 'yes', write: 'unset', admin: 'unset' } as const)
 
-        // if not ours, we need to make sure we have access first.
+        // if not ours, we need to make sure we have read access first.
         if (tomeShip !== this.thisShip) {
             await Store.checkExistsAndCanRead(
                 this.api,
@@ -114,9 +114,8 @@ export class Store extends Tome {
             app: 'spaces',
             path: '/current',
             err: () => {
-                // Is this the right error?
                 throw new Error(
-                    'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                    'Tome-KV: unable to watch current space in spaces agent.  Is Realm installed and configured?'
                 )
             },
             event: async (current: JSON) => {
@@ -126,7 +125,7 @@ export class Store extends Tome {
                 if (tomeShip !== this.tomeShip || space !== this.space) {
                     if (this.locked) {
                         throw new Error(
-                            'Tome: the space has been switched for a locked Tome.'
+                            'Tome-KV: the space has been switched for a locked Tome.'
                         )
                     }
                     await this._wipeAndChangeSpace(tomeShip, space)
@@ -160,8 +159,9 @@ export class Store extends Tome {
                 this.loaded = false
                 this.subscribeAll()
             }
-            // only do if %spaces exists
+            // TODO only do if %spaces exists.  Assume it does for now.
             this.watchCurrentSpace()
+            //this.watchPerms()
             this.active = true
         } else {
             super()
@@ -176,7 +176,6 @@ export class Store extends Tome {
         bucket: string,
         perm: Perm
     ) {
-        // do I have perms for this? should check somewhere.
         await api.poke({
             app: agent,
             mark: tomeMark,
@@ -190,9 +189,8 @@ export class Store extends Tome {
                 },
             },
             onError: (error) => {
-                // check and update current perms if they're wrong.
                 throw new Error(
-                    `Tome: Initializing key-value store on ship ${ship} failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
+                    `Tome-KV: Initializing key-value store on ship ${ship} failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
                 )
             },
         })
@@ -205,10 +203,9 @@ export class Store extends Tome {
         app: string,
         bucket: string
     ) {
-        // do I have perms for this? should check somewhere.
         await api.poke({
             app: agent,
-            mark: tomeMark,
+            mark: storeMark,
             json: {
                 'watch-kv': {
                     ship: ship,
@@ -217,11 +214,35 @@ export class Store extends Tome {
                     bucket: bucket,
                 },
             },
-            // ship: thisShip,
             onError: (error) => {
-                // check and update current perms if they're wrong.
                 throw new Error(
-                    `Tome: Initializing store watch failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
+                    `Tome-KV: Initializing store watch failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
+                )
+            },
+        })
+    }
+
+    private static async retrieveInitialPerms(
+        api: Urbit,
+        ship: string,
+        space: string,
+        app: string,
+        bucket: string
+    ) {
+        await api.poke({
+            app: agent,
+            mark: storeMark,
+            json: {
+                'team-kv': {
+                    ship: ship,
+                    space: space,
+                    app: app,
+                    bucket: bucket,
+                },
+            },
+            onError: (error) => {
+                throw new Error(
+                    `Tome-KV: Initializing store watch failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
                 )
             },
         })
@@ -259,7 +280,7 @@ export class Store extends Tome {
         const success = result === 'success'
         if (!success) {
             throw new Error(
-                'Tome: the requested Tome bucket does not exist, or you do not have permission to access the store.'
+                'Tome-KV: the requested Tome bucket does not exist, or you do not have permission to access the store.'
             )
         }
     }
@@ -295,11 +316,12 @@ export class Store extends Tome {
             }
             await Store.checkExistsAndCanRead(api, tomeShip, space, app, bucket)
             await Store.initBucket(api, tomeShip, space, app, bucket, {
-                read: 'unset',
+                read: 'yes',
                 write: 'unset',
                 admin: 'unset',
             })
             await Store.startWatchingBucket(api, tomeShip, space, app, bucket)
+            await Store.retrieveInitialPerms(api, tomeShip, space, app, bucket)
             return new Store(
                 api,
                 tomeShip,
@@ -357,7 +379,6 @@ export class Store extends Tome {
                             value: value,
                         },
                     },
-                    // ship: this.tomeShip,
                     onSuccess: () => {
                         this.cache.set(key, value)
                         success = true
@@ -434,7 +455,6 @@ export class Store extends Tome {
                             key: key,
                         },
                     },
-                    // ship: this.tomeShip,
                     onSuccess: () => {
                         this.cache.delete(key)
                         success = true
@@ -502,7 +522,6 @@ export class Store extends Tome {
                             bucket: this.bucket,
                         },
                     },
-                    // ship: this.tomeShip,
                     onSuccess: () => {
                         this.cache.clear()
                         success = true
@@ -598,7 +617,7 @@ export class Store extends Tome {
                 path: this.subscribePath(key),
                 err: () => {
                     throw new Error(
-                        'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                        'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
                     )
                 },
                 event: (value: string) => {
@@ -658,7 +677,7 @@ export class Store extends Tome {
                 path: this.subscribePath(),
                 err: () => {
                     throw new Error(
-                        'Tome: the key-value store being used has been removed, or your access has been revoked.'
+                        'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
                     )
                 },
                 event: (data: JSON) => {

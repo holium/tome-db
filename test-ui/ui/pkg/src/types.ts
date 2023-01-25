@@ -1,4 +1,4 @@
-type Level = 'our' | 'space' | 'open' | 'unset'
+type Level = 'our' | 'space' | 'open' | 'unset' | 'yes' | 'no'
 export interface Perm {
     read: Level
     write: Level

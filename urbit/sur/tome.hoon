@@ -13,6 +13,8 @@
       %space
       %open
       %unset
+      %yes
+      %no
   ==
 ::
 +$  meta
@@ -37,15 +39,18 @@
 +$  tome-action
   $%  [%init-tome ship=@t =space =app]
       [%init-kv ship=@t =space =app =bucket =perm]
-      [%watch-kv ship=@t =space =app =bucket] :: this is for a foreign store
       :: [%unwatch-kv ship=@t =space =app =bucket] someday...
   ==
 ::
 +$  kv-action
+    :: thisShip -> tomeShip
   $%  [%set-value ship=@t =space =app =bucket =key =value]
       [%remove-value ship=@t =space =app =bucket =key]
       [%clear-kv ship=@t =space =app =bucket]
       [%verify-kv ship=@t =space =app =bucket]
+    :: thisShip -> thisShip
+      [%watch-kv ship=@t =space =app =bucket]
+      [%team-kv ship=@t =space =app =bucket]
   ==
 ::
 +$  kv-update
@@ -54,6 +59,7 @@
       [%clear ~]
       [%get value=?(~ json-value)]
       [%all data=kv-data]
+      [%perm =perm]
   ==
 --
 

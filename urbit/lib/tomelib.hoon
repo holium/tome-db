@@ -11,6 +11,8 @@
         remove-value/(ot ~[ship/so space/so app/so bucket/so key/so])
         clear-kv/(ot ~[ship/so space/so app/so bucket/so])
         verify-kv/(ot ~[ship/so space/so app/so bucket/so])
+        watch-kv/(ot ~[ship/so space/so app/so bucket/so])
+        team-kv/(ot ~[ship/so space/so app/so bucket/so])
     ==
   --
 ++  enjs  =,  enjs:format
@@ -24,6 +26,7 @@
         %clear    (pairs ~)
         %get      value.upd
         %all      o+data.upd
+        %perm     (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
     ==
   --
 --

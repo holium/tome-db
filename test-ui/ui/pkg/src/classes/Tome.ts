@@ -29,7 +29,6 @@ export class Tome {
                     app: app,
                 },
             },
-            // ship: ship,
             onError: (error) => {
                 throw new Error(
                     `Tome: Initializing Tome on ship ${ship} failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
@@ -99,7 +98,7 @@ export class Tome {
             if (options.ship && options.space) {
                 if (options.ship !== tomeShip || options.space !== space) {
                     throw new Error(
-                        'Tome: you are not in the set ship and space.'
+                        'Tome: you are not in the preset space-path (space and corresponding ship).'
                     )
                 }
                 locked = true
@@ -139,7 +138,7 @@ export class Tome {
                 : this.perm
             if (this.app === 'all' && this.tomeShip === this.thisShip) {
                 console.warn(
-                    'KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
+                    'Tome-KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
                 )
                 permissions = {
                     read: 'our',

@@ -128,14 +128,25 @@
         [%kv ship=@ space=@ app=@ bucket=@ %data %all ~]
       ::  local store should already have 
       =/  ship  `@p`(slav %p ship.pol)
-      ?+    -.sig  `state
+      ?+  -.sig  `state
         %kick  kv-abet:kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol])
         %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
       ::
           %watch-ack
         %.  `state
-        ?~(p.sig same (slog leaf/"%tome-kv nack" ~))
+        ?~(p.sig same (slog leaf/"kv-data-all nack" ~))
       ==
+    ::
+        [%kv ship=@ space=@ app=@ bucket=@ %perm ~]
+      =/  ship  `@p`(slav %p ship.pol)
+      ?+  -.sig  `state
+        %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
+      ::
+          %watch-ack
+        %.  `state
+        ?~(p.sig same (slog leaf/"kv-perm nack" ~))
+      ==
+    ::
     ==
   (emil cards)
 ::  +poke: handle on-poke
@@ -143,11 +154,11 @@
 ++  poke
   |=  [mar=mark vaz=vase]
   =^  cards  state
-    ?+  mar  ~|(bad-tome-mark/mar !!)
+    ?+    mar  ~|(bad-tome-mark/mar !!)
         %tome-action
-      =/  act  !<(tome-action vaz)
-      =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
-      ?-  -.act
+      =/  act     !<(tome-action vaz)
+      =/  ship    `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      ?-    -.act
           %init-tome
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-tome' !!)
         ?:  (~(has bi tome) [ship space.act] app.act)
@@ -163,11 +174,6 @@
         =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
         `state(tome (~(put bi tome) [ship space.act] app.act tod))
       ::
-      ::  TODO consider making this a kv-action
-          %watch-kv
-        ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
-        kv-abet:kv-view:(kv-abed:kv [ship space.act app.act bucket.act])
-      ::
       ==
         %kv-action
       =/  act     !<(kv-action vaz)
@@ -182,6 +188,11 @@
         do
           %verify-kv
         do
+          %team-kv
+        do
+          %watch-kv
+        ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
+        kv-abet:kv-view:(kv-abed:kv [ship space.act app.act bucket.act])
       ==
     ==
   (emil cards)
@@ -200,6 +211,8 @@
           meta=kv-meta
           data=kv-data
           caz=(list card)
+          data-pax=path
+          perm-pax=path
       ==
   +*  kv  .
   ++  kv-emit  |=(c=card kv(caz [c caz]))
@@ -212,130 +225,93 @@
   ::
   ++  kv-abed
     |=  [p=ship s=space a=^app b=bucket]
-    =+  tod=(~(got bi tome) [p s] a)
-    =+  sto=(~(got by store.tod) b)
+    =/  tod       (~(got bi tome) [p s] a)
+    =/  sto       (~(got by store.tod) b)
+    =/  pp        `@tas`(scot %p p) :: planet for path
+    =/  data-pax  /kv/[pp]/[s]/[a]/[b]/data/all
+    =/  perm-pax  /kv/[pp]/[s]/[a]/[b]/perm
     %=  kv
-      shi   p
-      spa   s
-      app   a
-      buc   b
-      tod   tod
-      per   perm.sto
-      whi   whitelist.sto
-      bla   blacklist.sto
-      meta  meta.sto
-      data  data.sto
+      shi       p
+      spa       s
+      app       a
+      buc       b
+      tod       tod
+      per       perm.sto
+      whi       whitelist.sto
+      bla       blacklist.sto
+      meta      meta.sto
+      data      data.sto
+      data-pax  data-pax
+      perm-pax  perm-pax
     ==
-  ::  +kv-view: start watching foreign kv
-  ::
-  ++  kv-view
-    ^+  kv
-    =/  pp    `@tas`(scot %p shi) :: planet for path
-    =/  pax   /kv/[pp]/[spa]/[app]/[buc]/data/all
-    ::
-    ?:  (~(has in subs) pax)  kv
-    =.  subs  (~(put in subs) pax)  :: does this even work?
-    (kv-emit [%pass pax %agent [shi %tome-api] %watch pax])
-  ::  +kv-dude: handle foreign kv update
+  ::  +kv-dude: handle foreign kv updates (facts)
   ::
   ++  kv-dude
     |=  cag=cage
     ^+  kv
     ?<  =(our.bol shi)
-    ?+  p.cag  ~|('bad-kv-dude' !!)
+    ?+    p.cag  ~|('bad-kv-dude' !!)
         %kv-update
-      =/  upd     !<(kv-update q.cag)
-      =/  pp      `@tas`(scot %p shi) :: planet for path
-      =/  pax     ~[/kv/[pp]/[spa]/[app]/[buc]/data/all]
-      ?+  -.upd   ~|('bad-kv-update' !!)
+      =/  upd       !<(kv-update q.cag)
+      ~&  >>  ['kv-dude' upd]
+      ?+    -.upd   ~|('bad-kv-update' !!)
           %set
         %=  kv
           data  (~(put by data) key.upd s+value.upd)
-          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+          caz   [[%give %fact ~[data-pax] %kv-update !>(upd)] caz]
         ==
+      ::
           %remove
         %=  kv
           data  (~(del by data) key.upd)
-          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+          caz   [[%give %fact ~[data-pax] %kv-update !>(upd)] caz]
         ==
+      ::
           %clear
         %=  kv
           data  *kv-data
-          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+          caz   [[%give %fact ~[data-pax] %kv-update !>(upd)] caz]
         ==
+      ::
           %all
         %=  kv
           data  data.upd
-          caz   [[%give %fact pax %kv-update !>(upd)] caz]
+          caz   [[%give %fact ~[data-pax] %kv-update !>(upd)] caz]
         ==
+      ::
+          %perm
+        %=  kv
+          per   perm.upd
+          caz   [[%give %fact ~[perm-pax] %kv-update !>(upd)] caz]
+        ==
+      ::
       ==
     ==
-  ::  +kv-perm: check permissions, return true if allowed
-  ::
-  ++  kv-perm
-    |=  [act=?(%read %create %overwrite)]
-    ^-  ?
-    ?-  act
-        %read
-      ?:  (~(has in read.whi) src.bol)  %.y
-      ?:  (~(has in read.bla) src.bol)  %.n
-      ?-  read.per
-          %unset
-        %.n
-          %our
-        =(our.bol src.bol)
-          %space
-        :: TODO check if in the space
-        %.y
-          %open
-        %.y
-      ==
-        %create
-      ?:  (~(has in write.whi) src.bol)  %.y
-      ?:  (~(has in write.bla) src.bol)  %.n
-      ?-  write.per
-          %unset
-        %.n
-          %our
-        =(our.bol src.bol)
-          %space
-        :: TODO check if in the space
-        %.y
-          %open
-        %.y
-      ==
-        %overwrite
-      ?:  (~(has in admin.whi) src.bol)  %.y
-      ?:  (~(has in admin.bla) src.bol)  %.n
-      ?-  admin.per
-          %unset
-        %.n
-          %our
-        =(our.bol src.bol)
-          %space
-        :: TODO check if in the space
-        %.y
-          %open
-        %.y
-      ==
-    ==
+
+  ::  +kv-peer: handle kv watch requests
   ::
   ++  kv-peer
     |=  rest=(pole knot)
     ^+  kv
+    ~&  >>  rest
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
-      ::   [%perm ~]
-      ::   ~[[key.act s+value.act]]
-      :: %-  kv-emit
-      :: [%give %fact ~ %perm-update ...]
+        [%perm ~]
+      %-  kv-emit
+      [%give %fact ~ %kv-update !>(`kv-update`[%perm (kv-team)])]
+        :: [%give %kick ~[perm-pax] `src.bol]
+    ::
         [%data %all ~]
       %-  kv-emit
       [%give %fact ~ %kv-update !>(`kv-update`[%all data])]
+    ::
         [%data %key k=@t ~]
-      %-  kv-emit
-      [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
+      %-  kv-emil  :~
+        [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
+        :: [%give %kick ~[data-pax] `src.bol]
+      ==
+    ::
     ==
-  ::
+  ::  +kv-poke: handle kv poke requests
   ::  cm = current metadata
   ::  nm = new metadata
   ::
@@ -343,9 +319,7 @@
     |=  act=kv-action
     ^+  kv
     ::  right now live updates only go to the subscribeAll endpoint
-    =/  pp   `@tas`(scot %p shi) :: planet for path
-    =/  pax  ~[/kv/[pp]/[spa]/[app]/[buc]/data/all]
-    ?-  -.act
+    ?+    -.act  ~|('bad-kv-action' !!)
         %set-value
       ::  equivalent value is already set, do nothing.
       ?:  =(s+value.act (~(gut by data) key.act ~))  kv
@@ -366,9 +340,9 @@
       %=  kv
         meta  (~(put by meta) key.act nm)
         data  (~(put by data) key.act s+value.act)
-        caz   [[%give %fact pax %kv-update !>(`kv-update`[%set key.act value.act])] caz]
+        caz   [[%give %fact ~[data-pax] %kv-update !>(`kv-update`[%set key.act value.act])] caz]
       ==
-      ::
+    ::
         %remove-value
       =+  cm=(~(gut by meta) key.act ~)
       ?~  cm
@@ -379,9 +353,9 @@
       %=  kv
         meta  (~(del by meta) key.act)
         data  (~(del by data) key.act)
-        caz   [[%give %fact pax %kv-update !>(`kv-update`[%remove key.act])] caz]
+        caz   [[%give %fact ~[data-pax] %kv-update !>(`kv-update`[%remove key.act])] caz]
       ==
-      ::
+    ::
         %clear-kv
       ?~  meta  kv  :: nothing to clear
       ::  could check if all values are ours for %create perm level, but that's overkill
@@ -389,12 +363,75 @@
       %=  kv
         meta  *kv-meta
         data  *kv-data
-        caz   [[%give %fact pax %kv-update !>(`kv-update`[%clear ~])] caz]
+        caz   [[%give %fact ~[data-pax] %kv-update !>(`kv-update`[%clear ~])] caz]
       ==
+    ::
         %verify-kv
       :: The bucket must exist to get this far, so we just need to verify read permissions.
       ?>  (kv-perm %read)
       kv
+    ::
+        %team-kv
+      kv(caz [[%pass perm-pax %agent [shi %tome-api] %watch perm-pax] caz])
+    ::
     ==
+  ::  +kv-view: start watching foreign kv data
+  ::
+  ++  kv-view
+    ^+  kv
+    ?:  (~(has in subs) data-pax)  kv
+    =.  subs  (~(put in subs) data-pax)
+    (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
+  ::  +kv-perm: check a permission level, return true if allowed
+  ::
+  ++  kv-perm
+    |=  [act=?(%read %create %overwrite)]
+    ^-  ?
+    ?-    act
+        %read
+      ?:  (~(has in read.whi) src.bol)  %.y
+      ?:  (~(has in read.bla) src.bol)  %.n
+      ?-  read.per
+        %unset    %.n
+        %no       %.n
+        %our      =(our.bol src.bol)
+        %space    %.y  :: TODO check space membership
+        %open     %.y
+        %yes      %.y
+      ==
+        %create
+      ?:  (~(has in write.whi) src.bol)  %.y
+      ?:  (~(has in write.bla) src.bol)  %.n
+      ?-  write.per
+        %unset    %.n
+        %no       %.n
+        %our      =(our.bol src.bol)
+        %space    %.y  :: TODO check space membership
+        %open     %.y
+        %yes      %.y
+      ==
+        %overwrite
+      ?:  (~(has in admin.whi) src.bol)  %.y
+      ?:  (~(has in admin.bla) src.bol)  %.n
+      ?-  admin.per
+        %unset    %.n
+        %no       %.n
+        %our      =(our.bol src.bol)
+        %space    %.y  :: TODO check space membership
+        %open     %.y
+        %yes      %.y
+      ==
+    ==
+  ::  +kv-team: get read/write/admin permissions for a ship
+  ::
+  ++  kv-team
+    |.
+    ^-  perm
+    =/  read    ?:((kv-perm %read) %yes %no)
+    =/  write   ?:((kv-perm %create) %yes %no)
+    =/  admin   ?:((kv-perm %overwrite) %yes %no)
+    ~&  >>  `perm`[read write admin]
+    [read write admin]
+  ::
   --
 --

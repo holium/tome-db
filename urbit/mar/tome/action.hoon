@@ -10,13 +10,12 @@
   ++  json
     =,  dejs:format
     |=  jon=json
-    =*  levels  (su (perk [%our %space %open %unset ~]))
+    =*  levels  (su (perk [%our %space %open %unset %yes %no ~]))
     ^-  tome-action
     %.  jon
     %-  of
     :~  init-tome/(ot ~[ship/so space/so app/so])
         init-kv/(ot ~[ship/so space/so app/so bucket/so perm/(ot ~[read/levels write/levels admin/levels])])
-        watch-kv/(ot ~[ship/so space/so app/so bucket/so])
     ==
   --
 ++  grad  %noun
