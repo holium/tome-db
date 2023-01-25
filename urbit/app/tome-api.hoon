@@ -287,7 +287,6 @@
       ::
       ==
     ==
-
   ::  +kv-peer: handle kv watch requests
   ::
   ++  kv-peer
