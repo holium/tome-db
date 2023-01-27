@@ -316,7 +316,7 @@
         ?~  cm
           %create
         ?:(=(src.bol created-by.cm) %create %overwrite)
-      ?>  (kv-perm lvl)
+      ?>  ?:(=(src.bol our.bol) %.y (kv-perm lvl))
       ::
       =/  nm
         ?~  cm
@@ -336,7 +336,7 @@
       ?~  cm
         kv
       =/  lvl  ?:(=(src.bol created-by.cm) %create %overwrite)
-      ?>  (kv-perm lvl)
+      ?>  ?:(=(src.bol our.bol) %.y (kv-perm lvl))
       ::
       %=  kv
         meta  (~(del by meta) key.act)
@@ -347,7 +347,7 @@
         %clear-kv
       ?~  meta  kv  :: nothing to clear
       ::  could check if all values are ours for %create perm level, but that's overkill
-      ?>  (kv-perm %overwrite)
+      ?>  ?:(=(src.bol our.bol) %.y (kv-perm %overwrite))
       %=  kv
         meta  *kv-meta
         data  *kv-data
@@ -356,7 +356,7 @@
     ::
         %verify-kv
       :: The bucket must exist to get this far, so we just need to verify read permissions.
-      ?>  (kv-perm %read)
+      ?>  ?:(=(src.bol our.bol) %.y (kv-perm %read))
       kv
     ::
         %team-kv
@@ -392,9 +392,12 @@
         %unset    %.n
         %no       %.n
         %our      =(our.bol src.bol)
-        %space    %.y  :: TODO check space membership
         %open     %.y
         %yes      %.y
+          %space
+        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+        ?>  ?=(%is-member -.memb)
+        is-member.memb
       ==
         %create
       ?:  (~(has in write.whi) src.bol)  %.y
@@ -403,9 +406,12 @@
         %unset    %.n
         %no       %.n
         %our      =(our.bol src.bol)
-        %space    %.y  :: TODO check space membership
         %open     %.y
         %yes      %.y
+          %space
+        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+        ?>  ?=(%is-member -.memb)
+        is-member.memb
       ==
         %overwrite
       ?:  (~(has in admin.whi) src.bol)  %.y
@@ -414,9 +420,12 @@
         %unset    %.n
         %no       %.n
         %our      =(our.bol src.bol)
-        %space    %.y  :: TODO check space membership
         %open     %.y
         %yes      %.y
+          %space
+        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+        ?>  ?=(%is-member -.memb)
+        is-member.memb
       ==
     ==
   ::  +kv-team: get read/write/admin permissions for a ship
