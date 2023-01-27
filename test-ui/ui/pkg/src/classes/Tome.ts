@@ -155,7 +155,8 @@ export class Tome {
                 options.bucket ? options.bucket : 'def',
                 permissions,
                 options.preload !== undefined ? options.preload : true,
-                this.locked
+                this.locked,
+                options.activeCallback
             )
         } else {
             return Store.initStore()

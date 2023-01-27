@@ -10,6 +10,7 @@ export class Store extends Tome {
     private preload: boolean
     private loaded: boolean
     private active: boolean // if false, we are switching spaces
+    private activeCallback: (active: boolean) => void
 
     private cache: Map<string, string>
     private bucket: string
@@ -52,6 +53,7 @@ export class Store extends Tome {
     // this seems like pretty dirty update method, is there a better way?
     private async _wipeAndChangeSpace(tomeShip: string, space: string) {
         this.active = false
+        this.activeCallback(this.active)
         if (this.storeSubscriptionID) {
             await this.api.unsubscribe(this.storeSubscriptionID)
         }
@@ -107,6 +109,7 @@ export class Store extends Tome {
             // check perms
         }
         this.active = true
+        this.activeCallback(this.active)
     }
 
     private async watchCurrentSpace() {
@@ -145,6 +148,7 @@ export class Store extends Tome {
         perm?: Perm,
         preload?: boolean,
         locked?: boolean,
+        activeCallback?: (active: boolean) => void,
         writer?: boolean,
         admin?: boolean
     ) {
@@ -155,6 +159,7 @@ export class Store extends Tome {
             this.admin = admin
             this.cache = new Map()
             this.preload = preload
+            this.activeCallback = activeCallback
             if (preload) {
                 this.loaded = false
                 this.subscribeAll()
@@ -163,6 +168,7 @@ export class Store extends Tome {
             this.watchCurrentSpace()
             //this.watchPerms()
             this.active = true
+            this.activeCallback(this.active)
         } else {
             super()
         }
@@ -294,7 +300,8 @@ export class Store extends Tome {
         bucket?: string,
         perm?: Perm,
         preload?: boolean,
-        locked?: boolean
+        locked?: boolean,
+        activeCallback?: (active: boolean) => void
     ) {
         const mars = typeof api !== 'undefined'
         if (mars) {
@@ -310,6 +317,7 @@ export class Store extends Tome {
                     perm,
                     preload,
                     locked,
+                    activeCallback,
                     true,
                     true
                 )
@@ -331,7 +339,8 @@ export class Store extends Tome {
                 bucket,
                 perm,
                 preload,
-                locked
+                locked,
+                activeCallback
             )
         }
         return new Store()

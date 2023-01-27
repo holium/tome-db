@@ -15,4 +15,5 @@ export interface StoreOptions {
     bucket?: string
     permissions?: Perm
     preload?: boolean
+    activeCallback?: (active: boolean) => void
 }
