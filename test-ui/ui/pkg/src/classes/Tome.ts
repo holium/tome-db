@@ -125,7 +125,7 @@ export class Tome {
     /**
      * Initialize or retrieve the keyvalue Store for this Tome.
      *
-     * @param options  Optional bucket name, permissions and preload configuration for the store. `permisssions` will
+     * @param options  Optional bucket name, permissions, preload configuration, and callbacks for the store. `permisssions` will
      * default to the Tome's permissions, `bucket` to `'def'`, and `preload` will default to true. Preload definess whether
      * the frontend should stay subscribed to and cache all data / updates from the store.
      * If false, the frontend will access values from Urbit only when requested, which may take longer.
@@ -156,7 +156,9 @@ export class Tome {
                 permissions,
                 options.preload !== undefined ? options.preload : true,
                 this.locked,
-                options.activeCallback
+                options.onActiveChange,
+                options.onWriteChange,
+                options.onAdminChange
             )
         } else {
             return Store.initStore()

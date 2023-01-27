@@ -10,18 +10,20 @@ export class Store extends Tome {
     private preload: boolean
     private loaded: boolean
     private active: boolean // if false, we are switching spaces
-    private activeCallback: (active: boolean) => void
+    private onActiveChange: (active: boolean) => void
+    private onWriteChange: (write: boolean) => void
+    private onAdminChange: (admin: boolean) => void
 
     private cache: Map<string, string>
     private bucket: string
-    private writer: boolean
+    private write: boolean
     private admin: boolean
 
     // subscribe to all values in the store, and keep cache synced.
     private async subscribeAll() {
         this.storeSubscriptionID = await this.api.subscribe({
             app: agent,
-            path: this.subscribePath(),
+            path: this.dataSubscribePath(),
             err: () => {
                 throw new Error(
                     'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
@@ -52,8 +54,7 @@ export class Store extends Tome {
 
     // this seems like pretty dirty update method, is there a better way?
     private async _wipeAndChangeSpace(tomeShip: string, space: string) {
-        this.active = false
-        this.activeCallback(this.active)
+        this.setActive(false)
         if (this.storeSubscriptionID) {
             await this.api.unsubscribe(this.storeSubscriptionID)
         }
@@ -103,13 +104,12 @@ export class Store extends Tome {
         }
 
         if (this.tomeShip === this.thisShip) {
-            this.writer = true
+            this.write = true
             this.admin = true
         } else {
-            // check perms
+            await this.watchPerms()
         }
-        this.active = true
-        this.activeCallback(this.active)
+        this.setActive(true)
     }
 
     private async watchCurrentSpace() {
@@ -138,6 +138,23 @@ export class Store extends Tome {
         })
     }
 
+    private async watchPerms() {
+        await this.api.subscribe({
+            app: agent,
+            path: this.permsSubscribePath(),
+            err: () => { 
+                console.error('Tome-KV: unable to watch perms for this bucket.')
+            },
+            event: async (perms: JSON) => {
+                const write = perms.write === 'yes' ? true : false
+                const admin = perms.admin === 'yes' ? true : false
+                this.setWrite(write)
+                this.setAdmin(admin)
+            },
+            quit: this.watchPerms,
+        })
+    }
+
     private constructor(
         api?: Urbit,
         tomeShip?: string,
@@ -148,27 +165,28 @@ export class Store extends Tome {
         perm?: Perm,
         preload?: boolean,
         locked?: boolean,
-        activeCallback?: (active: boolean) => void,
-        writer?: boolean,
+        onActiveChange?: (active: boolean) => void,
+        onWriteChange?: (write: boolean) => void,
+        onAdminChange?: (admin: boolean) => void,
+        write?: boolean,
         admin?: boolean
     ) {
         if (typeof api !== 'undefined') {
             super(api, tomeShip, thisShip, space, app, perm, locked)
             this.bucket = bucket
-            this.writer = writer
+            this.write = write
             this.admin = admin
             this.cache = new Map()
             this.preload = preload
-            this.activeCallback = activeCallback
+            this.onActiveChange = onActiveChange
             if (preload) {
                 this.loaded = false
                 this.subscribeAll()
             }
             // TODO only do if %spaces exists.  Assume it does for now.
             this.watchCurrentSpace()
-            //this.watchPerms()
-            this.active = true
-            this.activeCallback(this.active)
+            this.watchPerms()
+            this.setActive(true)
         } else {
             super()
         }
@@ -301,7 +319,9 @@ export class Store extends Tome {
         perm?: Perm,
         preload?: boolean,
         locked?: boolean,
-        activeCallback?: (active: boolean) => void
+        onActiveChange?: (active: boolean) => void,
+        onWriteChange?: (write: boolean) => void,
+        onAdminChange?: (admin: boolean) => void
     ) {
         const mars = typeof api !== 'undefined'
         if (mars) {
@@ -317,7 +337,9 @@ export class Store extends Tome {
                     perm,
                     preload,
                     locked,
-                    activeCallback,
+                    onActiveChange,
+                    onWriteChange,
+                    onAdminChange,
                     true,
                     true
                 )
@@ -340,7 +362,9 @@ export class Store extends Tome {
                 perm,
                 preload,
                 locked,
-                activeCallback
+                onActiveChange,
+                onWriteChange,
+                onAdminChange
             )
         }
         return new Store()
@@ -623,7 +647,7 @@ export class Store extends Tome {
         return await this.api
             .subscribe({
                 app: agent,
-                path: this.subscribePath(key),
+                path: this.dataSubscribePath(key),
                 err: () => {
                     throw new Error(
                         'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
@@ -683,7 +707,7 @@ export class Store extends Tome {
         return await this.api
             .subscribe({
                 app: agent,
-                path: this.subscribePath(),
+                path: this.dataSubscribePath(),
                 err: () => {
                     throw new Error(
                         'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
@@ -700,7 +724,7 @@ export class Store extends Tome {
             })
     }
 
-    private subscribePath(key?: string): string {
+    private dataSubscribePath(key?: string): string {
         let path = `/kv/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/data/`
         if (key) {
             path += `key/${key}`
@@ -710,11 +734,15 @@ export class Store extends Tome {
         return path
     }
 
+    private permsSubscribePath(): string {
+        return `/kv/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/perm`
+    }
+
     /**
      * Whether the current ship has permission to create new entries in this Tome, or overwrite it's own entries.
      */
-    public isWriter(): boolean {
-        return this.writer
+    public isWrite(): boolean {
+        return this.write
     }
 
     /**
@@ -729,6 +757,33 @@ export class Store extends Tome {
      */
     public isActive(): boolean {
         return this.active
+    }
+
+    private setActive(active: boolean) {
+        if (active !== this.active) {
+            this.active = active
+            if (this.onActiveChange) {
+                this.onActiveChange(active)
+            }
+        }
+    }
+
+    private setWrite(write: boolean) {
+        if (write !== this.write) {
+            this.write = write
+            if (this.onWriteChange) {
+                this.onWriteChange(write)
+            }
+        }
+    }
+
+    private setAdmin(admin: boolean) { 
+        if (admin !== this.admin) {
+            this.admin = admin
+            if (this.onAdminChange) {
+                this.onAdminChange(admin)
+            }
+        }
     }
 
     private waitForActive(): Promise<void> {

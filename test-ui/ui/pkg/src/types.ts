@@ -15,5 +15,7 @@ export interface StoreOptions {
     bucket?: string
     permissions?: Perm
     preload?: boolean
-    activeCallback?: (active: boolean) => void
+    onActiveChange?: (active: boolean) => void
+    onWriteChange?: (write: boolean) => void
+    onAdminChange?: (admin: boolean) => void
 }
