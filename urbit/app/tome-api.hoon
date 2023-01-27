@@ -253,7 +253,6 @@
     ?+    p.cag  ~|('bad-kv-dude' !!)
         %kv-update
       =/  upd       !<(kv-update q.cag)
-      ~&  >>  ['kv-dude' upd]
       ?+    -.upd   ~|('bad-kv-update' !!)
           %set
         %=  kv
@@ -292,11 +291,10 @@
   ++  kv-peer
     |=  rest=(pole knot)
     ^+  kv
-    ~&  >>  rest
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
       %-  kv-emit
-      [%give %fact ~ %kv-update !>(`kv-update`[%perm (kv-team)])]
+      [%give %fact ~ %kv-update !>(`kv-update`[%perm kv-team])]
         :: [%give %kick ~[perm-pax] `src.bol]
     ::
         [%data %all ~]
@@ -424,12 +422,10 @@
   ::  +kv-team: get read/write/admin permissions for a ship
   ::
   ++  kv-team
-    |.
     ^-  perm
     =/  read    ?:((kv-perm %read) %yes %no)
     =/  write   ?:((kv-perm %create) %yes %no)
     =/  admin   ?:((kv-perm %overwrite) %yes %no)
-    ~&  >>  `perm`[read write admin]
     [read write admin]
   ::
   --
