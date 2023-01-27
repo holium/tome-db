@@ -125,26 +125,16 @@
   ^+  dat
   =^  cards  state
     ?+    pol  ~|(bad-dude-wire/pol !!)
-        [%kv ship=@ space=@ app=@ bucket=@ %data %all ~]
+        [%kv ship=@ space=@ app=@ bucket=@ rest=*]
       ::  local store should already have 
       =/  ship  `@p`(slav %p ship.pol)
       ?+  -.sig  `state
-        %kick  kv-abet:kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol])
+        %kick  kv-abet:(kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
         %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
       ::
           %watch-ack
         %.  `state
         ?~(p.sig same (slog leaf/"kv-data-all nack" ~))
-      ==
-    ::
-        [%kv ship=@ space=@ app=@ bucket=@ %perm ~]
-      =/  ship  `@p`(slav %p ship.pol)
-      ?+  -.sig  `state
-        %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
-      ::
-          %watch-ack
-        %.  `state
-        ?~(p.sig same (slog leaf/"kv-perm nack" ~))
       ==
     ::
     ==
@@ -286,13 +276,14 @@
       ::
       ==
     ==
-  ::  +kv-peer: handle kv watch requests
+  ::  +kv-peer: handle incoming kv watch requests
   ::
   ++  kv-peer
     |=  rest=(pole knot)
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
+      ~&  >  `kv-update`[%perm kv-team]
       %-  kv-emit
       [%give %fact ~ %kv-update !>(`kv-update`[%perm kv-team])]
         :: [%give %kick ~[perm-pax] `src.bol]
@@ -372,13 +363,22 @@
       kv(caz [[%pass perm-pax %agent [shi %tome-api] %watch perm-pax] caz])
     ::
     ==
-  ::  +kv-view: start watching foreign kv data
+  ::  +kv-view: start watching foreign kv (permissions or path)
   ::
   ++  kv-view
+    |=  rest=(pole knot)
     ^+  kv
-    ?:  (~(has in subs) data-pax)  kv
-    =.  subs  (~(put in subs) data-pax)
-    (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
+    ?+    rest  ~|(bad-kv-watch-path/rest !!)
+        [%perm ~]
+      kv
+      ::(kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
+    ::
+        [%data %all ~]
+      ?:  (~(has in subs) data-pax)  kv
+      =.  subs  (~(put in subs) data-pax)
+      (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
+    ::
+    ==
   ::  +kv-perm: check a permission level, return true if allowed
   ::
   ++  kv-perm
