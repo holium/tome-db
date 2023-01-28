@@ -155,8 +155,8 @@
           `state
         `state(tome (~(put bi tome) [ship space.act] app.act *tome-data))
       ::
+      ::  the following init pokes expect an %init-tome to already have been done.
           %init-kv
-      ::  %init-kv expects a %init-tome to have already been processed.
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-kv' !!)
         =+  tod=(~(got bi tome) [ship space.act] app.act)
         ?:  (~(has by store.tod) bucket.act)
@@ -164,11 +164,19 @@
         =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
         `state(tome (~(put bi tome) [ship space.act] app.act tod))
       ::
+          %init-feed
+        ?.  =(our.bol src.bol)  ~|('no-foreign-init-feed' !!)
+        =+  tod=(~(got bi tome) [ship space.act] app.act)
+        ?:  (~(has by feed.tod) bucket.act)
+          `state
+        =.  feed.tod  (~(put by feed.tod) bucket.act [perm.act *invited *invited locked.act *feed-data])
+        `state(tome (~(put bi tome) [ship space.act] app.act tod))
+      ::
       ==
         %kv-action
-      =/  act     !<(kv-action vaz)
-      =/  ship    `@p`(slav %p `@t`(cat 3 '~' ship.act))
-      =*  do      kv-abet:(kv-poke:(kv-abed:kv [ship space.act app.act bucket.act]) act)
+      =/  act   !<(kv-action vaz)
+      =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      =*  do    kv-abet:(kv-poke:(kv-abed:kv [ship space.act app.act bucket.act]) act)
       ?-  -.act
           %set-value
         do
@@ -182,8 +190,15 @@
         do
           %watch-kv
         ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
-        kv-abet:kv-view:(kv-abed:kv [ship space.act app.act bucket.act])
+        kv-abet:(kv-view:(kv-abed:kv [ship space.act app.act bucket.act]) [%data %all ~])
       ==
+        %feed-action
+      `state
+      :: =/  act   !<(feed-action vaz)
+      :: =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      :: =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act]) act)
+      :: ?-  -.act
+      :: ==
     ==
   (emil cards)
 ::
