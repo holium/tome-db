@@ -9,12 +9,12 @@ export class Store extends Tome {
     // then we know we can use the cache.
     private preload: boolean
     private loaded: boolean
-    private ready: boolean // if false, we are switching spaces
+    private ready: boolean // if false, we are switching spaces.  TODO could we consolidate this and "loaded"?
     private onReadyChange: (ready: boolean) => void
     private onWriteChange: (write: boolean) => void
     private onAdminChange: (admin: boolean) => void
 
-    private cache: Map<string, string>
+    private cache: Map<string, JSON>
     private bucket: string
     private write: boolean
     private admin: boolean
@@ -30,23 +30,20 @@ export class Store extends Tome {
                 )
             },
             event: (data: JSON) => {
-                if (!this.loaded) {
-                    this.cache = new Map(Object.entries(data))
-                    this.loaded = true
+                const entries: [string, string][] = Object.entries(data)
+                if (entries.length === 0) {
+                    // received an empty object, clear the cache.
+                    this.cache.clear()
                 } else {
-                    const entries = Object.entries(data)
-                    if (entries.length === 0) {
-                        // received an empty object, clear the cache.
-                        this.cache.clear()
-                    }
                     for (const [key, value] of entries) {
                         if (value === null) {
                             this.cache.delete(key)
                         } else {
-                            this.cache.set(key, value)
+                            this.cache.set(key, JSON.parse(value))
                         }
                     }
                 }
+                this.loaded = true
             },
             quit: this.subscribeAll,
         })
@@ -97,7 +94,7 @@ export class Store extends Tome {
 
         this.tomeShip = tomeShip
         this.space = space
-        this.cache = new Map()
+        this.cache = new Map<string, JSON>()
         if (this.preload) {
             this.loaded = false
             await this.subscribeAll()
@@ -122,6 +119,7 @@ export class Store extends Tome {
                 )
             },
             event: async (current: JSON) => {
+                // @ts-ignore
                 const spacePath = current.current.path.split('/')
                 const tomeShip = spacePath[1].slice(1)
                 const space = spacePath[2]
@@ -145,7 +143,7 @@ export class Store extends Tome {
             err: () => {
                 console.error('Tome-KV: unable to watch perms for this bucket.')
             },
-            event: async (perms: JSON) => {
+            event: async (perms: Perm) => {
                 const write = perms.write === 'yes' ? true : false
                 const admin = perms.admin === 'yes' ? true : false
                 this.setWrite(write)
@@ -176,7 +174,7 @@ export class Store extends Tome {
             this.bucket = bucket
             this.write = write
             this.admin = admin
-            this.cache = new Map()
+            this.cache = new Map<string, JSON>()
             this.preload = preload
             this.onReadyChange = onReadyChange
             if (preload) {
@@ -373,22 +371,27 @@ export class Store extends Tome {
     /**
      * Set a key-value pair in the store.
      * @param key The key to set.
-     * @param value The string value to associate with the key.
+     * @param value The JSON value to associate with the key.
      * @returns true if successful, false if not.
      */
-    public async set(key: string, value: string): Promise<boolean> {
+    public async set(key: string, value: JSON): Promise<boolean> {
         if (!key) {
             console.error('missing key parameter')
             return false
         }
-        if (typeof value !== 'string') {
-            console.error('value must be a string')
+        if (
+            value.constructor != Array &&
+            value.constructor != String &&
+            value.constructor != Object
+        ) {
+            console.error('value must be valid JSON')
             return false
         }
+        const valueStr = JSON.stringify(value)
 
         if (!this.mars) {
             try {
-                localStorage.setItem(localKvPrefix + key, value)
+                localStorage.setItem(localKvPrefix + key, valueStr)
                 return true
             } catch (error) {
                 console.error(error)
@@ -409,7 +412,7 @@ export class Store extends Tome {
                             app: this.app,
                             bucket: this.bucket,
                             key: key,
-                            value: value,
+                            value: valueStr,
                         },
                     },
                     onSuccess: () => {
@@ -438,7 +441,7 @@ export class Store extends Tome {
                                     app: this.app,
                                     bucket: this.bucket,
                                     key: key,
-                                    value: value,
+                                    value: valueStr,
                                 },
                             }),
                         },
@@ -600,12 +603,12 @@ export class Store extends Tome {
      * @param key  The key to retrieve.
      * @param allowCachedValue  Whether we can check for cached values first.
      * If false, we will always check Urbit for the latest value. Default is true.
-     * @returns The string value associated with the key, or undefined if the key does not exist.
+     * @returns The JSON value associated with the key, or undefined if the key does not exist.
      */
     public async get(
         key: string,
         allowCachedValue: boolean = true
-    ): Promise<string> {
+    ): Promise<JSON> {
         if (!key) {
             console.error('missing key parameter')
             return undefined
@@ -617,7 +620,7 @@ export class Store extends Tome {
                 console.error(`key ${key} not found`)
                 return undefined
             }
-            return value
+            return JSON.parse(value)
         } else {
             await this.waitForReady()
             // first check cache if allowed
@@ -628,9 +631,7 @@ export class Store extends Tome {
                 }
             }
             if (this.preload) {
-                while (!this.loaded) {
-                    await new Promise((resolve) => setTimeout(resolve, 100))
-                }
+                await this.waitForLoaded()
                 const value = this.cache.get(key)
                 if (value === undefined) {
                     console.error(`key ${key} not found`)
@@ -643,7 +644,7 @@ export class Store extends Tome {
     }
 
     // TODO - does this have race conditions?
-    private async _getValueFromUrbit(key: string): Promise<string> {
+    private async _getValueFromUrbit(key: string): Promise<JSON> {
         return await this.api
             .subscribe({
                 app: agent,
@@ -655,7 +656,7 @@ export class Store extends Tome {
                 },
                 event: (value: string) => {
                     if (value !== null) {
-                        this.cache.set(key, value)
+                        this.cache.set(key, JSON.parse(value))
                     } else {
                         this.cache.delete(key)
                     }
@@ -673,25 +674,23 @@ export class Store extends Tome {
      * @param useCache return the cache instead of querying Urbit.  Only relevant if preload was set to false.
      * @returns A map of all key-value pairs in the store.
      */
-    public async all(useCache: boolean = false): Promise<Map<string, string>> {
+    public async all(useCache: boolean = false): Promise<Map<string, JSON>> {
         if (!this.mars) {
-            const map: Map<string, string> = new Map()
+            const map = new Map<string, JSON>()
             const len = localStorage.length
             const startIndex = localKvPrefix.length
             for (let i = 0; i < len; i++) {
                 const key = localStorage.key(i)
                 if (key.startsWith(localKvPrefix)) {
                     const keyName = key.substring(startIndex) // get key without prefix
-                    map.set(keyName, localStorage.getItem(key))
+                    map.set(keyName, JSON.parse(localStorage.getItem(key)))
                 }
             }
             return map
         } else {
             await this.waitForReady()
             if (this.preload) {
-                while (!this.loaded) {
-                    await new Promise((resolve) => setTimeout(resolve, 100))
-                }
+                await this.waitForLoaded()
                 return this.cache
             } else {
                 if (useCache) {
@@ -703,7 +702,7 @@ export class Store extends Tome {
     }
 
     // TODO - does this have race conditions?
-    private async _getAllFromUrbit(): Promise<Map<string, string>> {
+    private async _getAllFromUrbit(): Promise<Map<string, JSON>> {
         return await this.api
             .subscribe({
                 app: agent,
@@ -714,7 +713,12 @@ export class Store extends Tome {
                     )
                 },
                 event: (data: JSON) => {
-                    this.cache = new Map(Object.entries(data))
+                    const entries: [string, string][] = Object.entries(data)
+                    const newCache = new Map<string, JSON>()
+                    for (const [key, value] of entries) {
+                        newCache.set(key, JSON.parse(value))
+                    }
+                    this.cache = newCache
                 },
                 quit: () => this._getAllFromUrbit(),
             })
@@ -789,6 +793,15 @@ export class Store extends Tome {
     private waitForReady(): Promise<void> {
         return new Promise((resolve) => {
             while (!this.ready) {
+                setTimeout(() => {}, 50)
+            }
+            resolve()
+        })
+    }
+
+    private waitForLoaded(): Promise<void> {
+        return new Promise((resolve) => {
+            while (!this.loaded) {
                 setTimeout(() => {}, 50)
             }
             resolve()
