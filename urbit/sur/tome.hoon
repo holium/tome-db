@@ -3,9 +3,9 @@
 +$  app           @tas              :: app name (reduce namespace collisions).  if no app this is 'all'
 +$  bucket        @tas              :: bucket name (with its own permissions).  if no bucket this is 'def'
 +$  key           @t                :: key name
-+$  value         @t
++$  value         @t                :: value in kv store
++$  content       @t                :: content for feed post / reply
 +$  json-value    [%s value]        :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
-+$  id            (pair ship time)  :: unique id for each entry in a feed (including replies)
 +$  ships         (set ship)
 +$  invited       [read=ships write=ships admin=ships]
 ::
@@ -31,40 +31,49 @@
 +$  kv-meta  (map key meta)
 +$  store    (map bucket [=perm whitelist=invited blacklist=invited meta=kv-meta data=kv-data])
 ::
-+$  reply-value
-  $:  created-at=time
-      updated-at=time
-      author=ship
-      content=json-value
-  ==
++$  id   @uvH
+::  this map solves a race condition where two users attempt to update/react to a post at the same time
+::  which would result in the second update being ignored (it references the wrong time).  For now we don't update time though.
++$  feed-ids  (map id time)  ::`@uvH`(cut 0 [0 64] eny) 
 ::
-+$  replies  ((mop time reply-value) gth)
+:: +$  replies     ((mop time reply-value) gth)
++$  reactions   (map ship json-value)
+::
+:: +$  reply-value
+::   $:  created-at=time
+::       updated-at=time
+::       author=ship
+::       content=json-value
+::       =reactions
+::   ==
+::
 +$  feed-value
-  $:  created-at=time
+  $:  =id
+      created-by=ship
+      updated-by=ship
+      created-at=time
       updated-at=time
-      author=ship
+  ::
       content=json-value
-      =replies
-      reactions=(map ship json-value)
+      :: =replies
+      =reactions
   ==
 ::
++$  log  _|
 +$  feed-data  ((mop time feed-value) gth)
-::  if "locked", %write permissions can only add, not edit or delete.
+::  if "log", %write permissions can only add, not edit or delete.
 ::  this makes it act like a log.  (admins can still edit or delete anything).
-+$  feed       (map bucket [=perm whitelist=invited blacklist=invited locked=_| data=feed-data])
++$  feed       (map (pair =bucket =log) [=perm ids=feed-ids whitelist=invited blacklist=invited data=feed-data])
 ::
-:: =log =feed =counter etc.
-:: "invited" is in addition to the basic permission level.
-::  ex. if read is %space and someone not in our space attempts to read,
-::  we will also check the read invite list before rejecting.
++$  tome-data  [=store =feed]
 ::
-+$  tome-data   [=store =feed]
+::  Actions and updates
 ::
 +$  tome-action
   $%  [%init-tome ship=@t =space =app]
       [%init-kv ship=@t =space =app =bucket =perm]
       :: [%unwatch-kv ship=@t =space =app =bucket] someday...
-      [%init-feed ship=@t =space =app =bucket locked=? =perm]
+      [%init-feed ship=@t =space =app =bucket =log =perm]
   ==
 ::
 +$  kv-action
@@ -87,7 +96,26 @@
       [%perm =perm]
   ==
 ::
-:: +$  feed-action
++$  feed-action
+  ::  top level actions (on posts)
+  ::  %set-x becomes %new or %edit. Otherwise actions are similar to kv.
+  ::  thisShip -> tomeShip
+  $%  [%new-post ship=@t =space =app =bucket =log =content]
+      [%delete-post ship=@t =space =app =bucket =log =id]
+      [%edit-post ship=@t =space =app =bucket =log =id =content]
+      [%clear-feed ship=@t =space =app =bucket =log]
+      [%verify-feed ship=@t =space =app =bucket =log]
+  :: thisShip -> thisShip
+      [%watch-feed ship=@t =space =app =bucket =log]
+      [%team-feed ship=@t =space =app =bucket =log]
+  ::  actions for reactions (anything a foreign ship wants to associate with a post)
+      [%set-post-reaction ship=@t =space =app =bucket =log =id =value]      :: src.bol is the ship to set the reaction for
+      [%remove-post-reaction ship=@t =space =app =bucket =log =id]          :: only you can do this currently (uses src.bol for ship to remove)
+  ::  actions on replies
+      :: [%add-reply ship=@t =space =app =bucket =log post=id =value]
+  ==
+::
+:: +$  feed-update
 ::   $%
 ::   ==
 --

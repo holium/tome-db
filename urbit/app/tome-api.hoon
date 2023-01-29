@@ -167,38 +167,48 @@
           %init-feed
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-feed' !!)
         =+  tod=(~(got bi tome) [ship space.act] app.act)
-        ?:  (~(has by feed.tod) bucket.act)
+        ?:  (~(has by feed.tod) [bucket.act log.act])
           `state
-        =.  feed.tod  (~(put by feed.tod) bucket.act [perm.act *invited *invited locked.act *feed-data])
+        =.  feed.tod  (~(put by feed.tod) [bucket.act log.act] [perm.act *feed-ids *invited *invited *feed-data])
         `state(tome (~(put bi tome) [ship space.act] app.act tod))
       ::
       ==
+    ::
         %kv-action
       =/  act   !<(kv-action vaz)
       =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
       =*  do    kv-abet:(kv-poke:(kv-abed:kv [ship space.act app.act bucket.act]) act)
       ?-  -.act
-          %set-value
-        do
-          %remove-value
-        do
-          %clear-kv
-        do
-          %verify-kv
-        do
-          %team-kv
-        do
+        %set-value      do
+        %remove-value   do
+        %clear-kv       do
+        %verify-kv      do
+        %team-kv        do
           %watch-kv
         ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
         kv-abet:(kv-view:(kv-abed:kv [ship space.act app.act bucket.act]) [%data %all ~])
       ==
+    ::
         %feed-action
-      `state
-      :: =/  act   !<(feed-action vaz)
-      :: =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      =/  act   !<(feed-action vaz)
+      =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
       :: =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act]) act)
-      :: ?-  -.act
-      :: ==
+      =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act log.act]) act)
+      ~&  >>>  act
+      ?-    -.act
+        %new-post               do
+        %delete-post            do
+        %edit-post              do
+        %clear-feed             do
+        %verify-feed            do
+        %team-feed              do
+        %set-post-reaction      do
+        %remove-post-reaction   do
+          %watch-feed
+        ?:  =(our.bol ship)  ~|('no-watch-local-feed' !!)
+        `state
+        :: fe-abet:(fe-view:(fe-abed:fe [ship space.act app.act bucket.act log.act]) [%data %all ~])
+      ==
     ==
   (emil cards)
 ::
@@ -389,6 +399,7 @@
       ::(kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
+      ::  check wex.bol instead? probably too complicated
       ?:  (~(has in subs) data-pax)  kv
       =.  subs  (~(put in subs) data-pax)
       (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
@@ -452,5 +463,128 @@
     =/  admin   ?:((kv-perm %overwrite) %yes %no)
     [read write admin]
   ::
+  --
+::
+::  +fe: feed engine
+::
+++  fe
+  |_  $:  shi=ship
+          spa=space
+          ap=app
+          buc=bucket
+          lo=log
+          tod=tome-data
+          per=perm
+          ids=feed-ids
+          whi=invited
+          bla=invited
+          data=feed-data
+          caz=(list card)
+          data-pax=path
+          perm-pax=path
+      ==
+  +*  fe  .
+  ++  fe-emit  |=(c=card fe(caz [c caz]))
+  ++  fe-emil  |=(lc=(list card) fe(caz (welp lc caz)))
+  ++  fe-abet
+    ^-  (quip card _state)
+    ~&  >>  data
+    =.  feed.tod  (~(put by feed.tod) [buc lo] [per ids whi bla data])
+    [(flop caz) state(tome (~(put bi tome) [shi spa] ap tod))]
+  ::  +kv-abed: initialize nested core.  only works when the map entries already exist
+  ::
+  ++  fe-abed
+    |=  [p=ship s=space a=app b=bucket l=log]
+    =/  tod       (~(got bi tome) [p s] a)
+    =/  fee       (~(got by feed.tod) [b l])
+    =/  pp        `@tas`(scot %p p) :: planet for path
+    =/  type      ?:(=(l %.y) %log %feed)
+    %=  fe
+      shi       p
+      spa       s
+      ap        a
+      buc       b
+      lo        l
+      tod       tod
+      per       perm.fee
+      ids       ids.fee
+      whi       whitelist.fee
+      bla       blacklist.fee
+      data      data.fee
+      data-pax  /feed/[pp]/[s]/[a]/[b]/[type]/data/all
+      perm-pax  /feed/[pp]/[s]/[a]/[b]/[type]/perm
+    ==
+  ::  +fe-poke: handle log/feed pokes
+  ::
+  ++  fe-poke
+    |=  act=feed-action
+    ^+  fe
+    =/  fon  ((on time feed-value) gth)  :: mop needs this to work
+    ?+    -.act  ~|('bad-feed-action' !!)
+        %new-post
+      =/  id  `@uv`(cut 0 [0 64] eny.bol)
+      ::  TODO check if we have permission to post first
+      %=  fe
+        ids   (~(put by ids) id now.bol)
+        data  (put:fon data now.bol [id src.bol src.bol now.bol now.bol s+content.act *reactions])
+      ==
+    ::
+        %delete-post
+      =+  time=(~(gut by ids) id.act ~)
+      ?~  time  :: if no post, do nothing
+        fe
+      ::  TODO check if we have permission to delete first
+      =/  res  (del:fon data time)
+      %=  fe
+        ids   (~(del by ids) id.act)
+        data  +.res
+      ==
+    ::
+        %edit-post
+      =+  time=(~(gut by ids) id.act ~)
+      ?~  time  :: if no post, do nothing
+        fe
+      ::  TODO check if we have permission to edit first
+      =/  curr  (got:fon data time)
+      %=  fe
+        data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *reactions])
+      ==
+    ::
+        %clear-feed
+      ?~  ids  fe  :: if no posts, do nothing
+      :: TODO check if we have permission to clear first
+      %=  fe
+        ids  *feed-ids
+        data  *feed-data
+      ==
+    ::
+        %verify-feed
+      :: The bucket must exist to get this far, so we just need to verify read permissions.
+      :: TODO check read permissions
+      fe
+    ::
+        %set-post-reaction
+      =+  time=(~(gut by ids) id.act ~)
+      ?~  time  :: if no post, do nothing.  TODO: should these all be crashes? Probably depends
+        fe
+      ::  TODO check if we have permission to react first (create)
+      =/  curr  (got:fon data time)
+      =/  new-reactions  (~(put by reactions.curr) src.bol s+value.act)
+      %=  fe
+        data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-reactions])
+      ==
+    ::
+        %remove-post-reaction
+      =+  time=(~(gut by ids) id.act ~)
+      ?~  time  :: if no post, do nothing.
+        fe
+      ::  TODO check if we have permission to remove reactions first (create)
+      =/  curr  (got:fon data time)
+      =/  new-reactions  (~(del by reactions.curr) src.bol)
+      %=  fe
+        data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-reactions])
+      ==
+    ::
+    ==
   --
 --
