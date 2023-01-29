@@ -1,4 +1,4 @@
-/-  *tomejson
+/-  *tome
 |%
 ++  dejs  =,  dejs:format
   |%
@@ -15,21 +15,21 @@
         team-kv/(ot ~[ship/so space/so app/so bucket/so])
     ==
   ::
-  ++  feed-action
-    |=  jon=json
-    ^-  ^feed-action
-    %.  jon
-    %-  of
-    :~  new-post/(ot ~[ship/so space/so app/so bucket/so log/bo content/so])
-        delete-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/(se %uv)])  :: need to cast to `@uv` somewhere
-        edit-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/(se %uv) content/so])
-        clear-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-        verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-        watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-        team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-        set-post-reaction/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv) value/so])
-        remove-post-reaction/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv)])
-    ==
+  :: ++  feed-action
+  ::   |=  jon=json
+  ::   ^-  ^feed-action
+  ::   %.  jon
+  ::   %-  of
+  ::   :~  new-post/(ot ~[ship/so space/so app/so bucket/so log/bo content/so])
+  ::       delete-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/(se %uv)])  :: need to cast to `@uv` somewhere
+  ::       edit-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/(se %uv) content/so])
+  ::       clear-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+  ::       verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+  ::       watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+  ::       team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+  ::       set-post-reaction/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv) value/so])
+  ::       remove-post-reaction/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv)])
+  ::   ==
   ::
   --
 ++  enjs  =,  enjs:format

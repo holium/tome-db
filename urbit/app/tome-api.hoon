@@ -337,7 +337,7 @@
       ::  equivalent value is already set, do nothing.
       ?:  =(s+value.act (~(gut by data) key.act ~))  kv
       =+  cm=(~(gut by meta) key.act ~)
-      =/  lvl
+      =*  lvl
         ?~  cm
           %create
         ?:(=(src.bol created-by.cm) %create %overwrite)
@@ -360,7 +360,7 @@
       =+  cm=(~(gut by meta) key.act ~)
       ?~  cm
         kv
-      =/  lvl  ?:(=(src.bol created-by.cm) %create %overwrite)
+      =*  lvl  ?:(=(src.bol created-by.cm) %create %overwrite)
       ?>  ?:(=(src.bol our.bol) %.y (kv-perm lvl))
       ::
       %=  kv
@@ -408,9 +408,9 @@
   ::  +kv-perm: check a permission level, return true if allowed
   ::
   ++  kv-perm
-    |=  [act=?(%read %create %overwrite)]
+    |=  [lvl=?(%read %create %overwrite)]
     ^-  ?
-    ?-    act
+    ?-    lvl
         %read
       ?:  (~(has in read.whi) src.bol)  %.y
       ?:  (~(has in read.bla) src.bol)  %.n
@@ -425,6 +425,7 @@
         ?>  ?=(%is-member -.memb)
         is-member.memb
       ==
+    ::
         %create
       ?:  (~(has in write.whi) src.bol)  %.y
       ?:  (~(has in write.bla) src.bol)  %.n
@@ -439,6 +440,7 @@
         ?>  ?=(%is-member -.memb)
         is-member.memb
       ==
+    ::
         %overwrite
       ?:  (~(has in admin.whi) src.bol)  %.y
       ?:  (~(has in admin.bla) src.bol)  %.n
@@ -523,7 +525,8 @@
     ?+    -.act  ~|('bad-feed-action' !!)
         %new-post
       =/  id  `@uv`(cut 0 [0 64] eny.bol)
-      ::  TODO check if we have permission to post first
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))  :: TODO maybe do error prints here instead (and similar)
+      ::
       %=  fe
         ids   (~(put by ids) id now.bol)
         data  (put:fon data now.bol [id src.bol src.bol now.bol now.bol s+content.act *reactions])
@@ -533,26 +536,32 @@
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing
         fe
-      ::  TODO check if we have permission to delete first
+      =*  curr  (got:fon data time)
+      =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
+      ::
       =/  res  (del:fon data time)
       %=  fe
         ids   (~(del by ids) id.act)
-        data  +.res
+        data  +.res  :: mop delete return type is weird. tail is the new map
       ==
     ::
         %edit-post
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing
         fe
-      ::  TODO check if we have permission to edit first
       =/  curr  (got:fon data time)
+      =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
+      ::
       %=  fe
         data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *reactions])
       ==
     ::
         %clear-feed
       ?~  ids  fe  :: if no posts, do nothing
-      :: TODO check if we have permission to clear first
+      ::
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %overwrite))
       %=  fe
         ids  *feed-ids
         data  *feed-data
@@ -560,14 +569,16 @@
     ::
         %verify-feed
       :: The bucket must exist to get this far, so we just need to verify read permissions.
-      :: TODO check read permissions
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %read))
       fe
     ::
-        %set-post-reaction
+        %set-post-reaction  :: Reactions are currently only supported by feeds, not logs
+      ?>  =(lo %.n)
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing.  TODO: should these all be crashes? Probably depends
         fe
-      ::  TODO check if we have permission to react first (create)
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
+      ::
       =/  curr  (got:fon data time)
       =/  new-reactions  (~(put by reactions.curr) src.bol s+value.act)
       %=  fe
@@ -575,16 +586,69 @@
       ==
     ::
         %remove-post-reaction
+      ?>  =(lo %.n)
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing.
         fe
-      ::  TODO check if we have permission to remove reactions first (create)
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
+      ::
       =/  curr  (got:fon data time)
       =/  new-reactions  (~(del by reactions.curr) src.bol)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-reactions])
       ==
     ::
+    ==
+  ::  +fe-perm: check a permission level, return true if allowed
+  ::  duplicates +kv-perm
+  ++  fe-perm
+    |=  [lvl=?(%read %create %overwrite)]
+    ^-  ?
+    ?-    lvl
+        %read
+      ?:  (~(has in read.whi) src.bol)  %.y
+      ?:  (~(has in read.bla) src.bol)  %.n
+      ?-  read.per
+        %unset    %.n
+        %no       %.n
+        %our      =(our.bol src.bol)
+        %open     %.y
+        %yes      %.y
+          %space
+        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+        ?>  ?=(%is-member -.memb)
+        is-member.memb
+      ==
+    ::
+        %create
+      ?:  (~(has in write.whi) src.bol)  %.y
+      ?:  (~(has in write.bla) src.bol)  %.n
+      ?-  write.per
+        %unset    %.n
+        %no       %.n
+        %our      =(our.bol src.bol)
+        %open     %.y
+        %yes      %.y
+          %space
+        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+        ?>  ?=(%is-member -.memb)
+        is-member.memb
+      ==
+    ::
+        %overwrite
+      ?:  (~(has in admin.whi) src.bol)  %.y
+      ?:  (~(has in admin.bla) src.bol)  %.n
+      ?-  admin.per
+        %unset    %.n
+        %no       %.n
+        %our      =(our.bol src.bol)
+        %open     %.y
+        %yes      %.y
+          %space
+        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+        ?>  ?=(%is-member -.memb)
+        is-member.memb
+      ==
     ==
   --
 --

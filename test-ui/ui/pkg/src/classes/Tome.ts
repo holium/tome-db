@@ -1,5 +1,14 @@
 import Urbit from '@urbit/http-api'
-import { Perm, Store, StoreOptions, TomeOptions } from '../index'
+import {
+    Perm,
+    KeyValueStore,
+    FeedStore,
+    LogStore,
+    StoreOptions,
+    TomeOptions,
+    DataStore,
+    InitStoreOptions,
+} from '../index'
 import { agent, tomeMark } from './constants'
 
 export class Tome {
@@ -37,17 +46,12 @@ export class Tome {
         })
     }
 
-    protected constructor(
-        api?: Urbit,
-        tomeShip?: string,
-        thisShip?: string,
-        space?: string,
-        app?: string,
-        perm?: Perm,
-        locked?: boolean
-    ) {
-        this.mars = typeof api !== 'undefined'
-        if (this.mars) {
+    // maybe use a different (sub) type here?
+    protected constructor(options?: InitStoreOptions) {
+        if (typeof options !== 'undefined') {
+            this.mars = true
+            const { api, tomeShip, thisShip, space, app, perm, locked } =
+                options
             this.api = api
             this.tomeShip = tomeShip
             this.thisShip = thisShip
@@ -56,6 +60,7 @@ export class Tome {
             this.perm = perm
             this.locked = locked
         } else {
+            this.mars = false
             this.app = 'tome-db'
         }
     }
@@ -117,7 +122,15 @@ export class Tome {
                 ? options.permissions
                 : ({ read: 'space', write: 'our', admin: 'our' } as const)
             await Tome.initTomePoke(api, tomeShip, space, app)
-            return new Tome(api, tomeShip, thisShip, space, app, perm, locked)
+            return new Tome({
+                api,
+                tomeShip,
+                thisShip,
+                space,
+                app,
+                perm,
+                locked,
+            })
         }
         return new Tome()
     }
@@ -131,7 +144,7 @@ export class Tome {
      * If false, the frontend will access values from Urbit only when requested, which may take longer.
      * @returns A Store instance.
      */
-    public async keyvalue(options: StoreOptions = {}): Promise<Store> {
+    public async keyvalue(options: StoreOptions = {}): Promise<KeyValueStore> {
         if (this.mars) {
             let permissions = options.permissions
                 ? options.permissions
@@ -146,22 +159,52 @@ export class Tome {
                     admin: 'our',
                 } as const
             }
-            return await Store.initStore(
-                this.api,
-                this.tomeShip,
-                this.thisShip,
-                this.space,
-                this.app,
-                options.bucket ? options.bucket : 'def',
-                permissions,
-                options.preload !== undefined ? options.preload : true,
-                this.locked,
-                options.onReadyChange,
-                options.onWriteChange,
-                options.onAdminChange
-            )
+            return await DataStore.initDataStore({
+                type: 'kv',
+                api: this.api,
+                tomeShip: this.tomeShip,
+                thisShip: this.thisShip,
+                space: this.space,
+                app: this.app,
+                perm: permissions,
+                locked: this.locked,
+                bucket: options.bucket ? options.bucket : 'def',
+                preload: options.preload !== undefined ? options.preload : true,
+                onReadyChange: options.onReadyChange,
+                onWriteChange: options.onWriteChange,
+                onAdminChange: options.onAdminChange,
+                isLog: false,
+            })
         } else {
-            return Store.initStore()
+            return new KeyValueStore()
         }
     }
+
+    // public async feed(options: Options = {}): Promise<FeedStore> {
+    //     if (!this.mars) {
+    //         throw new Error(
+    //             'Tome-Feed: Feed can only be used on Urbit. Try using `keyvalue` instead.'
+    //         )
+    //     }
+    //     let permissions = options.permissions ? options.permissions : this.perm
+    //     if (this.app === 'all' && this.tomeShip === this.thisShip) {
+    //         console.warn(
+    //             'Tome-KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
+    //         )
+    //         permissions = {
+    //             read: 'our',
+    //             write: 'our',
+    //             admin: 'our',
+    //         } as const
+    //     }
+    //     return await FeedStore.initFeed()
+    // }
+
+    // public async log(options: Options = {}): Promise<LogStore> {
+    //     if (!this.mars) {
+    //         throw new Error(
+    //             'Tome-Log: Log can only be used on Urbit. Try using `keyvalue` instead.'
+    //         )
+    //     }
+    // }
 }
