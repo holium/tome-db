@@ -6,27 +6,25 @@ const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
 export function App() {
-    const [active, setActive] = useState(false)
-    
-    const updateActive = (_active) => {
-        setActive(_active)
+    const [ready, setReady] = useState(false)
+
+    const updateReady = (_ready) => {
+        setReady(_ready)
     }
 
     useEffect(() => {
-        async function init() { 
+        async function init() {
             const db = await Tome.init(api)
             const store = await db.keyvalue({
-                onActiveChange: updateActive,
+                onReadyChange: updateReady,
             })
         }
-        init()     
-    }, []);
-
-
+        init()
+    }, [])
 
     return (
         <main className="flex items-center justify-center min-h-screen">
-            {active ? <p>active</p> : <p>inactive</p>}
+            {ready ? <p>active</p> : <p>inactive</p>}
         </main>
     )
 }

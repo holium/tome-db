@@ -156,7 +156,7 @@ export class Tome {
                 permissions,
                 options.preload !== undefined ? options.preload : true,
                 this.locked,
-                options.onActiveChange,
+                options.onReadyChange,
                 options.onWriteChange,
                 options.onAdminChange
             )

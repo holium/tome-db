@@ -9,8 +9,8 @@ export class Store extends Tome {
     // then we know we can use the cache.
     private preload: boolean
     private loaded: boolean
-    private active: boolean // if false, we are switching spaces
-    private onActiveChange: (active: boolean) => void
+    private ready: boolean // if false, we are switching spaces
+    private onReadyChange: (ready: boolean) => void
     private onWriteChange: (write: boolean) => void
     private onAdminChange: (admin: boolean) => void
 
@@ -54,7 +54,7 @@ export class Store extends Tome {
 
     // this seems like pretty dirty update method, is there a better way?
     private async _wipeAndChangeSpace(tomeShip: string, space: string) {
-        this.setActive(false)
+        this.setReady(false)
         if (this.storeSubscriptionID) {
             await this.api.unsubscribe(this.storeSubscriptionID)
         }
@@ -109,7 +109,7 @@ export class Store extends Tome {
         } else {
             await this.watchPerms()
         }
-        this.setActive(true)
+        this.setReady(true)
     }
 
     private async watchCurrentSpace() {
@@ -142,7 +142,7 @@ export class Store extends Tome {
         await this.api.subscribe({
             app: agent,
             path: this.permsSubscribePath(),
-            err: () => { 
+            err: () => {
                 console.error('Tome-KV: unable to watch perms for this bucket.')
             },
             event: async (perms: JSON) => {
@@ -165,7 +165,7 @@ export class Store extends Tome {
         perm?: Perm,
         preload?: boolean,
         locked?: boolean,
-        onActiveChange?: (active: boolean) => void,
+        onReadyChange?: (ready: boolean) => void,
         onWriteChange?: (write: boolean) => void,
         onAdminChange?: (admin: boolean) => void,
         write?: boolean,
@@ -178,7 +178,7 @@ export class Store extends Tome {
             this.admin = admin
             this.cache = new Map()
             this.preload = preload
-            this.onActiveChange = onActiveChange
+            this.onReadyChange = onReadyChange
             if (preload) {
                 this.loaded = false
                 this.subscribeAll()
@@ -186,7 +186,7 @@ export class Store extends Tome {
             // TODO only do if %spaces exists.  Assume it does for now.
             this.watchCurrentSpace()
             this.watchPerms()
-            this.setActive(true)
+            this.setReady(true)
         } else {
             super()
         }
@@ -319,7 +319,7 @@ export class Store extends Tome {
         perm?: Perm,
         preload?: boolean,
         locked?: boolean,
-        onActiveChange?: (active: boolean) => void,
+        onReadyChange?: (ready: boolean) => void,
         onWriteChange?: (write: boolean) => void,
         onAdminChange?: (admin: boolean) => void
     ) {
@@ -337,7 +337,7 @@ export class Store extends Tome {
                     perm,
                     preload,
                     locked,
-                    onActiveChange,
+                    onReadyChange,
                     onWriteChange,
                     onAdminChange,
                     true,
@@ -362,7 +362,7 @@ export class Store extends Tome {
                 perm,
                 preload,
                 locked,
-                onActiveChange,
+                onReadyChange,
                 onWriteChange,
                 onAdminChange
             )
@@ -395,7 +395,7 @@ export class Store extends Tome {
                 return false
             }
         } else {
-            await this.waitForActive()
+            await this.waitForReady()
             // maybe set in the cache, return, and poke / retry as necesssary?
             let success = false
             if (this.tomeShip === this.thisShip) {
@@ -473,7 +473,7 @@ export class Store extends Tome {
             localStorage.removeItem(localKvPrefix + key)
             return true
         } else {
-            await this.waitForActive()
+            await this.waitForReady()
             let success = false
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
@@ -541,7 +541,7 @@ export class Store extends Tome {
             localStorage.clear()
             return true
         } else {
-            await this.waitForActive()
+            await this.waitForReady()
             let success = false
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
@@ -619,7 +619,7 @@ export class Store extends Tome {
             }
             return value
         } else {
-            await this.waitForActive()
+            await this.waitForReady()
             // first check cache if allowed
             if (allowCachedValue) {
                 const value = this.cache.get(key)
@@ -687,7 +687,7 @@ export class Store extends Tome {
             }
             return map
         } else {
-            await this.waitForActive()
+            await this.waitForReady()
             if (this.preload) {
                 while (!this.loaded) {
                     await new Promise((resolve) => setTimeout(resolve, 100))
@@ -753,17 +753,17 @@ export class Store extends Tome {
     }
 
     /**
-     * Whether the current store is active.  Useful for showing a loading screen?
+     * Whether the current store is ready (loaded).  Useful for showing a loading screen?
      */
-    public isActive(): boolean {
-        return this.active
+    public isReady(): boolean {
+        return this.ready
     }
 
-    private setActive(active: boolean) {
-        if (active !== this.active) {
-            this.active = active
-            if (this.onActiveChange) {
-                this.onActiveChange(active)
+    private setReady(ready: boolean) {
+        if (ready !== this.ready) {
+            this.ready = ready
+            if (this.onReadyChange) {
+                this.onReadyChange(ready)
             }
         }
     }
@@ -777,7 +777,7 @@ export class Store extends Tome {
         }
     }
 
-    private setAdmin(admin: boolean) { 
+    private setAdmin(admin: boolean) {
         if (admin !== this.admin) {
             this.admin = admin
             if (this.onAdminChange) {
@@ -786,9 +786,9 @@ export class Store extends Tome {
         }
     }
 
-    private waitForActive(): Promise<void> {
+    private waitForReady(): Promise<void> {
         return new Promise((resolve) => {
-            while (!this.active) {
+            while (!this.ready) {
                 setTimeout(() => {}, 50)
             }
             resolve()
