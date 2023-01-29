@@ -1,7 +1,5 @@
 import { DataStore, InitStoreOptions } from '../../index'
-import { agent, storeMark, localKvPrefix } from '../constants'
-
-const type = 'kv'
+import { agent, storeMark, localKvPrefix, kvThread } from '../constants'
 
 export class KeyValueStore extends DataStore {
     public constructor(options?: InitStoreOptions) {
@@ -45,20 +43,21 @@ export class KeyValueStore extends DataStore {
             await this.waitForReady()
             // maybe set in the cache, return, and poke / retry as necesssary?
             let success = false
+            const json = {
+                'set-value': {
+                    ship: this.tomeShip,
+                    space: this.space,
+                    app: this.app,
+                    bucket: this.bucket,
+                    key: key,
+                    value: valueStr,
+                },
+            }
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
                     mark: storeMark,
-                    json: {
-                        'set-value': {
-                            ship: this.tomeShip,
-                            space: this.space,
-                            app: this.app,
-                            bucket: this.bucket,
-                            key: key,
-                            value: valueStr,
-                        },
-                    },
+                    json: json,
                     onSuccess: () => {
                         this.cache.set(key, value)
                         success = true
@@ -75,22 +74,13 @@ export class KeyValueStore extends DataStore {
                     .thread({
                         inputMark: 'json',
                         outputMark: 'json',
-                        threadName: 'poke-tunnel',
+                        threadName: kvThread,
                         body: {
                             ship: this.tomeShip,
-                            json: JSON.stringify({
-                                'set-value': {
-                                    ship: this.tomeShip,
-                                    space: this.space,
-                                    app: this.app,
-                                    bucket: this.bucket,
-                                    key: key,
-                                    value: valueStr,
-                                },
-                            }),
+                            json: JSON.stringify(json),
                         },
                     })
-                    .catch((e) => {
+                    .catch(() => {
                         console.error(
                             'Failed to add key-value pair to the Store.'
                         )
@@ -113,7 +103,7 @@ export class KeyValueStore extends DataStore {
     public async remove(key: string): Promise<boolean> {
         if (!key) {
             console.error('missing key parameter')
-            return
+            return false
         }
 
         if (!this.mars) {
@@ -122,19 +112,20 @@ export class KeyValueStore extends DataStore {
         } else {
             await this.waitForReady()
             let success = false
+            const json = {
+                'remove-value': {
+                    ship: this.tomeShip,
+                    space: this.space,
+                    app: this.app,
+                    bucket: this.bucket,
+                    key: key,
+                },
+            }
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
                     mark: storeMark,
-                    json: {
-                        'remove-value': {
-                            ship: this.tomeShip,
-                            space: this.space,
-                            app: this.app,
-                            bucket: this.bucket,
-                            key: key,
-                        },
-                    },
+                    json: json,
                     onSuccess: () => {
                         this.cache.delete(key)
                         success = true
@@ -149,18 +140,10 @@ export class KeyValueStore extends DataStore {
                     .thread({
                         inputMark: 'json',
                         outputMark: 'json',
-                        threadName: 'poke-tunnel',
+                        threadName: kvThread,
                         body: {
                             ship: this.tomeShip,
-                            json: JSON.stringify({
-                                'remove-value': {
-                                    ship: this.tomeShip,
-                                    space: this.space,
-                                    app: this.app,
-                                    bucket: this.bucket,
-                                    key: key,
-                                },
-                            }),
+                            json: JSON.stringify(json),
                         },
                     })
                     .catch((e) => {
@@ -190,18 +173,19 @@ export class KeyValueStore extends DataStore {
         } else {
             await this.waitForReady()
             let success = false
+            const json = {
+                'clear-kv': {
+                    ship: this.tomeShip,
+                    space: this.space,
+                    app: this.app,
+                    bucket: this.bucket,
+                },
+            }
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
                     mark: storeMark,
-                    json: {
-                        'clear-kv': {
-                            ship: this.tomeShip,
-                            space: this.space,
-                            app: this.app,
-                            bucket: this.bucket,
-                        },
-                    },
+                    json: json,
                     onSuccess: () => {
                         this.cache.clear()
                         success = true
@@ -216,20 +200,13 @@ export class KeyValueStore extends DataStore {
                     .thread({
                         inputMark: 'json',
                         outputMark: 'json',
-                        threadName: 'poke-tunnel',
+                        threadName: kvThread,
                         body: {
                             ship: this.tomeShip,
-                            json: JSON.stringify({
-                                'clear-kv': {
-                                    ship: this.tomeShip,
-                                    space: this.space,
-                                    app: this.app,
-                                    bucket: this.bucket,
-                                },
-                            }),
+                            json: JSON.stringify(json),
                         },
                     })
-                    .catch((e) => {
+                    .catch(() => {
                         console.error('Failed to clear Store.')
                         return undefined
                     })
@@ -266,51 +243,8 @@ export class KeyValueStore extends DataStore {
             }
             return JSON.parse(value)
         } else {
-            await this.waitForReady()
-            // first check cache if allowed
-            if (allowCachedValue) {
-                const value = this.cache.get(key)
-                if (value) {
-                    return value
-                }
-            }
-            if (this.preload) {
-                await this.waitForLoaded()
-                const value = this.cache.get(key)
-                if (value === undefined) {
-                    console.error(`key ${key} not found`)
-                }
-                return value
-            } else {
-                return await this._getValueFromUrbit(key)
-            }
+            return await this.retrieveOne(key, allowCachedValue)
         }
-    }
-
-    // TODO - does this have race conditions?
-    private async _getValueFromUrbit(key: string): Promise<JSON> {
-        return await this.api
-            .subscribe({
-                app: agent,
-                path: this.dataSubscribePath(key),
-                err: () => {
-                    throw new Error(
-                        'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
-                    )
-                },
-                event: (value: string) => {
-                    if (value !== null) {
-                        this.cache.set(key, JSON.parse(value))
-                    } else {
-                        this.cache.delete(key)
-                    }
-                },
-                quit: () => this._getValueFromUrbit(key),
-            })
-            .then(async (id) => {
-                await this.api.unsubscribe(id)
-                return this.cache.get(key)
-            })
     }
 
     /**
@@ -332,43 +266,7 @@ export class KeyValueStore extends DataStore {
             }
             return map
         } else {
-            await this.waitForReady()
-            if (this.preload) {
-                await this.waitForLoaded()
-                return this.cache
-            } else {
-                if (useCache) {
-                    return this.cache
-                }
-                return await this._getAllFromUrbit()
-            }
+            return await this.retrieveAll(useCache)
         }
-    }
-
-    // TODO - does this have race conditions?
-    private async _getAllFromUrbit(): Promise<Map<string, JSON>> {
-        return await this.api
-            .subscribe({
-                app: agent,
-                path: this.dataSubscribePath(),
-                err: () => {
-                    throw new Error(
-                        'Tome-KV: the key-value store being used has been removed, or your access has been revoked.'
-                    )
-                },
-                event: (data: JSON) => {
-                    const entries: [string, string][] = Object.entries(data)
-                    const newCache = new Map<string, JSON>()
-                    for (const [key, value] of entries) {
-                        newCache.set(key, JSON.parse(value))
-                    }
-                    this.cache = newCache
-                },
-                quit: () => this._getAllFromUrbit(),
-            })
-            .then(async (id) => {
-                await this.api.unsubscribe(id)
-                return this.cache
-            })
     }
 }

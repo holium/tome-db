@@ -179,11 +179,11 @@
       =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
       =*  do    kv-abet:(kv-poke:(kv-abed:kv [ship space.act app.act bucket.act]) act)
       ?-  -.act
-        %set-value      do
-        %remove-value   do
-        %clear-kv       do
-        %verify-kv      do
-        %team-kv        do
+        %set-value     do
+        %remove-value  do
+        %clear-kv      do
+        %verify-kv     do
+        %team-kv       do
           %watch-kv
         ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
         kv-abet:(kv-view:(kv-abed:kv [ship space.act app.act bucket.act]) [%data %all ~])
@@ -196,14 +196,14 @@
       =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act log.act]) act)
       ~&  >>>  act
       ?-    -.act
-        %new-post               do
-        %delete-post            do
-        %edit-post              do
-        %clear-feed             do
-        %verify-feed            do
-        %team-feed              do
-        %set-post-reaction      do
-        %remove-post-reaction   do
+        %new-post          do
+        %delete-post       do
+        %edit-post         do
+        %clear-feed        do
+        %verify-feed       do
+        %team-feed         do
+        %set-post-link     do
+        %remove-post-link  do
           %watch-feed
         ?:  =(our.bol ship)  ~|('no-watch-local-feed' !!)
         `state
@@ -529,7 +529,7 @@
       ::
       %=  fe
         ids   (~(put by ids) id now.bol)
-        data  (put:fon data now.bol [id src.bol src.bol now.bol now.bol s+content.act *reactions])
+        data  (put:fon data now.bol [id src.bol src.bol now.bol now.bol s+content.act *links])
       ==
     ::
         %delete-post
@@ -555,7 +555,7 @@
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
       ::
       %=  fe
-        data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *reactions])
+        data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *links])
       ==
     ::
         %clear-feed
@@ -572,7 +572,7 @@
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %read))
       fe
     ::
-        %set-post-reaction  :: Reactions are currently only supported by feeds, not logs
+        %set-post-link  :: links are currently only supported by feeds, not logs
       ?>  =(lo %.n)
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing.  TODO: should these all be crashes? Probably depends
@@ -580,12 +580,12 @@
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
-      =/  new-reactions  (~(put by reactions.curr) src.bol s+value.act)
+      =/  new-links  (~(put by links.curr) src.bol s+value.act)
       %=  fe
-        data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-reactions])
+        data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
       ==
     ::
-        %remove-post-reaction
+        %remove-post-link
       ?>  =(lo %.n)
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing.
@@ -593,9 +593,9 @@
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
-      =/  new-reactions  (~(del by reactions.curr) src.bol)
+      =/  new-links  (~(del by links.curr) src.bol)
       %=  fe
-        data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-reactions])
+        data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
       ==
     ::
     ==

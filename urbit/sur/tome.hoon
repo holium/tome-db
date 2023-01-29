@@ -37,14 +37,14 @@
 +$  feed-ids  (map id time)  ::`@uvH`(cut 0 [0 64] eny) 
 ::
 :: +$  replies     ((mop time reply-value) gth)
-+$  reactions   (map ship json-value)
++$  links   (map ship json-value)
 ::
 :: +$  reply-value
 ::   $:  created-at=time
 ::       updated-at=time
 ::       author=ship
 ::       content=json-value
-::       =reactions
+::       =links
 ::   ==
 ::
 +$  feed-value
@@ -56,7 +56,7 @@
   ::
       content=json-value
       :: =replies
-      =reactions
+      =links
   ==
 ::
 +$  log  _|
@@ -100,7 +100,7 @@
   ::  top level actions (on posts)
   ::  %set-x becomes %new or %edit. Otherwise actions are similar to kv.
   ::  thisShip -> tomeShip
-  $%  [%new-post ship=@t =space =app =bucket =log =content]
+  $%  [%new-post ship=@t =space =app =bucket =log =id =content]
       [%delete-post ship=@t =space =app =bucket =log =id]
       [%edit-post ship=@t =space =app =bucket =log =id =content]
       [%clear-feed ship=@t =space =app =bucket =log]
@@ -108,9 +108,9 @@
   :: thisShip -> thisShip
       [%watch-feed ship=@t =space =app =bucket =log]
       [%team-feed ship=@t =space =app =bucket =log]
-  ::  actions for reactions (anything a foreign ship wants to associate with a post)
-      [%set-post-reaction ship=@t =space =app =bucket =log =id =value]      :: src.bol is the ship to set the reaction for
-      [%remove-post-reaction ship=@t =space =app =bucket =log =id]          :: only you can do this currently (uses src.bol for ship to remove)
+  ::  actions for links (anything a foreign ship wants to associate with a post)
+      [%set-post-link ship=@t =space =app =bucket =log =id =value]      :: src.bol is the ship to set the link for
+      [%remove-post-link ship=@t =space =app =bucket =log =id]          :: only you can do this currently (uses src.bol for ship to remove)
   ::  actions on replies
       :: [%add-reply ship=@t =space =app =bucket =log post=id =value]
   ==

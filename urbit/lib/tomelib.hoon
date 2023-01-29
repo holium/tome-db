@@ -27,8 +27,8 @@
   ::       verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
   ::       watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
   ::       team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-  ::       set-post-reaction/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv) value/so])
-  ::       remove-post-reaction/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv)])
+  ::       set-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv) value/so])
+  ::       remove-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv)])
   ::   ==
   ::
   --

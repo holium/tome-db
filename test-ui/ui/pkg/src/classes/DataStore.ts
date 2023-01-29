@@ -1,5 +1,5 @@
 import { InitStoreOptions, Perm, StoreType } from '../index'
-import { KeyValueStore, Tome } from './index'
+import { FeedStore, KeyValueStore, LogStore, Tome } from './index'
 import { agent, storeMark, tomeMark } from './constants'
 
 export abstract class DataStore extends Tome {
@@ -24,7 +24,7 @@ export abstract class DataStore extends Tome {
 
     // assumes MARZ
     public static async initDataStore(options: InitStoreOptions) {
-        const { tomeShip, thisShip } = options
+        const { tomeShip, thisShip, type, isLog } = options
         if (tomeShip === thisShip) {
             await DataStore.initBucket(options)
             return new KeyValueStore({
@@ -42,7 +42,16 @@ export abstract class DataStore extends Tome {
         await DataStore.initBucket({ ...options, perm: foreignPerm })
         await DataStore.startWatchingForeignBucket(options)
         await DataStore.startWatchingForeignPerms(options)
-        return new KeyValueStore(options)
+        switch (type) {
+            case 'kv':
+                return new KeyValueStore(options)
+            case 'feed':
+                if (isLog) {
+                    return new LogStore(options)
+                } else {
+                    return new FeedStore(options)
+                }
+        }
     }
 
     constructor(options?: InitStoreOptions) {
@@ -186,8 +195,9 @@ export abstract class DataStore extends Tome {
 
     protected static async checkExistsAndCanRead(options: InitStoreOptions) {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
+        const action = `verify-${type}`
         const body = {
-            [`verify-${type}`]: {
+            [action]: {
                 ship: tomeShip,
                 space: space,
                 app: app,
@@ -196,7 +206,7 @@ export abstract class DataStore extends Tome {
         }
         if (type === 'feed') {
             // @ts-ignore
-            body['log'] = isLog
+            body[action]['log'] = isLog
         }
         // Tunnel poke to Tome ship
         const result = await api
@@ -223,8 +233,9 @@ export abstract class DataStore extends Tome {
 
     protected static async initBucket(options: InitStoreOptions) {
         const { api, tomeShip, space, app, bucket, type, isLog, perm } = options
+        const action = `init-${type}`
         const body = {
-            [`init-${type}`]: {
+            [action]: {
                 ship: tomeShip,
                 space: space,
                 app: app,
@@ -234,7 +245,7 @@ export abstract class DataStore extends Tome {
         }
         if (type === 'feed') {
             // @ts-ignore
-            body['log'] = isLog
+            body[action]['log'] = isLog
         }
         await api.poke({
             app: agent,
@@ -252,8 +263,9 @@ export abstract class DataStore extends Tome {
         options: InitStoreOptions
     ) {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
+        const action = `watch-${type}`
         const body = {
-            [`watch-${type}`]: {
+            [action]: {
                 ship: tomeShip,
                 space: space,
                 app: app,
@@ -262,7 +274,7 @@ export abstract class DataStore extends Tome {
         }
         if (type === 'feed') {
             // @ts-ignore
-            body['log'] = isLog
+            body[action]['log'] = isLog
         }
         await api.poke({
             app: agent,
@@ -280,8 +292,9 @@ export abstract class DataStore extends Tome {
         options: InitStoreOptions
     ) {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
+        const action = `team-${type}`
         const body = {
-            [`team-${type}`]: {
+            [action]: {
                 ship: tomeShip,
                 space: space,
                 app: app,
@@ -290,7 +303,7 @@ export abstract class DataStore extends Tome {
         }
         if (type === 'feed') {
             // @ts-ignore
-            body['log'] = isLog
+            body[action]['log'] = isLog
         }
         await api.poke({
             app: agent,
@@ -332,6 +345,93 @@ export abstract class DataStore extends Tome {
             },
             quit: this.subscribeAll,
         })
+    }
+
+    protected async retrieveOne(key: string, allowCachedValue: boolean = true) {
+        await this.waitForReady()
+        // first check cache if allowed
+        if (allowCachedValue) {
+            const value = this.cache.get(key)
+            if (value) {
+                return value
+            }
+        }
+        if (this.preload) {
+            await this.waitForLoaded()
+            const value = this.cache.get(key)
+            if (value === undefined) {
+                console.error(`key ${key} not found`)
+            }
+            return value
+        } else {
+            return await this._getValueFromUrbit(key)
+        }
+    }
+
+    // TODO - does this have race conditions?
+    private async _getValueFromUrbit(key: string): Promise<JSON> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.dataSubscribePath(key),
+                err: () => {
+                    throw new Error(
+                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+                    )
+                },
+                event: (value: string) => {
+                    if (value !== null) {
+                        this.cache.set(key, JSON.parse(value))
+                    } else {
+                        this.cache.delete(key)
+                    }
+                },
+                quit: () => this._getValueFromUrbit(key),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return this.cache.get(key)
+            })
+    }
+
+    protected async retrieveAll(useCache: boolean = false) {
+        await this.waitForReady()
+        if (this.preload) {
+            await this.waitForLoaded()
+            return this.cache
+        } else {
+            if (useCache) {
+                return this.cache
+            }
+            return await this._getAllFromUrbit()
+        }
+    }
+
+    // TODO - does this have race conditions?
+    private async _getAllFromUrbit(): Promise<Map<string, JSON>> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.dataSubscribePath(),
+                err: () => {
+                    throw new Error(
+                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+                    )
+                },
+                event: (data: JSON) => {
+                    const entries: [string, string][] = Object.entries(data)
+                    const newCache = new Map<string, JSON>()
+                    for (const [key, value] of entries) {
+                        newCache.set(key, JSON.parse(value))
+                    }
+                    this.cache = newCache
+                },
+                quit: () => this._getAllFromUrbit(),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return this.cache
+            })
     }
 
     protected dataSubscribePath(key?: string): string {

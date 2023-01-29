@@ -8,6 +8,7 @@ import {
     TomeOptions,
     DataStore,
     InitStoreOptions,
+    StoreType,
 } from '../index'
 import { agent, tomeMark } from './constants'
 
@@ -135,6 +136,41 @@ export class Tome {
         return new Tome()
     }
 
+    private async initStore(
+        options: StoreOptions,
+        type: StoreType,
+        isLog: boolean
+    ) {
+        let permissions = options.permissions ? options.permissions : this.perm
+        if (this.app === 'all' && this.tomeShip === this.thisShip) {
+            console.warn(
+                'Tome-KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
+            )
+            permissions = {
+                read: 'our',
+                write: 'our',
+                admin: 'our',
+            } as const
+        }
+        return await DataStore.initDataStore({
+            type: type,
+            api: this.api,
+            tomeShip: this.tomeShip,
+            thisShip: this.thisShip,
+            space: this.space,
+            app: this.app,
+            perm: permissions,
+            locked: this.locked,
+            bucket: options.bucket ? options.bucket : 'def',
+            preload: options.preload !== undefined ? options.preload : true,
+            onReadyChange: options.onReadyChange,
+            onWriteChange: options.onWriteChange,
+            onAdminChange: options.onAdminChange,
+            isLog: isLog,
+        })
+    }
+
+    // TODO make this docstring better
     /**
      * Initialize or retrieve the keyvalue Store for this Tome.
      *
@@ -146,65 +182,29 @@ export class Tome {
      */
     public async keyvalue(options: StoreOptions = {}): Promise<KeyValueStore> {
         if (this.mars) {
-            let permissions = options.permissions
-                ? options.permissions
-                : this.perm
-            if (this.app === 'all' && this.tomeShip === this.thisShip) {
-                console.warn(
-                    'Tome-KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
-                )
-                permissions = {
-                    read: 'our',
-                    write: 'our',
-                    admin: 'our',
-                } as const
-            }
-            return await DataStore.initDataStore({
-                type: 'kv',
-                api: this.api,
-                tomeShip: this.tomeShip,
-                thisShip: this.thisShip,
-                space: this.space,
-                app: this.app,
-                perm: permissions,
-                locked: this.locked,
-                bucket: options.bucket ? options.bucket : 'def',
-                preload: options.preload !== undefined ? options.preload : true,
-                onReadyChange: options.onReadyChange,
-                onWriteChange: options.onWriteChange,
-                onAdminChange: options.onAdminChange,
-                isLog: false,
-            })
+            return await this.initStore(options, 'kv', false)
         } else {
             return new KeyValueStore()
         }
     }
 
-    // public async feed(options: Options = {}): Promise<FeedStore> {
-    //     if (!this.mars) {
-    //         throw new Error(
-    //             'Tome-Feed: Feed can only be used on Urbit. Try using `keyvalue` instead.'
-    //         )
-    //     }
-    //     let permissions = options.permissions ? options.permissions : this.perm
-    //     if (this.app === 'all' && this.tomeShip === this.thisShip) {
-    //         console.warn(
-    //             'Tome-KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
-    //         )
-    //         permissions = {
-    //             read: 'our',
-    //             write: 'our',
-    //             admin: 'our',
-    //         } as const
-    //     }
-    //     return await FeedStore.initFeed()
-    // }
+    public async feed(options: StoreOptions = {}): Promise<FeedStore> {
+        if (this.mars) {
+            return await this.initStore(options, 'feed', false)
+        } else {
+            throw new Error(
+                'Tome-feed: Feed can only be used with Urbit. Try using `keyvalue` instead.'
+            )
+        }
+    }
 
-    // public async log(options: Options = {}): Promise<LogStore> {
-    //     if (!this.mars) {
-    //         throw new Error(
-    //             'Tome-Log: Log can only be used on Urbit. Try using `keyvalue` instead.'
-    //         )
-    //     }
-    // }
+    public async log(options: StoreOptions = {}): Promise<LogStore> {
+        if (this.mars) {
+            return await this.initStore(options, 'feed', true)
+        } else {
+            throw new Error(
+                'Tome-log: Log can only be used with Urbit. Try using `keyvalue` instead.'
+            )
+        }
+    }
 }

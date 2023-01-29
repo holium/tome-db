@@ -48,6 +48,7 @@ export function App() {
             const db = await Tome.init(api)
             const store = await db.keyvalue({
                 preload: true,
+                onReadyChange: updateReady,
             })
             testStore(store)
         }
