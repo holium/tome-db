@@ -1,4 +1,4 @@
-import { DataStore, InitStoreOptions } from '../../index'
+import { DataStore, InitStoreOptions, Value } from '../../index'
 import { agent, storeMark, localKvPrefix, kvThread } from '../constants'
 
 export class KeyValueStore extends DataStore {
@@ -13,20 +13,16 @@ export class KeyValueStore extends DataStore {
     /**
      * Set a key-value pair in the store.
      * @param key The key to set.
-     * @param value The JSON value to associate with the key.
+     * @param value The string or JSON value to associate with the key.
      * @returns true if successful, false if not.
      */
-    public async set(key: string, value: JSON): Promise<boolean> {
+    public async set(key: string, value: Value): Promise<boolean> {
         if (!key) {
             console.error('missing key parameter')
             return false
         }
-        if (
-            value.constructor != Array &&
-            value.constructor != String &&
-            value.constructor != Object
-        ) {
-            console.error('value must be valid JSON')
+        if (!this.canStore(value)) {
+            console.error('value is an invalid type.')
             return false
         }
         const valueStr = JSON.stringify(value)
@@ -146,7 +142,7 @@ export class KeyValueStore extends DataStore {
                             json: JSON.stringify(json),
                         },
                     })
-                    .catch((e) => {
+                    .catch(() => {
                         console.error(
                             'Failed to remove key-value pair from the Store.'
                         )
@@ -229,7 +225,7 @@ export class KeyValueStore extends DataStore {
     public async get(
         key: string,
         allowCachedValue: boolean = true
-    ): Promise<JSON> {
+    ): Promise<Value | undefined> {
         if (!key) {
             console.error('missing key parameter')
             return undefined
@@ -252,7 +248,7 @@ export class KeyValueStore extends DataStore {
      * @param useCache return the cache instead of querying Urbit.  Only relevant if preload was set to false.
      * @returns A map of all key-value pairs in the store.
      */
-    public async all(useCache: boolean = false): Promise<Map<string, JSON>> {
+    public async all(useCache: boolean = false): Promise<Map<string, Value>> {
         if (!this.mars) {
             const map = new Map<string, JSON>()
             const len = localStorage.length

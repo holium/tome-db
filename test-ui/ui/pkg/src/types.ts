@@ -3,6 +3,10 @@ import Urbit from '@urbit/http-api'
 type Level = 'our' | 'space' | 'open' | 'unset' | 'yes' | 'no'
 export type StoreType = 'kv' | 'feed'
 
+type T = string | number | boolean | object | Array<T>
+export type Value = T | JSON
+export type Content = T | JSON
+
 export interface Perm {
     read: Level
     write: Level

@@ -5,6 +5,7 @@
 +$  key           @t                :: key name
 +$  value         @t                :: value in kv store
 +$  content       @t                :: content for feed post / reply
++$  id            @t                :: uuid for feed post
 +$  json-value    [%s value]        :: value (JSON encoded as a string).  Store with %s so we aren't constantly adding it to requests.
 +$  ships         (set ship)
 +$  invited       [read=ships write=ships admin=ships]
@@ -31,10 +32,7 @@
 +$  kv-meta  (map key meta)
 +$  store    (map bucket [=perm whitelist=invited blacklist=invited meta=kv-meta data=kv-data])
 ::
-+$  id   @uvH
-::  this map solves a race condition where two users attempt to update/react to a post at the same time
-::  which would result in the second update being ignored (it references the wrong time).  For now we don't update time though.
-+$  feed-ids  (map id time)  ::`@uvH`(cut 0 [0 64] eny) 
++$  feed-ids  (map id time)
 ::
 :: +$  replies     ((mop time reply-value) gth)
 +$  links   (map ship json-value)
@@ -59,7 +57,7 @@
       =links
   ==
 ::
-+$  log  _|
++$  log  ?
 +$  feed-data  ((mop time feed-value) gth)
 ::  if "log", %write permissions can only add, not edit or delete.
 ::  this makes it act like a log.  (admins can still edit or delete anything).

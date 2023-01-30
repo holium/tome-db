@@ -192,7 +192,6 @@
         %feed-action
       =/  act   !<(feed-action vaz)
       =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
-      :: =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act]) act)
       =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act log.act]) act)
       ~&  >>>  act
       ?-    -.act
@@ -206,8 +205,7 @@
         %remove-post-link  do
           %watch-feed
         ?:  =(our.bol ship)  ~|('no-watch-local-feed' !!)
-        `state
-        :: fe-abet:(fe-view:(fe-abed:fe [ship space.act app.act bucket.act log.act]) [%data %all ~])
+        fe-abet:(fe-view:(fe-abed:fe [ship space.act app.act bucket.act log.act]) [%data %all ~])
       ==
     ==
   (emil cards)
@@ -399,7 +397,6 @@
       ::(kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
-      ::  check wex.bol instead? probably too complicated
       ?:  (~(has in subs) data-pax)  kv
       =.  subs  (~(put in subs) data-pax)
       (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
@@ -516,6 +513,29 @@
       data-pax  /feed/[pp]/[s]/[a]/[b]/[type]/data/all
       perm-pax  /feed/[pp]/[s]/[a]/[b]/[type]/perm
     ==
+  ::  +fe-peer: handle incoming watch requests
+  ::
+  ++  fe-peer
+    |=  rest=(pole knot)
+    ^+  fe
+    fe
+    :: ?+    rest  ~|(bad-feed-watch-path/rest !!)
+    ::     [%perm ~]
+    ::   %-  fe-emit
+    ::   [%give %fact ~ %feed-update !>(`feed-update`[%perm fe-team])]
+    ::     :: [%give %kick ~[perm-pax] `src.bol]
+    :: ::
+    ::     [%data %all ~]
+    ::   %-  kv-emit
+    ::   [%give %fact ~ %feed-update !>(`feed-update`[%all data])]
+    :: ::
+    ::     [%data %key k=@t ~]  :: TODO these should eventually be scries.
+    ::   %-  kv-emil  :~
+    ::     [%give %fact ~ %feed-update !>(`feed-update`[%get (~(gut by data) k.rest ~)])]
+    ::     :: [%give %kick ~[data-pax] `src.bol]
+    ::   ==
+    :: ::
+    :: ==
   ::  +fe-poke: handle log/feed pokes
   ::
   ++  fe-poke
@@ -524,12 +544,11 @@
     =/  fon  ((on time feed-value) gth)  :: mop needs this to work
     ?+    -.act  ~|('bad-feed-action' !!)
         %new-post
-      =/  id  `@uv`(cut 0 [0 64] eny.bol)
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))  :: TODO maybe do error prints here instead (and similar)
       ::
       %=  fe
-        ids   (~(put by ids) id now.bol)
-        data  (put:fon data now.bol [id src.bol src.bol now.bol now.bol s+content.act *links])
+        ids   (~(put by ids) id.act now.bol)
+        data  (put:fon data now.bol [id.act src.bol src.bol now.bol now.bol s+content.act *links])
       ==
     ::
         %delete-post
@@ -599,6 +618,23 @@
       ==
     ::
     ==
+  ::  fe-view: start watching foreign feed
+  ::
+  ++  fe-view
+    |=  rest=(pole knot)
+    ^+  fe
+    ?+    rest  ~|(bad-feed-watch-path/rest !!)
+        [%perm ~]
+      fe
+      ::(kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
+    ::
+        [%data %all ~]
+      ?:  (~(has in subs) data-pax)  fe
+      =.  subs  (~(put in subs) data-pax)
+      (fe-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
+    ::
+    ==
+  ::  +k
   ::  +fe-perm: check a permission level, return true if allowed
   ::  duplicates +kv-perm
   ++  fe-perm
@@ -650,5 +686,14 @@
         is-member.memb
       ==
     ==
+  ::  +fe-team: get read/write/admin permissions for a ship
+  ::
+  ++  fe-team
+    ^-  perm
+    =/  read    ?:((fe-perm %read) %yes %no)
+    =/  write   ?:((fe-perm %create) %yes %no)
+    =/  admin   ?:((fe-perm %overwrite) %yes %no)
+    [read write admin]
+  ::
   --
 --

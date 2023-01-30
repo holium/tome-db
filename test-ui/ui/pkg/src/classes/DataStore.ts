@@ -1,4 +1,4 @@
-import { InitStoreOptions, Perm, StoreType } from '../index'
+import { InitStoreOptions, Perm, StoreType, Value } from '../index'
 import { FeedStore, KeyValueStore, LogStore, Tome } from './index'
 import { agent, storeMark, tomeMark } from './constants'
 
@@ -14,7 +14,7 @@ export abstract class DataStore extends Tome {
     protected onWriteChange: (write: boolean) => void // TODO consider consolidating into "onPermsChange".  What about read?
     protected onAdminChange: (admin: boolean) => void
 
-    protected cache: Map<string, JSON>
+    protected cache: Map<string, Value>
     protected bucket: string
     protected write: boolean
     protected admin: boolean
@@ -71,7 +71,7 @@ export abstract class DataStore extends Tome {
             this.bucket = bucket
             this.write = write
             this.admin = admin
-            this.cache = new Map<string, JSON>()
+            this.cache = new Map<string, string | JSON>()
             this.preload = preload
             this.onReadyChange = onReadyChange
             this.onWriteChange = onWriteChange
@@ -88,7 +88,8 @@ export abstract class DataStore extends Tome {
             }
             // TODO only do if %spaces exists.  Assume it does for now.
             this.watchCurrentSpace()
-            this.watchPerms()
+            // TODO turn this back on
+            //this.watchPerms()
             this.setReady(true)
         } else {
             // This should only be called by KeyValueStore.
@@ -178,7 +179,7 @@ export abstract class DataStore extends Tome {
 
         this.tomeShip = tomeShip
         this.space = space
-        this.cache = new Map<string, JSON>()
+        this.cache = new Map<string, string | JSON>()
         if (this.preload) {
             this.loaded = false
             await this.subscribeAll()
@@ -369,7 +370,7 @@ export abstract class DataStore extends Tome {
     }
 
     // TODO - does this have race conditions?
-    private async _getValueFromUrbit(key: string): Promise<JSON> {
+    private async _getValueFromUrbit(key: string): Promise<Value> {
         return await this.api
             .subscribe({
                 app: agent,
@@ -408,7 +409,7 @@ export abstract class DataStore extends Tome {
     }
 
     // TODO - does this have race conditions?
-    private async _getAllFromUrbit(): Promise<Map<string, JSON>> {
+    private async _getAllFromUrbit(): Promise<Map<string, Value>> {
         return await this.api
             .subscribe({
                 app: agent,
@@ -491,5 +492,18 @@ export abstract class DataStore extends Tome {
             }
             resolve()
         })
+    }
+
+    protected canStore(value: any): boolean {
+        if (
+            value.constructor === Array ||
+            value.constructor === Object ||
+            value.constructor === String ||
+            value.constructor === Number ||
+            value.constructor === Boolean
+        ) {
+            return true
+        }
+        return false
     }
 }

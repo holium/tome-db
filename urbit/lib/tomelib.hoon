@@ -15,21 +15,22 @@
         team-kv/(ot ~[ship/so space/so app/so bucket/so])
     ==
   ::
-  :: ++  feed-action
-  ::   |=  jon=json
-  ::   ^-  ^feed-action
-  ::   %.  jon
-  ::   %-  of
-  ::   :~  new-post/(ot ~[ship/so space/so app/so bucket/so log/bo content/so])
-  ::       delete-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/(se %uv)])  :: need to cast to `@uv` somewhere
-  ::       edit-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/(se %uv) content/so])
-  ::       clear-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-  ::       verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-  ::       watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-  ::       team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-  ::       set-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv) value/so])
-  ::       remove-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/(se %uv)])
-  ::   ==
+  ++  feed-action
+    |=  jon=json
+    ^-  ^feed-action
+    %.  jon
+    %-  of
+    :~  new-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/so content/so])
+        delete-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/so])
+        edit-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/so content/so])
+        clear-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+        verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+        watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+        team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+        :: these don't work because ?????
+        :: set-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/so value/so])
+        :: remove-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/so])
+    ==
   ::
   --
 ++  enjs  =,  enjs:format

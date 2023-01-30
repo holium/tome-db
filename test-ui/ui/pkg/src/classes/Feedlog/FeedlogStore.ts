@@ -1,4 +1,4 @@
-import { DataStore, InitStoreOptions } from '../../index'
+import { Content, DataStore, InitStoreOptions, Value } from '../../index'
 import { agent, feedMark, feedThread } from '../constants'
 import { v4 as uuid, validate } from 'uuid'
 
@@ -10,23 +10,22 @@ export abstract class FeedlogStore extends DataStore {
         options.isLog ? (this.name = 'log') : (this.name = 'feed')
     }
 
-    private async _postOrEdit(content: JSON, id?: string) {
+    private async _postOrEdit(
+        content: Content,
+        id?: string
+    ): Promise<string | undefined> {
         let action = typeof id === undefined ? 'new-post' : 'edit-post'
         if (action === 'new-post') {
             id = uuid()
         } else {
             if (!validate(id)) {
                 console.error('Invalid ID.')
-                return false
+                return undefined
             }
         }
-        if (
-            content.constructor != Array &&
-            content.constructor != String &&
-            content.constructor != Object
-        ) {
-            console.error('content must be valid JSON')
-            return false
+        if (!this.canStore(content)) {
+            console.error('content is an invalid type.')
+            return undefined
         }
         const contentStr = JSON.stringify(content)
         await this.waitForReady()
@@ -81,10 +80,14 @@ export abstract class FeedlogStore extends DataStore {
                 this.cache.set(id, content)
             }
         }
-        return success
+        if (success) {
+            return id
+        } else {
+            return undefined
+        }
     }
 
-    private async _setOrRemoveLink(id: string, value?: JSON) {
+    private async _setOrRemoveLink(id: string, value?: Value) {
         if (!validate(id)) {
             console.error('Invalid ID.')
             return false
@@ -92,12 +95,8 @@ export abstract class FeedlogStore extends DataStore {
         let action =
             typeof value !== undefined ? 'set-post-link' : 'remove-post-link'
         if (action === 'set-post-link') {
-            if (
-                value.constructor != Array &&
-                value.constructor != String &&
-                value.constructor != Object
-            ) {
-                console.error('value must be valid JSON')
+            if (!this.canStore(value)) {
+                console.error('value is an invalid type.')
                 return false
             }
         }
@@ -160,15 +159,18 @@ export abstract class FeedlogStore extends DataStore {
         return success
     }
 
-    public async post(content: JSON): Promise<boolean> {
+    public async post(content: Content): Promise<string | undefined> {
         return await this._postOrEdit(content)
     }
 
-    public async edit(id: string, newContent: JSON): Promise<boolean> {
+    public async edit(
+        id: string,
+        newContent: JSON
+    ): Promise<string | undefined> {
         return await this._postOrEdit(newContent, id)
     }
 
-    public async setLink(id: string, value: JSON): Promise<boolean> {
+    public async setLink(id: string, value: Value): Promise<boolean> {
         return await this._setOrRemoveLink(id, value)
     }
 
@@ -286,7 +288,7 @@ export abstract class FeedlogStore extends DataStore {
     }
 
     // is this method even useful?
-    public async get(id: string): Promise<JSON> {
+    public async get(id: string): Promise<Content | undefined> {
         if (!validate(id)) {
             console.error('Invalid ID.')
             return undefined
@@ -294,7 +296,7 @@ export abstract class FeedlogStore extends DataStore {
         return await this.retrieveOne(id)
     }
 
-    public async all(useCache: boolean = false): Promise<Map<string, JSON>> {
+    public async all(useCache: boolean = false): Promise<Map<string, Content>> {
         return await this.retrieveAll(useCache)
     }
 

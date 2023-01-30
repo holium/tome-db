@@ -144,7 +144,7 @@ export class Tome {
         let permissions = options.permissions ? options.permissions : this.perm
         if (this.app === 'all' && this.tomeShip === this.thisShip) {
             console.warn(
-                'Tome-KV: Permissions on `all` are ignored. Setting all permissions levels to `our` instead...'
+                `Tome-${type}: Permissions on 'all' are ignored. Setting permissions levels to 'our' instead...`
             )
             permissions = {
                 read: 'our',
