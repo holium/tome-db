@@ -183,7 +183,9 @@
         %remove-value  do
         %clear-kv      do
         %verify-kv     do
-        %team-kv       do
+          %team-kv
+        ?:  =(our.bol ship)  ~|('no-perm-local-kv' !!)
+        kv-abet:(kv-view:(kv-abed:kv [ship space.act app.act bucket.act]) [%perm ~])
           %watch-kv
         ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
         kv-abet:(kv-view:(kv-abed:kv [ship space.act app.act bucket.act]) [%data %all ~])
@@ -382,9 +384,6 @@
       ?>  ?:(=(src.bol our.bol) %.y (kv-perm %read))
       kv
     ::
-        %team-kv
-      kv(caz [[%pass perm-pax %agent [shi %tome-api] %watch perm-pax] caz])
-    ::
     ==
   ::  +kv-view: start watching foreign kv (permissions or path)
   ::
@@ -393,8 +392,9 @@
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
-      kv
-      ::(kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
+      ?:  (~(has in subs) perm-pax)  kv
+      =.  subs  (~(put in subs) perm-pax)
+      (kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  kv
@@ -549,6 +549,7 @@
       %=  fe
         ids   (~(put by ids) id.act now.bol)
         data  (put:fon data now.bol [id.act src.bol src.bol now.bol now.bol s+content.act *links])
+        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%new =feed-value])] caz]
       ==
     ::
         %delete-post
@@ -563,6 +564,7 @@
       %=  fe
         ids   (~(del by ids) id.act)
         data  +.res  :: mop delete return type is weird. tail is the new map
+        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%del id.act])] caz]
       ==
     ::
         %edit-post
@@ -575,6 +577,7 @@
       ::
       %=  fe
         data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *links])
+        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%edit =feed-value])] caz]
       ==
     ::
         %clear-feed
@@ -584,6 +587,7 @@
       %=  fe
         ids  *feed-ids
         data  *feed-data
+        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%clear ~])] caz]
       ==
     ::
         %verify-feed
@@ -625,8 +629,7 @@
     ^+  fe
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
-      fe
-      ::(kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
+      (fe-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  fe

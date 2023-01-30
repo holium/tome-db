@@ -334,17 +334,22 @@ export abstract class DataStore extends Tome {
                     `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
                 )
             },
-            event: (data: JSON) => {
+            event: (data: Value) => {
+                console.log(data)
                 const entries: [string, string][] = Object.entries(data)
                 if (entries.length === 0) {
                     // received an empty object, clear the cache.
                     this.cache.clear()
                 } else {
-                    for (const [key, value] of entries) {
+                    for (let [key, value] of entries) {
                         if (value === null) {
                             this.cache.delete(key)
                         } else {
-                            this.cache.set(key, JSON.parse(value))
+                            // TODO foreign strings are getting stripped of their quotes? This is a workaround.
+                            if (value.constructor !== String) {
+                                value = JSON.parse(value)
+                            }
+                            this.cache.set(key, value)
                         }
                     }
                 }
@@ -388,7 +393,11 @@ export abstract class DataStore extends Tome {
                 },
                 event: (value: string) => {
                     if (value !== null) {
-                        this.cache.set(key, JSON.parse(value))
+                        // TODO do we need this?
+                        if (value.constructor !== String) {
+                            value = JSON.parse(value)
+                        }
+                        this.cache.set(key, value)
                     } else {
                         this.cache.delete(key)
                     }
@@ -425,11 +434,16 @@ export abstract class DataStore extends Tome {
                         `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
                     )
                 },
-                event: (data: JSON) => {
+                event: (data: Value) => {
+                    console.log(data)
                     const entries: [string, string][] = Object.entries(data)
-                    const newCache = new Map<string, JSON>()
-                    for (const [key, value] of entries) {
-                        newCache.set(key, JSON.parse(value))
+                    const newCache = new Map<string, Value>()
+                    for (let [key, value] of entries) {
+                        // TODO foreign strings are getting stripped of their quotes? This is a workaround.
+                        if (value.constructor !== String) {
+                            value = JSON.parse(value)
+                        }
+                        newCache.set(key, value)
                     }
                     this.cache = newCache
                 },

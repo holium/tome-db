@@ -250,7 +250,7 @@ export class KeyValueStore extends DataStore {
      */
     public async all(useCache: boolean = false): Promise<Map<string, Value>> {
         if (!this.mars) {
-            const map = new Map<string, JSON>()
+            const map = new Map<string, Value>()
             const len = localStorage.length
             const startIndex = localKvPrefix.length
             for (let i = 0; i < len; i++) {

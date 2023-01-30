@@ -56,12 +56,12 @@ export function App() {
             "Removed 'alice' and check all again: " +
                 JSON.stringify(Object.fromEntries(resp))
         )
-        // await store.clear()
-        // resp = await store.all()
-        // console.log(
-        //     'Cleared store and check all again: ' +
-        //         JSON.stringify(Object.fromEntries(resp))
-        // )
+        await store.clear()
+        resp = await store.all()
+        console.log(
+            'Cleared store and check all again: ' +
+                JSON.stringify(Object.fromEntries(resp))
+        )
     }
 
     const testFeed = async (feed: FeedStore) => {
@@ -75,16 +75,16 @@ export function App() {
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
-            // const store = await db.keyvalue({
-            //     preload: true,
-            //     onReadyChange: updateReady,
-            // })
-            const feed = await db.feed({
-                preload: false,
+            const store = await db.keyvalue({
+                preload: true,
                 onReadyChange: updateReady,
             })
-            // testStore(store)
-            testFeed(feed)
+            // const feed = await db.feed({
+            //     preload: false,
+            //     onReadyChange: updateReady,
+            // })
+            testStore(store)
+            // testFeed(feed)
         }
         init()
     }, [])
