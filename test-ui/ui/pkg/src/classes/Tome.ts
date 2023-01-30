@@ -49,7 +49,7 @@ export class Tome {
 
     // maybe use a different (sub) type here?
     protected constructor(options?: InitStoreOptions) {
-        if (typeof options !== 'undefined') {
+        if (options !== undefined) {
             this.mars = true
             const { api, tomeShip, thisShip, space, app, perm, locked } =
                 options
@@ -77,7 +77,7 @@ export class Tome {
         app?: string,
         options: TomeOptions = {}
     ): Promise<Tome> {
-        const mars = typeof api !== 'undefined'
+        const mars = api !== undefined
         if (mars) {
             let locked = false
             let tomeShip = api.ship

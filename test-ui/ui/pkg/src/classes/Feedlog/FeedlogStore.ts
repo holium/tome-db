@@ -14,7 +14,7 @@ export abstract class FeedlogStore extends DataStore {
         content: Content,
         id?: string
     ): Promise<string | undefined> {
-        let action = typeof id === undefined ? 'new-post' : 'edit-post'
+        let action = id === undefined ? 'new-post' : 'edit-post'
         if (action === 'new-post') {
             id = uuid()
         } else {
@@ -92,8 +92,7 @@ export abstract class FeedlogStore extends DataStore {
             console.error('Invalid ID.')
             return false
         }
-        let action =
-            typeof value !== undefined ? 'set-post-link' : 'remove-post-link'
+        let action = value !== undefined ? 'set-post-link' : 'remove-post-link'
         if (action === 'set-post-link') {
             if (!this.canStore(value)) {
                 console.error('value is an invalid type.')
@@ -165,7 +164,7 @@ export abstract class FeedlogStore extends DataStore {
 
     public async edit(
         id: string,
-        newContent: JSON
+        newContent: Content
     ): Promise<string | undefined> {
         return await this._postOrEdit(newContent, id)
     }

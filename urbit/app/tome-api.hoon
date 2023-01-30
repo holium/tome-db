@@ -193,7 +193,7 @@
       =/  act   !<(feed-action vaz)
       =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
       =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act log.act]) act)
-      ~&  >>>  act
+      :: ~&  >>>  act
       ?-    -.act
         %new-post          do
         %delete-post       do
@@ -487,7 +487,7 @@
   ++  fe-emil  |=(lc=(list card) fe(caz (welp lc caz)))
   ++  fe-abet
     ^-  (quip card _state)
-    ~&  >>  data
+    :: ~&  >>  data
     =.  feed.tod  (~(put by feed.tod) [buc lo] [per ids whi bla data])
     [(flop caz) state(tome (~(put bi tome) [shi spa] ap tod))]
   ::  +kv-abed: initialize nested core.  only works when the map entries already exist

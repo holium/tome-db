@@ -1,5 +1,5 @@
 import { InitStoreOptions, Perm, StoreType, Value } from '../index'
-import { FeedStore, KeyValueStore, LogStore, Tome } from './index'
+import { LogStore, FeedStore, KeyValueStore, Tome } from './index'
 import { agent, storeMark, tomeMark } from './constants'
 
 export abstract class DataStore extends Tome {
@@ -27,11 +27,17 @@ export abstract class DataStore extends Tome {
         const { tomeShip, thisShip, type, isLog } = options
         if (tomeShip === thisShip) {
             await DataStore.initBucket(options)
-            return new KeyValueStore({
-                ...options,
-                write: true,
-                admin: true,
-            })
+            const newOptions = { ...options, write: true, admin: true }
+            switch (type) {
+                case 'kv':
+                    return new KeyValueStore(newOptions)
+                case 'feed':
+                    if (isLog) {
+                        return new LogStore(options)
+                    } else {
+                        return new FeedStore(options)
+                    }
+            }
         }
         await DataStore.checkExistsAndCanRead(options)
         const foreignPerm = {

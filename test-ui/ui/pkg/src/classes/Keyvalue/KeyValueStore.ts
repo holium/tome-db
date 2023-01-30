@@ -3,7 +3,7 @@ import { agent, storeMark, localKvPrefix, kvThread } from '../constants'
 
 export class KeyValueStore extends DataStore {
     public constructor(options?: InitStoreOptions) {
-        if (typeof options !== 'undefined') {
+        if (options !== undefined) {
             super(options)
         } else {
             super()

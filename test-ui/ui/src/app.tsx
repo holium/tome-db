@@ -65,25 +65,26 @@ export function App() {
     }
 
     const testFeed = async (feed: FeedStore) => {
-        const bobId = await feed.post(JSON.parse('bob'))
-        const echoId = await feed.post(JSON.parse('charlie'))
-        await feed.edit(bobId, JSON.parse('charlie'))
-        await feed.delete(echoId)
+        const bobId = await feed.post('bob')
+        const echoId = await feed.post(3)
+        bobId && (await feed.edit(bobId, 'david'))
+        // await feed.clear()
+        // await feed.delete(echoId)
     }
 
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
-            const store = await db.keyvalue({
-                preload: true,
-                onReadyChange: updateReady,
-            })
-            // const feed = await db.feed({
-            //     preload: false,
+            // const store = await db.keyvalue({
+            //     preload: true,
             //     onReadyChange: updateReady,
             // })
-            testStore(store)
-            //testFeed(feed)
+            const feed = await db.feed({
+                preload: false,
+                onReadyChange: updateReady,
+            })
+            // testStore(store)
+            testFeed(feed)
         }
         init()
     }, [])
