@@ -38,9 +38,10 @@
 +$  links   (map ship json-value)
 ::
 :: +$  reply-value
-::   $:  created-at=time
+::   $:  created-by=ship
+      :: updated-by=ship
+      :: created-at=time
 ::       updated-at=time
-::       author=ship
 ::       content=json-value
 ::       =links
 ::   ==
@@ -99,8 +100,8 @@
   ::  %set-x becomes %new or %edit. Otherwise actions are similar to kv.
   ::  thisShip -> tomeShip
   $%  [%new-post ship=@t =space =app =bucket =log =id =content]
-      [%delete-post ship=@t =space =app =bucket =log =id]
       [%edit-post ship=@t =space =app =bucket =log =id =content]
+      [%delete-post ship=@t =space =app =bucket =log =id]
       [%clear-feed ship=@t =space =app =bucket =log]
       [%verify-feed ship=@t =space =app =bucket =log]
   :: thisShip -> thisShip
@@ -113,8 +114,15 @@
       :: [%add-reply ship=@t =space =app =bucket =log post=id =value]
   ==
 ::
-:: +$  feed-update
-::   $%
-::   ==
++$  feed-update
+  $%  [%new =id =time =ship =content]  :: ship is author, time is post time
+      [%edit =id =time =ship =content]  :: ship is who updated, time is update time
+      [%delete =id =time]
+      [%clear ~]
+      [%get value=?(~ json-value)]
+      [%all data=feed-data]
+      [%perm =perm]
+  ==
+::
 --
 

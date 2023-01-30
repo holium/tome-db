@@ -19,8 +19,8 @@
   (need !<((unit json) arg))
 =/  input  (decode-input jon)
 =/  ship  `@p`(slav %p `@t`(cat 3 '~' -.input))
-=/  act  (kv-action:dejs:tomelib (need (de-json:html +.input)))
+=/  act  (feed-action:dejs:tomelib (need (de-json:html +.input)))
 ::
 ::  This returns nothing on failure, 'success' on success.
-;<  ~  bind:m  (poke [ship %tome-api] [%kv-action !>(act)])
+;<  ~  bind:m  (poke [ship %tome-api] [%feed-action !>(act)])
 (pure:m !>(s+'success'))

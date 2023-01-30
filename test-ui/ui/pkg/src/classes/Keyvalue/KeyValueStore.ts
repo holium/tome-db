@@ -1,5 +1,5 @@
 import { DataStore, InitStoreOptions, Value } from '../../index'
-import { agent, storeMark, localKvPrefix, kvThread } from '../constants'
+import { agent, kvMark, localKvPrefix, kvThread } from '../constants'
 
 export class KeyValueStore extends DataStore {
     public constructor(options?: InitStoreOptions) {
@@ -52,7 +52,7 @@ export class KeyValueStore extends DataStore {
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
-                    mark: storeMark,
+                    mark: kvMark,
                     json: json,
                     onSuccess: () => {
                         this.cache.set(key, value)
@@ -120,7 +120,7 @@ export class KeyValueStore extends DataStore {
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
-                    mark: storeMark,
+                    mark: kvMark,
                     json: json,
                     onSuccess: () => {
                         this.cache.delete(key)
@@ -180,7 +180,7 @@ export class KeyValueStore extends DataStore {
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
-                    mark: storeMark,
+                    mark: kvMark,
                     json: json,
                     onSuccess: () => {
                         this.cache.clear()

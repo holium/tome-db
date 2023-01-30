@@ -117,6 +117,13 @@
     =^  cards  state
       kv-abet:(kv-peer:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
     (emil cards)
+  ::
+      [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
+    =/  ship    `@p`(slav %p ship.pol)
+    =/  log=?   =(log.pol 'log')
+    =^  cards  state
+      fe-abet:(fe-peer:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
+    (emil cards)
   ==
 ::  +dude: handle on-agent
 ::
@@ -129,12 +136,30 @@
       ::  local store should already have 
       =/  ship  `@p`(slav %p ship.pol)
       ?+  -.sig  `state
-        %kick  kv-abet:(kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
         %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
+      ::
+          %kick
+        =.  subs  (~(del in subs) pol)
+        kv-abet:(kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
       ::
           %watch-ack
         %.  `state
-        ?~(p.sig same (slog leaf/"kv-data-all nack" ~))
+        ?~(p.sig same (slog leaf/"kv-watch nack" ~))
+      ==
+        [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
+      ::  local store should already have 
+      =/  ship    `@p`(slav %p ship.pol)
+      =/  log=?   =(log.pol 'log')
+      ?+  -.sig  `state
+        %fact  fe-abet:(fe-dude:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) cage.sig)
+      ::
+          %kick
+        =.  subs  (~(del in subs) pol)
+        fe-abet:(fe-view:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
+      ::
+          %watch-ack
+        %.  `state
+        ?~(p.sig same (slog leaf/"feed-watch nack" ~))
       ==
     ::
     ==
@@ -195,7 +220,6 @@
       =/  act   !<(feed-action vaz)
       =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
       =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act log.act]) act)
-      :: ~&  >>>  act
       ?-    -.act
         %new-post          do
         %delete-post       do
@@ -390,6 +414,7 @@
   ++  kv-view
     |=  rest=(pole knot)
     ^+  kv
+    ::  TODO when we get kicked from these watches, we need to remove them from subs.
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
       ?:  (~(has in subs) perm-pax)  kv
@@ -487,7 +512,6 @@
   ++  fe-emil  |=(lc=(list card) fe(caz (welp lc caz)))
   ++  fe-abet
     ^-  (quip card _state)
-    :: ~&  >>  data
     =.  feed.tod  (~(put by feed.tod) [buc lo] [per ids whi bla data])
     [(flop caz) state(tome (~(put bi tome) [shi spa] ap tod))]
   ::  +kv-abed: initialize nested core.  only works when the map entries already exist
@@ -513,29 +537,99 @@
       data-pax  /feed/[pp]/[s]/[a]/[b]/[type]/data/all
       perm-pax  /feed/[pp]/[s]/[a]/[b]/[type]/perm
     ==
+  ::  +fe-dude: handle foreign feed updates (facts)
+  ::
+  ++  fe-dude
+    |=  cag=cage
+    ^+  fe
+    ?<  =(our.bol shi)
+    ?+    p.cag  ~|('bad-feed-dude' !!)
+        %feed-update
+      =/  upd  !<(feed-update q.cag)
+      =/  fon  ((on time feed-value) gth)  :: mop needs this to work
+      ?+    -.upd   ~|('bad-feed-update' !!)
+          %new
+        %=  fe
+          ids   (~(put by ids) id.upd time.upd)
+          data  (put:fon data time.upd [id.upd ship.upd ship.upd time.upd time.upd s+content.upd *links])
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+          %edit
+        =/  has  (~(has by ids) id.upd)
+        =/  new-ids  :: add new ID if we don't have original
+          ?:  has
+            ids
+          (~(put by ids) id.upd time.upd)
+        ::
+        =/  og-time  (~(got by ids) id.upd)
+        ::
+        =/  old-by
+          ?:  has
+            created-by:(got:fon data og-time)
+          :: if we receive %edit without an original, just use them as the original author.
+          ship.upd
+        ::
+        %=  fe
+          ids   new-ids
+          data  (put:fon data og-time [id.upd old-by ship.upd og-time time.upd s+content.upd *links])
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+          %delete
+        ::  TODO maybe do nothing if we don't have the entry?
+        =/  res  (del:fon data time.upd)
+        %=  fe
+          ids   (~(del by ids) id.upd)
+          data  +.res
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+          %clear
+        %=  fe
+          ids   *feed-ids
+          data  *feed-data
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+          %all
+        ::  TODO run through data and add all entries to ids?
+        %=  fe
+          data  data.upd
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+          %perm
+        %=  fe
+          per   perm.upd
+          caz   [[%give %fact ~[perm-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+      ==
+    ==
+
   ::  +fe-peer: handle incoming watch requests
   ::
   ++  fe-peer
     |=  rest=(pole knot)
     ^+  fe
-    fe
-    :: ?+    rest  ~|(bad-feed-watch-path/rest !!)
-    ::     [%perm ~]
-    ::   %-  fe-emit
-    ::   [%give %fact ~ %feed-update !>(`feed-update`[%perm fe-team])]
-    ::     :: [%give %kick ~[perm-pax] `src.bol]
-    :: ::
-    ::     [%data %all ~]
-    ::   %-  kv-emit
-    ::   [%give %fact ~ %feed-update !>(`feed-update`[%all data])]
-    :: ::
-    ::     [%data %key k=@t ~]  :: TODO these should eventually be scries.
-    ::   %-  kv-emil  :~
-    ::     [%give %fact ~ %feed-update !>(`feed-update`[%get (~(gut by data) k.rest ~)])]
-    ::     :: [%give %kick ~[data-pax] `src.bol]
-    ::   ==
-    :: ::
-    :: ==
+    ?+    rest  ~|(bad-feed-watch-path/rest !!)
+        [%perm ~]
+      %-  fe-emit
+      [%give %fact ~ %feed-update !>(`feed-update`[%perm fe-team])]
+        :: [%give %kick ~[perm-pax] `src.bol]
+    ::
+        [%data %all ~]
+      %-  fe-emit
+      [%give %fact ~ %feed-update !>(`feed-update`[%all data])]
+    ::
+      ::   [%data %key k=@t ~]  :: TODO these should eventually be scries.
+      :: %-  fe-emil  :~
+      ::   [%give %fact ~ %feed-update !>(`feed-update`[%get (~(gut by data) k.rest ~)])]
+      ::   :: [%give %kick ~[data-pax] `src.bol]
+      :: ==
+    ::
+    ==
   ::  +fe-poke: handle log/feed pokes
   ::
   ++  fe-poke
@@ -549,7 +643,20 @@
       %=  fe
         ids   (~(put by ids) id.act now.bol)
         data  (put:fon data now.bol [id.act src.bol src.bol now.bol now.bol s+content.act *links])
-        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%new =feed-value])] caz]
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%new id.act now.bol src.bol content.act])] caz]
+      ==
+    ::
+        %edit-post
+      =+  time=(~(gut by ids) id.act ~)
+      ?~  time  :: if no post, do nothing
+        fe
+      =/  curr  (got:fon data time)
+      =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
+      ::
+      %=  fe
+        data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *links])
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%edit id.act now.bol src.bol content.act])] caz]
       ==
     ::
         %delete-post
@@ -564,20 +671,7 @@
       %=  fe
         ids   (~(del by ids) id.act)
         data  +.res  :: mop delete return type is weird. tail is the new map
-        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%del id.act])] caz]
-      ==
-    ::
-        %edit-post
-      =+  time=(~(gut by ids) id.act ~)
-      ?~  time  :: if no post, do nothing
-        fe
-      =/  curr  (got:fon data time)
-      =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
-      ::
-      %=  fe
-        data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *links])
-        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%edit =feed-value])] caz]
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%delete id.act time])] caz]
       ==
     ::
         %clear-feed
@@ -587,7 +681,7 @@
       %=  fe
         ids  *feed-ids
         data  *feed-data
-        :: caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%clear ~])] caz]
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%clear ~])] caz]
       ==
     ::
         %verify-feed
@@ -606,6 +700,7 @@
       =/  new-links  (~(put by links.curr) src.bol s+value.act)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
+        :: caz
       ==
     ::
         %remove-post-link
@@ -619,6 +714,7 @@
       =/  new-links  (~(del by links.curr) src.bol)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
+        :: caz
       ==
     ::
     ==
@@ -629,6 +725,8 @@
     ^+  fe
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
+      ?:  (~(has in subs) perm-pax)  fe
+      =.  subs  (~(put in subs) perm-pax)
       (fe-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
@@ -637,7 +735,6 @@
       (fe-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
     ::
     ==
-  ::  +k
   ::  +fe-perm: check a permission level, return true if allowed
   ::  duplicates +kv-perm
   ++  fe-perm

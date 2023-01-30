@@ -1,6 +1,6 @@
 import { InitStoreOptions, Perm, StoreType, Value } from '../index'
 import { LogStore, FeedStore, KeyValueStore, Tome } from './index'
-import { agent, storeMark, tomeMark } from './constants'
+import { agent, kvMark, feedMark, tomeMark } from './constants'
 
 export abstract class DataStore extends Tome {
     protected storeSubscriptionID: number
@@ -47,7 +47,8 @@ export abstract class DataStore extends Tome {
         } as const
         await DataStore.initBucket({ ...options, perm: foreignPerm })
         await DataStore.startWatchingForeignBucket(options)
-        await DataStore.startWatchingForeignPerms(options)
+        // TODO turn this back on
+        // await DataStore.startWatchingForeignPerms(options)
         switch (type) {
             case 'kv':
                 return new KeyValueStore(options)
@@ -271,6 +272,7 @@ export abstract class DataStore extends Tome {
     ) {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
         const action = `watch-${type}`
+        const mark = type === 'kv' ? kvMark : feedMark
         const body = {
             [action]: {
                 ship: tomeShip,
@@ -285,7 +287,7 @@ export abstract class DataStore extends Tome {
         }
         await api.poke({
             app: agent,
-            mark: storeMark,
+            mark: mark,
             json: body,
             onError: (error) => {
                 throw new Error(
@@ -300,6 +302,7 @@ export abstract class DataStore extends Tome {
     ) {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
         const action = `team-${type}`
+        const mark = type === 'kv' ? kvMark : feedMark
         const body = {
             [action]: {
                 ship: tomeShip,
@@ -314,7 +317,7 @@ export abstract class DataStore extends Tome {
         }
         await api.poke({
             app: agent,
-            mark: storeMark,
+            mark: mark,
             json: body,
             onError: (error) => {
                 throw new Error(
@@ -335,7 +338,6 @@ export abstract class DataStore extends Tome {
                 )
             },
             event: (data: Value) => {
-                console.log(data)
                 const entries: [string, string][] = Object.entries(data)
                 if (entries.length === 0) {
                     // received an empty object, clear the cache.
@@ -435,7 +437,6 @@ export abstract class DataStore extends Tome {
                     )
                 },
                 event: (data: Value) => {
-                    console.log(data)
                     const entries: [string, string][] = Object.entries(data)
                     const newCache = new Map<string, Value>()
                     for (let [key, value] of entries) {
@@ -456,7 +457,11 @@ export abstract class DataStore extends Tome {
     }
 
     protected dataSubscribePath(key?: string): string {
-        let path = `/${this.type}/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/data/`
+        let path = `/${this.type}/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
+        if (this.type === 'feed') {
+            path += this.isLog ? 'log/' : 'feed/'
+        }
+        path += 'data/'
         if (key) {
             path += `key/${key}`
         } else {
@@ -466,7 +471,12 @@ export abstract class DataStore extends Tome {
     }
 
     protected permsSubscribePath(): string {
-        return `/${this.type}/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/perm`
+        let path = `/${this.type}/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
+        if (this.type === 'feed') {
+            path += this.isLog ? 'log/' : 'feed/'
+        }
+        path += 'perm'
+        return path
     }
 
     protected setReady(ready: boolean) {
