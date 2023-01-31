@@ -48,7 +48,6 @@ export abstract class FeedlogStore extends DataStore {
                 mark: feedMark,
                 json: json,
                 onSuccess: () => {
-                    this.cache.set(id, content)
                     success = true
                 },
                 onError: () => {
@@ -76,9 +75,6 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
-            if (success) {
-                this.cache.set(id, content)
-            }
         }
         if (success) {
             return id
@@ -121,8 +117,6 @@ export abstract class FeedlogStore extends DataStore {
                 mark: feedMark,
                 json: json,
                 onSuccess: () => {
-                    // TODO update cache with reactions
-                    // this.cache.set(id, value)
                     success = true
                 },
                 onError: () => {
@@ -150,10 +144,6 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
-            if (success) {
-                // TODO update cache with reactions
-                // this.cache.set(id, value)
-            }
         }
         return success
     }
@@ -200,7 +190,6 @@ export abstract class FeedlogStore extends DataStore {
                 mark: feedMark,
                 json: json,
                 onSuccess: () => {
-                    this.cache.delete(id)
                     success = true
                 },
                 onError: (error) => {
@@ -226,9 +215,6 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
-            if (success) {
-                this.cache.delete(id)
-            }
         }
         return success
     }
@@ -251,7 +237,6 @@ export abstract class FeedlogStore extends DataStore {
                 mark: feedMark,
                 json: json,
                 onSuccess: () => {
-                    this.cache.clear()
                     success = true
                 },
                 onError: () => {
@@ -279,24 +264,99 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
-            if (success) {
-                this.cache.clear()
-            }
         }
         return success
     }
 
-    // is this method even useful?
-    public async get(id: string): Promise<Content | undefined> {
+    public async get(
+        id: string,
+        allowCachedValue: boolean = true
+    ): Promise<Content | undefined> {
         if (!validate(id)) {
             console.error('Invalid ID.')
             return undefined
         }
+        if (allowCachedValue) {
+            const index = this.order.get(id)
+            if (index !== undefined) {
+                return this.feedlog[index]
+            }
+        }
         return await this.retrieveOne(id)
     }
 
-    public async all(useCache: boolean = false): Promise<Map<string, Content>> {
-        return await this.retrieveAll(useCache)
+    public async all(useCache: boolean = false): Promise<Array<Content>> {
+        await this.waitForReady()
+        if (this.preload) {
+            await this.waitForLoaded()
+            return this.feedlog
+        }
+        if (useCache) {
+            return this.feedlog
+        }
+        return await this._getAllFromUrbit()
+    }
+
+    private async retrieveOne(id: string): Promise<Content | undefined> {
+        await this.waitForReady()
+        if (this.preload) {
+            await this.waitForLoaded()
+            const index = this.order.get(id)
+            if (index === undefined) {
+                console.error(`id ${id} not found`)
+                return undefined
+            }
+            return this.feedlog[index]
+        } else {
+            return await this._getValueFromUrbit(id)
+        }
+    }
+
+    // TODO just make this a scry (same for get and for KVStore)
+    // TODO - does this have race conditions?
+    private async _getAllFromUrbit(): Promise<Array<Content>> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.dataSubscribePath(),
+                err: () => {
+                    throw new Error(
+                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+                    )
+                },
+                event: (data: Content[]) => {
+                    // TODO loop over feedlog and add ids to order
+                    this.feedlog = data
+                },
+                quit: () => this._getAllFromUrbit(),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return this.feedlog
+            })
+    }
+
+    // TODO - does this have race conditions?
+    private async _getValueFromUrbit(id: string): Promise<Content> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.dataSubscribePath(id),
+                err: () => {
+                    throw new Error(
+                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+                    )
+                },
+                event: (value: string) => {
+                    // TODO
+                    console.log(value)
+                },
+                quit: () => this._getValueFromUrbit(id),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return 'placeholder!'
+            })
     }
 
     // other useful methods

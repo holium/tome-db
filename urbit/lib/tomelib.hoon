@@ -46,25 +46,25 @@
       %perm    (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
     ==
   ::
+  ++  feed-convert
+    |=  x=[k=@da v=feed-value]
+      (pairs ~[[%time s+(crip (en-json:html (sect k.x)))] [%id s+id.v.x] [%ship s+(crip (en-json:html (ship created-by.v.x)))] [%content content.v.x]])
+  ::
   ++  feed-update
     |=  upd=^feed-update
     ^-  json
     ?-  -.upd
-      %new     (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(crip (en-json:html (ship ship.upd)))] [%content s+content.upd]])
-      %edit    (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(crip (en-json:html (ship ship.upd)))] [%content s+content.upd]])
-      %delete  (pairs ~[[%id s+id.upd] [%time (sect time.upd)]])
-      %clear   (pairs ~)
+      %new     (pairs ~[[%type s+'new'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(crip (en-json:html (ship ship.upd)))] [%content s+content.upd]])]])
+      %edit    (pairs ~[[%type s+'edit'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(crip (en-json:html (ship ship.upd)))] [%content s+content.upd]])]]) :: time is updated-time, ship is updated-by
+      %delete  (pairs ~[[%type s+'delete'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)]])]])
+      %clear   (frond %type s+'clear')
       %get     value.upd
       %perm    (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
         %all
       =/  fon        ((on @da feed-value) gth)  :: mop needs this to work
       =/  data-list  (tap:fon data.upd)
-      :-  %o
-      %-  malt :: TODO probably just return the list to keep it sorted.
-        (turn data-list |=(x=[k=@da v=feed-value] [(crip (en-json:html (sect k.x))) (pairs ~[[%id s+id.v.x] [%ship s+(crip (en-json:html (ship created-by.v.x)))] [%content content.v.x]])]))
-      :: (pairs ~[[%id s+id.val] [%time (sect time.val)] [%ship s+(crip (en-json:html (ship ship.val)))] [%content s+content.val]])
-      :: first make mop a map
-
+      :-  %a
+      (turn data-list feed-convert)
     ==
   --
 --

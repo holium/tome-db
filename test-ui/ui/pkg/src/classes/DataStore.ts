@@ -13,8 +13,11 @@ export abstract class DataStore extends Tome {
     protected onReadyChange: (ready: boolean) => void
     protected onWriteChange: (write: boolean) => void // TODO consider consolidating into "onPermsChange".  What about read?
     protected onAdminChange: (admin: boolean) => void
-
-    protected cache: Map<string, Value>
+    
+    protected cache: Map<string, Value> // cache key-value pairs
+    protected feedlog: Array<Value> // array of objects (feed entries)
+    protected order: Map<string, number> // map of id to index in feedlog
+    
     protected bucket: string
     protected write: boolean
     protected admin: boolean
@@ -78,7 +81,9 @@ export abstract class DataStore extends Tome {
             this.bucket = bucket
             this.write = write
             this.admin = admin
-            this.cache = new Map<string, string | JSON>()
+            this.cache = new Map<string, Value>()
+            this.feedlog = []
+            this.order = new Map<string, number>()
             this.preload = preload
             this.onReadyChange = onReadyChange
             this.onWriteChange = onWriteChange
@@ -129,7 +134,7 @@ export abstract class DataStore extends Tome {
             path: '/current',
             err: () => {
                 throw new Error(
-                    'Tome-KV: unable to watch current space in spaces agent.  Is Realm installed and configured?'
+                    `Tome-${this.type}: unable to watch current space in spaces agent.  Is Realm installed and configured?`
                 )
             },
             event: async (current: JSON) => {
@@ -140,7 +145,7 @@ export abstract class DataStore extends Tome {
                 if (tomeShip !== this.tomeShip || space !== this.space) {
                     if (this.locked) {
                         throw new Error(
-                            'Tome-KV: the space has been switched for a locked Tome.'
+                            `Tome-${this.type}: the space has been switched for a locked Tome.`
                         )
                     }
                     await this._wipeAndChangeSpace(tomeShip, space)
@@ -186,7 +191,7 @@ export abstract class DataStore extends Tome {
 
         this.tomeShip = tomeShip
         this.space = space
-        this.cache = new Map<string, string | JSON>()
+        this.wipeLocalValues()
         if (this.preload) {
             this.loaded = false
             await this.subscribeAll()
@@ -338,122 +343,37 @@ export abstract class DataStore extends Tome {
                 )
             },
             event: (data: Value) => {
-                const entries: [string, string][] = Object.entries(data)
-                if (entries.length === 0) {
-                    // received an empty object, clear the cache.
-                    this.cache.clear()
-                } else {
-                    for (let [key, value] of entries) {
-                        if (value === null) {
-                            this.cache.delete(key)
-                        } else {
-                            // TODO foreign strings are getting stripped of their quotes? This is a workaround.
-                            if (value.constructor !== String) {
-                                value = JSON.parse(value)
+                if (this.type === 'kv') {
+                    const entries: [string, string][] = Object.entries(data)
+                    if (entries.length === 0) {
+                        // received an empty object, clear the cache.
+                        this.cache.clear()
+                    } else {
+                        for (let [key, value] of entries) {
+                            if (value === null) {
+                                this.cache.delete(key)
+                            } else {
+                                // TODO foreign strings are getting stripped of their quotes? This is a workaround.
+                                if (value.constructor !== String) {
+                                    value = JSON.parse(value)
+                                }
+                                this.cache.set(key, value)
                             }
-                            this.cache.set(key, value)
                         }
+                    }
+                } else {
+                    console.log(data)
+                    // Feed
+                    if (data.constructor === Array) {
+                        // update is %all
+                        this.feedlog = data
+                    } else {
                     }
                 }
                 this.loaded = true
             },
             quit: this.subscribeAll,
         })
-    }
-
-    protected async retrieveOne(key: string, allowCachedValue: boolean = true) {
-        await this.waitForReady()
-        // first check cache if allowed
-        if (allowCachedValue) {
-            const value = this.cache.get(key)
-            if (value) {
-                return value
-            }
-        }
-        if (this.preload) {
-            await this.waitForLoaded()
-            const value = this.cache.get(key)
-            if (value === undefined) {
-                console.error(`key ${key} not found`)
-            }
-            return value
-        } else {
-            return await this._getValueFromUrbit(key)
-        }
-    }
-
-    // TODO - does this have race conditions?
-    private async _getValueFromUrbit(key: string): Promise<Value> {
-        return await this.api
-            .subscribe({
-                app: agent,
-                path: this.dataSubscribePath(key),
-                err: () => {
-                    throw new Error(
-                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
-                    )
-                },
-                event: (value: string) => {
-                    if (value !== null) {
-                        // TODO do we need this?
-                        if (value.constructor !== String) {
-                            value = JSON.parse(value)
-                        }
-                        this.cache.set(key, value)
-                    } else {
-                        this.cache.delete(key)
-                    }
-                },
-                quit: () => this._getValueFromUrbit(key),
-            })
-            .then(async (id) => {
-                await this.api.unsubscribe(id)
-                return this.cache.get(key)
-            })
-    }
-
-    protected async retrieveAll(useCache: boolean = false) {
-        await this.waitForReady()
-        if (this.preload) {
-            await this.waitForLoaded()
-            return this.cache
-        } else {
-            if (useCache) {
-                return this.cache
-            }
-            return await this._getAllFromUrbit()
-        }
-    }
-
-    // TODO - does this have race conditions?
-    private async _getAllFromUrbit(): Promise<Map<string, Value>> {
-        return await this.api
-            .subscribe({
-                app: agent,
-                path: this.dataSubscribePath(),
-                err: () => {
-                    throw new Error(
-                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
-                    )
-                },
-                event: (data: Value) => {
-                    const entries: [string, string][] = Object.entries(data)
-                    const newCache = new Map<string, Value>()
-                    for (let [key, value] of entries) {
-                        // TODO foreign strings are getting stripped of their quotes? This is a workaround.
-                        if (value.constructor !== String) {
-                            value = JSON.parse(value)
-                        }
-                        newCache.set(key, value)
-                    }
-                    this.cache = newCache
-                },
-                quit: () => this._getAllFromUrbit(),
-            })
-            .then(async (id) => {
-                await this.api.unsubscribe(id)
-                return this.cache
-            })
     }
 
     protected dataSubscribePath(key?: string): string {
@@ -535,5 +455,11 @@ export abstract class DataStore extends Tome {
             return true
         }
         return false
+    }
+
+    private wipeLocalValues() {
+        this.cache.clear()
+        this.order.clear()
+        this.feedlog = []
     }
 }

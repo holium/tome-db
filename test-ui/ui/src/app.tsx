@@ -50,10 +50,10 @@ export function App() {
         value = await store.get('boolean')
         console.log("Retrieved value for 'boolean': " + value)
 
-        await store.remove('alice')
+        await store.remove('string')
         resp = await store.all()
         console.log(
-            "Removed 'alice' and check all again: " +
+            "Removed 'string' and check all again: " +
                 JSON.stringify(Object.fromEntries(resp))
         )
         await store.clear()
@@ -67,10 +67,9 @@ export function App() {
     const testFeed = async (feed: FeedStore) => {
         // feed.clear()
         const bobId = await feed.post('david')
-        //const echoId = await feed.post(3)
+        const echoId = await feed.post(3)
         await feed.edit(bobId, 'malevsky')
-        //await feed.delete(echoId)
-        //await feed.clear()
+        // await feed.delete(echoId)
         // await feed.delete(echoId)
     }
 
@@ -85,8 +84,9 @@ export function App() {
                 preload: true,
                 onReadyChange: updateReady,
             })
-            console.log(feed)
-            // testStore(store)
+            //console.log(stor)
+            // console.log(feed)
+            //testStore(store)
             testFeed(feed)
         }
         init()

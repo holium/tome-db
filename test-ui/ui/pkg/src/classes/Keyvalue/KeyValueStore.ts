@@ -239,7 +239,24 @@ export class KeyValueStore extends DataStore {
             }
             return JSON.parse(value)
         } else {
-            return await this.retrieveOne(key, allowCachedValue)
+            await this.waitForReady()
+            // first check cache if allowed
+            if (allowCachedValue) {
+                const value = this.cache.get(key)
+                if (value !== undefined) {
+                    return value
+                }
+            }
+            if (this.preload) {
+                await this.waitForLoaded()
+                const value = this.cache.get(key)
+                if (value === undefined) {
+                    console.error(`key ${key} not found`)
+                }
+                return value
+            } else {
+                return await this._getValueFromUrbit(key)
+            }
         }
     }
 
@@ -262,7 +279,76 @@ export class KeyValueStore extends DataStore {
             }
             return map
         } else {
-            return await this.retrieveAll(useCache)
+            await this.waitForReady()
+            if (this.preload) {
+                await this.waitForLoaded()
+                return this.cache
+            }
+            if (useCache) {
+                return this.cache
+            }
+            return await this._getAllFromUrbit()
         }
+    }
+
+    // TODO - does this have race conditions?
+    private async _getValueFromUrbit(key: string): Promise<Value> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.dataSubscribePath(key),
+                err: () => {
+                    throw new Error(
+                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+                    )
+                },
+                event: (value: string) => {
+                    if (value !== null) {
+                        // TODO do we need this?
+                        if (value.constructor !== String) {
+                            value = JSON.parse(value)
+                        }
+                        this.cache.set(key, value)
+                    } else {
+                        this.cache.delete(key)
+                    }
+                },
+                quit: () => this._getValueFromUrbit(key),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return this.cache.get(key)
+            })
+    }
+
+    // TODO - does this have race conditions?
+    private async _getAllFromUrbit(): Promise<Map<string, Value>> {
+        return await this.api
+            .subscribe({
+                app: agent,
+                path: this.dataSubscribePath(),
+                err: () => {
+                    throw new Error(
+                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+                    )
+                },
+                event: (data: Value) => {
+                    const entries: [string, string][] = Object.entries(data)
+                    const newCache = new Map<string, Value>()
+                    for (let [key, value] of entries) {
+                        // TODO foreign strings are getting stripped of their quotes? This is a workaround.
+                        if (value.constructor !== String) {
+                            value = JSON.parse(value)
+                        }
+                        newCache.set(key, value)
+                    }
+                    this.cache = newCache
+                },
+                quit: () => this._getAllFromUrbit(),
+            })
+            .then(async (id) => {
+                await this.api.unsubscribe(id)
+                return this.cache
+            })
     }
 }
