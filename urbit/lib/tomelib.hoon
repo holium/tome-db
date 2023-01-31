@@ -48,14 +48,14 @@
   ::
   ++  feed-convert
     |=  x=[k=@da v=feed-value]
-      (pairs ~[[%time s+(crip (en-json:html (sect k.x)))] [%id s+id.v.x] [%ship s+(crip (en-json:html (ship created-by.v.x)))] [%content content.v.x]])
+      (pairs ~[[%id s+id.v.x] [%time (sect k.x)] [%ship s+(scot %p created-by.v.x)] [%content content.v.x]])
   ::
   ++  feed-update
     |=  upd=^feed-update
     ^-  json
     ?-  -.upd
-      %new     (pairs ~[[%type s+'new'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(crip (en-json:html (ship ship.upd)))] [%content s+content.upd]])]])
-      %edit    (pairs ~[[%type s+'edit'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(crip (en-json:html (ship ship.upd)))] [%content s+content.upd]])]]) :: time is updated-time, ship is updated-by
+      %new     (pairs ~[[%type s+'new'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]])
+      %edit    (pairs ~[[%type s+'edit'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]]) :: time is updated-time, ship is updated-by
       %delete  (pairs ~[[%type s+'delete'] [%value (pairs ~[[%id s+id.upd] [%time (sect time.upd)]])]])
       %clear   (frond %type s+'clear')
       %get     value.upd
