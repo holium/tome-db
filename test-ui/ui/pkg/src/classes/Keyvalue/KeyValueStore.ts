@@ -56,6 +56,7 @@ export class KeyValueStore extends DataStore {
                     json: json,
                     onSuccess: () => {
                         this.cache.set(key, value)
+                        this.dataUpdateCallback()
                         success = true
                     },
                     onError: () => {
@@ -85,6 +86,7 @@ export class KeyValueStore extends DataStore {
                 success = result === 'success'
                 if (success) {
                     this.cache.set(key, value)
+                    this.dataUpdateCallback()
                 }
             }
             return success
@@ -124,6 +126,7 @@ export class KeyValueStore extends DataStore {
                     json: json,
                     onSuccess: () => {
                         this.cache.delete(key)
+                        this.dataUpdateCallback()
                         success = true
                     },
                     onError: (error) => {
@@ -151,6 +154,7 @@ export class KeyValueStore extends DataStore {
                 success = result === 'success'
                 if (success) {
                     this.cache.delete(key)
+                    this.dataUpdateCallback()
                 }
             }
             return success
@@ -184,6 +188,7 @@ export class KeyValueStore extends DataStore {
                     json: json,
                     onSuccess: () => {
                         this.cache.clear()
+                        this.dataUpdateCallback()
                         success = true
                     },
                     onError: () => {
@@ -209,6 +214,7 @@ export class KeyValueStore extends DataStore {
                 success = result === 'success'
                 if (success) {
                     this.cache.clear()
+                    this.dataUpdateCallback()
                 }
             }
             return success

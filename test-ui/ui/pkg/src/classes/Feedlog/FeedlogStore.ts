@@ -276,13 +276,24 @@ export abstract class FeedlogStore extends DataStore {
             console.error('Invalid ID.')
             return undefined
         }
+        await this.waitForReady()
         if (allowCachedValue) {
-            const index = this.order.get(id)
+            const index = this.order.indexOf(id)
             if (index !== undefined) {
                 return this.feedlog[index]
             }
         }
-        return await this.retrieveOne(id)
+        if (this.preload) {
+            await this.waitForLoaded()
+            const index = this.order.indexOf(id)
+            if (index === undefined) {
+                console.error(`id ${id} not found`)
+                return undefined
+            }
+            return this.feedlog[index]
+        } else {
+            return await this._getValueFromUrbit(id)
+        }
     }
 
     public async all(useCache: boolean = false): Promise<Array<Content>> {
@@ -295,21 +306,6 @@ export abstract class FeedlogStore extends DataStore {
             return this.feedlog
         }
         return await this._getAllFromUrbit()
-    }
-
-    private async retrieveOne(id: string): Promise<Content | undefined> {
-        await this.waitForReady()
-        if (this.preload) {
-            await this.waitForLoaded()
-            const index = this.order.get(id)
-            if (index === undefined) {
-                console.error(`id ${id} not found`)
-                return undefined
-            }
-            return this.feedlog[index]
-        } else {
-            return await this._getValueFromUrbit(id)
-        }
     }
 
     // TODO just make this a scry (same for get and for KVStore)

@@ -1,4 +1,4 @@
-import { InitStoreOptions, Perm, StoreType, Value } from '../index'
+import { FeedlogEntry, InitStoreOptions, Perm, StoreType, Value } from '../index'
 import { LogStore, FeedStore, KeyValueStore, Tome } from './index'
 import { agent, kvMark, feedMark, tomeMark } from './constants'
 
@@ -13,11 +13,12 @@ export abstract class DataStore extends Tome {
     protected onReadyChange: (ready: boolean) => void
     protected onWriteChange: (write: boolean) => void // TODO consider consolidating into "onPermsChange".  What about read?
     protected onAdminChange: (admin: boolean) => void
-    
+    protected onDataChange: (data: any) => void
+
     protected cache: Map<string, Value> // cache key-value pairs
     protected feedlog: Array<Value> // array of objects (feed entries)
-    protected order: Map<string, number> // map of id to index in feedlog
-    
+    protected order: Array<string> // ids of feed entries in order
+
     protected bucket: string
     protected write: boolean
     protected admin: boolean
@@ -75,6 +76,7 @@ export abstract class DataStore extends Tome {
                 onReadyChange,
                 onWriteChange,
                 onAdminChange,
+                onDataChange,
                 type,
                 isLog,
             } = options
@@ -83,11 +85,12 @@ export abstract class DataStore extends Tome {
             this.admin = admin
             this.cache = new Map<string, Value>()
             this.feedlog = []
-            this.order = new Map<string, number>()
+            this.order = []
             this.preload = preload
             this.onReadyChange = onReadyChange
             this.onWriteChange = onWriteChange
             this.onAdminChange = onAdminChange
+            this.onDataChange = onDataChange
             this.type = type
             if (type === 'feed') {
                 this.isLog = isLog
@@ -342,7 +345,7 @@ export abstract class DataStore extends Tome {
                     `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
                 )
             },
-            event: (data: Value) => {
+            event: async (data: Value) => {
                 if (this.type === 'kv') {
                     const entries: [string, string][] = Object.entries(data)
                     if (entries.length === 0) {
@@ -362,15 +365,54 @@ export abstract class DataStore extends Tome {
                         }
                     }
                 } else {
-                    console.log(data)
                     // Feed
                     if (data.constructor === Array) {
                         // update is %all
+                        data.map((entry: FeedlogEntry) => {
+                            // save the IDs in time order so they are easier to find later
+                            this.order.push(entry.id)
+                            entry.content = JSON.parse(entry.content)
+                            return entry
+                        })
                         this.feedlog = data
                     } else {
+                        // %all update overwrites the array, so we need to wait here
+                        // TODO can this block forever? might depend on update order
+                        await this.waitForLoaded()
+                        // %new, %edit, %delete, %clear
+                        let index: number
+                        switch (data.type) {
+                            case 'new':
+                                this.order.unshift(data.value.id)
+                                this.feedlog.unshift(data.value)
+                                break
+                            case 'edit':
+                                index = this.order.indexOf(data.value.id)
+                                if (index > -1) {
+                                    // TODO for now we don't store updated time or author
+                                    this.feedlog[index] = {
+                                        ...this.feedlog[index],
+                                        content: JSON.parse(data.value.content),
+                                    }
+                                }
+                                break
+                            case 'delete':
+                                index = this.order.indexOf(data.value.id)
+                                if (index > -1) {
+                                    this.feedlog.splice(index, 1)
+                                    this.order.splice(index, 1)
+                                }
+                                break
+                            case 'clear':
+                                this.wipeLocalValues()
+                                break
+                            default:
+                                console.error('Tome-feed: unknown update type')
+                        }
                     }
                 }
                 this.loaded = true
+                this.dataUpdateCallback()
             },
             quit: this.subscribeAll,
         })
@@ -457,9 +499,25 @@ export abstract class DataStore extends Tome {
         return false
     }
 
+    protected dataUpdateCallback() {
+        switch (this.type) {
+            case 'kv':
+                if (this.onDataChange) { 
+                    this.onDataChange(this.cache)
+                }
+                break
+            case 'feed':
+                if (this.onDataChange) {
+                    this.onDataChange(this.feedlog)
+                }
+                break
+        }
+    }
+
     private wipeLocalValues() {
         this.cache.clear()
-        this.order.clear()
-        this.feedlog = []
+        this.order.length = 0
+        this.feedlog.length = 0
+        this.dataUpdateCallback()
     }
 }

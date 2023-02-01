@@ -7,6 +7,8 @@ type T = string | number | boolean | object | Array<T>
 export type Value = T | JSON
 export type Content = T | JSON
 
+export type FeedlogEntry = { id: string; ship: string; time: number; content: string }
+
 export interface Perm {
     read: Level
     write: Level
@@ -26,6 +28,7 @@ export interface StoreOptions {
     onReadyChange?: (ready: boolean) => void
     onWriteChange?: (write: boolean) => void
     onAdminChange?: (admin: boolean) => void
+    onDataChange?: (data: any) => void
 }
 
 export interface InitStoreOptions {
@@ -43,6 +46,7 @@ export interface InitStoreOptions {
     onReadyChange?: (ready: boolean) => void
     onWriteChange?: (write: boolean) => void
     onAdminChange?: (admin: boolean) => void
+    onDataChange?: (data: any) => void
     write?: boolean
     admin?: boolean
 }

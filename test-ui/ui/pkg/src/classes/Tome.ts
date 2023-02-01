@@ -166,6 +166,7 @@ export class Tome {
             onReadyChange: options.onReadyChange,
             onWriteChange: options.onWriteChange,
             onAdminChange: options.onAdminChange,
+            onDataChange: options.onDataChange,
             isLog: isLog,
         })
     }

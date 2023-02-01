@@ -37,38 +37,38 @@ export function App() {
         }
 
         await store.set('complex', complexJSON)
+        // console.log(
+        //     'Values currently in the key-value store: ' +
+        //         JSON.stringify(Object.fromEntries(resp))
+        // )
 
-        let resp = await store.all()
-        console.log(
-            'Values currently in the key-value store: ' +
-                JSON.stringify(Object.fromEntries(resp))
-        )
-
-        console.log("Attempting to retrieve a missing value 'zulu'")
+        //console.log("Attempting to retrieve a missing value 'zulu'")
         let value = await store.get('zulu')
 
         value = await store.get('boolean')
-        console.log("Retrieved value for 'boolean': " + value)
+        //console.log("Retrieved value for 'boolean': " + value)
 
         await store.remove('string')
-        resp = await store.all()
-        console.log(
-            "Removed 'string' and check all again: " +
-                JSON.stringify(Object.fromEntries(resp))
-        )
-        await store.clear()
-        resp = await store.all()
-        console.log(
-            'Cleared store and check all again: ' +
-                JSON.stringify(Object.fromEntries(resp))
-        )
+        // console.log(
+        //     "Removed 'string' and check all again: " +
+        //         JSON.stringify(Object.fromEntries(resp))
+        // )
+        // await store.clear()
+        // console.log(
+        //     'Cleared store and check all again: ' +
+        //         JSON.stringify(Object.fromEntries(resp))
+        // )
     }
 
     const testFeed = async (feed: FeedStore) => {
-        // feed.clear()
-        const bobId = await feed.post('david')
-        const echoId = await feed.post(3)
-        await feed.edit(bobId, 'malevsky')
+        const addNew = async () => { await feed.post('david') }
+        await addNew()
+        // await feed.clear()
+        // for (let i = 0; i < 10; i++) { 
+        //     await addNew()
+        // }
+        //const bobId = await feed.post('david')
+        //const echoId = await feed.post(3)
         // await feed.delete(echoId)
         // await feed.delete(echoId)
     }
@@ -76,18 +76,20 @@ export function App() {
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
-            // const store = await db.keyvalue({
-            //     preload: true,
-            //     onReadyChange: updateReady,
-            // })
-            const feed = await db.feed({
+            const store = await db.keyvalue({
                 preload: true,
                 onReadyChange: updateReady,
+                onDataChange: (data) => console.log(data),
             })
+            // const feed = await db.feed({
+            //     preload: true,
+            //     onReadyChange: updateReady,
+            //     onDataChange: (data) => console.log(data),
+            // })
             //console.log(stor)
             // console.log(feed)
-            //testStore(store)
-            testFeed(feed)
+            testStore(store)
+            //testFeed(feed)
         }
         init()
     }, [])
