@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Urbit from '@urbit/http-api'
+import { Button, Flex, MemeBlock } from '@holium/design-system'
 import Tome, { FeedStore } from '../pkg/src/index'
 // import { MemeBlock } from '@holium/design-system'
 
@@ -29,25 +30,29 @@ export function App() {
         }
         init()
     }, [])
-
-    // const ListItems = data.map((item) => (
-    //     // item.date * 1000
-    //     <MemeBlock
-    //         id={item.id}
-    //         image={item.content}
-    //         by={item.ship}
-    //         date={item.date}
-    //         onReaction={(payload) => {
-    //             console.log(payload)
-    //         }}
-    //     />
-    // ))
+    const ListItems = data.map((item: any, index: number) => {
+        return (
+            <MemeBlock
+                zIndex={data.length - index}
+                key={item.id}
+                id={item.id}
+                image={item.content}
+                by={item.ship}
+                date={new Date(item.time).toUTCString()}
+                reactions={item.reactions || []}
+                onReaction={(payload) => {
+                    console.log(payload)
+                }}
+            />
+        )
+    })
 
     return (
         <main className="flex items-center justify-center">
-            {ready && feed ? (
-                <div>
-                    <button
+            <Flex position="relative" my={2} flexDirection="column" gap={8}>
+                {ready && feed ? (
+                    <Button.Primary
+                        px={1}
                         onClick={() =>
                             feed.post(
                                 'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
@@ -55,11 +60,12 @@ export function App() {
                         }
                     >
                         Add new
-                    </button>
-                </div>
-            ) : (
-                <p>welcome...</p>
-            )}
+                    </Button.Primary>
+                ) : (
+                    <p>welcome...</p>
+                )}
+                {ListItems}
+            </Flex>
         </main>
     )
 }
