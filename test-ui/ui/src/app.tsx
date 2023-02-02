@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Urbit from '@urbit/http-api'
 import Tome, { FeedStore } from '../pkg/src/index'
+// import { MemeBlock } from '@holium/design-system'
 
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
@@ -10,15 +11,17 @@ export function App() {
     const [data, setData] = useState([])
     const [feed, setFeed] = useState<FeedStore>()
 
-
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
             const feed = await db.feed({
                 preload: true,
-                permissions: {read: 'space', write: 'space', admin: 'our'},
+                permissions: { read: 'space', write: 'space', admin: 'our' },
                 onReadyChange: setReady,
                 onDataChange: (data) => {
+                    // newest records first.
+                    // if you want a different order, you can sort the data here.
+                    // need to spread array to trigger re-render
                     setData([...data])
                 },
             })
@@ -27,17 +30,35 @@ export function App() {
         init()
     }, [])
 
-    const listItems = data.map((item) => <li key={item.id}>{item.id}</li>)
+    // const ListItems = data.map((item) => (
+    //     // item.date * 1000
+    //     <MemeBlock
+    //         id={item.id}
+    //         image={item.content}
+    //         by={item.ship}
+    //         date={item.date}
+    //         onReaction={(payload) => {
+    //             console.log(payload)
+    //         }}
+    //     />
+    // ))
 
     return (
-        <main className="flex items-center justify-center min-h-screen">
+        <main className="flex items-center justify-center">
             {ready && feed ? (
                 <div>
-                    <ul>{listItems}</ul>
-                    <button onClick={() => feed.post('~lomder-librun!')}>Add new</button>
+                    <button
+                        onClick={() =>
+                            feed.post(
+                                'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
+                            )
+                        }
+                    >
+                        Add new
+                    </button>
                 </div>
             ) : (
-                <p>loading...</p>
+                <p>welcome...</p>
             )}
         </main>
     )
