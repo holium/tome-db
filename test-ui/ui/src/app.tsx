@@ -26,6 +26,17 @@ export function App() {
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
+            const kv = await db.keyvalue({
+                preload: true,
+                permissions: { read: 'space', write: 'space', admin: 'our' },
+                onReadyChange: setReady,
+                onDataChange: (data) => {
+                    // newest records first.
+                    // if you want a different order, you can sort the data here.
+                    // need to spread array to trigger re-render
+                    setData([...data])
+                },
+            })
             const feed = await db.feed({
                 preload: true,
                 permissions: { read: 'space', write: 'space', admin: 'our' },
@@ -38,10 +49,10 @@ export function App() {
                 },
             })
             setFeed(feed)
-            const id = await feed.post(
-                'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
-            )
-            await feed.setLink(id, '1f60d')
+            // const id = await feed.post(
+            //     'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
+            // )
+            // await feed.setLink(id, '1f60d')
             //testFeed(feed)
         }
         init()

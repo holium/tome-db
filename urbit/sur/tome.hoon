@@ -93,7 +93,7 @@
     ::
       [%get value=?(~ json-value)]
       [%all data=kv-data]
-      [%perm =perm]
+      [%perm read=?(%yes %no) write=?(%yes %no) admin=?(%yes %no)]
   ==
 ::
 +$  feed-action
@@ -124,7 +124,7 @@
     ::
       [%get value=?(~ json-value)]
       [%all data=feed-data]
-      [%perm =perm]
+      [%perm read=?(%yes %no) write=?(%yes %no) admin=?(%yes %no)]
   ==
 ::
 --

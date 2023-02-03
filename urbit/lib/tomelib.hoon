@@ -40,9 +40,9 @@
       %set     (frond key.upd s+value.upd)
       %remove  (frond key.upd ~)
       %clear   (pairs ~)
+      %perm    (pairs ~[[%read s+read.upd] [%write s+write.upd] [%admin s+admin.upd]])
       %get     value.upd
       %all     o+data.upd
-      %perm    (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
     ==
   ::
   ++  feed-convert
@@ -68,8 +68,8 @@
       %clear        (frond %type s+'clear')
       %set-link     (pairs ~[[%type s+'set-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd] [%value s+value.upd]])]])
       %remove-link  (pairs ~[[%type s+'remove-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd]])]])
+      %perm         (pairs ~[[%read s+read.upd] [%write s+write.upd] [%admin s+admin.upd]])
       %get          value.upd
-      %perm         (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
         %all
       =/  fon        ((on @da feed-value) gth)  :: mop needs this to work
       =/  data-list  (tap:fon data.upd)

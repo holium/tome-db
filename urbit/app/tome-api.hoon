@@ -8,7 +8,7 @@
 ::
 +$  versioned-state  $%(state-0)
 ::
-+$  state-0  [%0 tome=(mip path:s-p app tome-data) subs=(set path)]
++$  state-0  [%0 tome=(mip path:s-p app tome-data) subs=(set path)] :: subs is data paths we are subscribed to
 ::
 ::
 ::  boilerplate
@@ -226,9 +226,11 @@
         %edit-post         do
         %clear-feed        do
         %verify-feed       do
-        %team-feed         do
         %set-post-link     do
         %remove-post-link  do
+          %team-feed
+        ?:  =(our.bol ship)  ~|('no-perm-local-feed' !!)
+        fe-abet:(fe-view:(fe-abed:fe [ship space.act app.act bucket.act log.act]) [%perm ~])
           %watch-feed
         ?:  =(our.bol ship)  ~|('no-watch-local-feed' !!)
         fe-abet:(fe-view:(fe-abed:fe [ship space.act app.act bucket.act log.act]) [%data %all ~])
@@ -318,9 +320,12 @@
         ==
       ::
           %perm
+        =/  lc  :~  [%give %fact ~[perm-pax] %kv-update !>(upd)]
+                    [%pass perm-pax %agent [shi %tome-api] %leave ~]
+                ==
         %=  kv
-          per   perm.upd
-          caz   [[%give %fact ~[perm-pax] %kv-update !>(upd)] caz]
+          per   +.upd
+          caz   (welp lc caz)
         ==
       ::
       ==
@@ -332,20 +337,17 @@
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
-      ~&  >  `kv-update`[%perm kv-team]
       %-  kv-emit
-      [%give %fact ~ %kv-update !>(`kv-update`[%perm kv-team])]
-        :: [%give %kick ~[perm-pax] `src.bol]
+      [%give %fact ~ %kv-update !>(`kv-update`kv-team)]
     ::
         [%data %all ~]
       %-  kv-emit
       [%give %fact ~ %kv-update !>(`kv-update`[%all data])]
     ::
         [%data %key k=@t ~]
-      %-  kv-emil  :~
-        [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
+      %-  kv-emit
+      [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
         :: [%give %kick ~[data-pax] `src.bol]
-      ==
     ::
     ==
   ::  +kv-poke: handle kv poke requests
@@ -416,8 +418,6 @@
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
-      ?:  (~(has in subs) perm-pax)  kv
-      =.  subs  (~(put in subs) perm-pax)
       (kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
@@ -480,11 +480,10 @@
   ::  +kv-team: get read/write/admin permissions for a ship
   ::
   ++  kv-team
-    ^-  perm
     =/  read    ?:((kv-perm %read) %yes %no)
     =/  write   ?:((kv-perm %create) %yes %no)
     =/  admin   ?:((kv-perm %overwrite) %yes %no)
-    [read write admin]
+    [%perm read write admin]
   ::
   --
 ::
@@ -622,9 +621,12 @@
         ==
       ::
           %perm
+        =/  lc  :~  [%give %fact ~[perm-pax] %feed-update !>(upd)]
+                    [%pass perm-pax %agent [shi %tome-api] %leave ~]
+                ==
         %=  fe
-          per   perm.upd
-          caz   [[%give %fact ~[perm-pax] %feed-update !>(upd)] caz]
+          per   +.upd
+          caz   (welp lc caz)
         ==
       ::
       ==
@@ -638,7 +640,7 @@
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
       %-  fe-emit
-      [%give %fact ~ %feed-update !>(`feed-update`[%perm fe-team])]
+      [%give %fact ~ %feed-update !>(`feed-update`fe-team)]
         :: [%give %kick ~[perm-pax] `src.bol]
     ::
         [%data %all ~]
@@ -646,10 +648,9 @@
       [%give %fact ~ %feed-update !>(`feed-update`[%all data])]
     ::
       ::   [%data %key k=@t ~]  :: TODO these should eventually be scries.
-      :: %-  fe-emil  :~
+      :: %-  fe-emit
       ::   [%give %fact ~ %feed-update !>(`feed-update`[%get (~(gut by data) k.rest ~)])]
       ::   :: [%give %kick ~[data-pax] `src.bol]
-      :: ==
     ::
     ==
   ::  +fe-poke: handle log/feed pokes
@@ -749,8 +750,6 @@
     ^+  fe
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
-      ?:  (~(has in subs) perm-pax)  fe
-      =.  subs  (~(put in subs) perm-pax)
       (fe-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
     ::
         [%data %all ~]
@@ -813,11 +812,10 @@
   ::  +fe-team: get read/write/admin permissions for a ship
   ::
   ++  fe-team
-    ^-  perm
     =/  read    ?:((fe-perm %read) %yes %no)
     =/  write   ?:((fe-perm %create) %yes %no)
     =/  admin   ?:((fe-perm %overwrite) %yes %no)
-    [read write admin]
+    [%perm read write admin]
   ::
   --
 --

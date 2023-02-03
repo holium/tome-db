@@ -61,8 +61,7 @@ export abstract class DataStore extends Tome {
         } as const
         await DataStore.initBucket({ ...options, perm: foreignPerm })
         await DataStore.startWatchingForeignBucket(options)
-        // TODO turn this back on
-        // await DataStore.startWatchingForeignPerms(options)
+        await DataStore.startWatchingForeignPerms(options)
         switch (type) {
             case 'kv':
                 return new KeyValueStore(options)
