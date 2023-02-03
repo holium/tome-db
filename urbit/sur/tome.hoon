@@ -76,12 +76,12 @@
   ==
 ::
 +$  kv-action
-    :: thisShip -> tomeShip
+    :: ourShip -> tomeShip
   $%  [%set-value ship=@t =space =app =bucket =key =value]
       [%remove-value ship=@t =space =app =bucket =key]
       [%clear-kv ship=@t =space =app =bucket]
       [%verify-kv ship=@t =space =app =bucket]
-    :: thisShip -> thisShip
+    :: ourShip -> ourShip
       [%watch-kv ship=@t =space =app =bucket]
       [%team-kv ship=@t =space =app =bucket]
   ==
@@ -99,13 +99,13 @@
 +$  feed-action
   ::  top level actions (on posts)
   ::  %set-x becomes %new or %edit. Otherwise actions are similar to kv.
-  ::  thisShip -> tomeShip
+  ::  ourShip -> tomeShip
   $%  [%new-post ship=@t =space =app =bucket =log =id =content]
       [%edit-post ship=@t =space =app =bucket =log =id =content]
       [%delete-post ship=@t =space =app =bucket =log =id]
       [%clear-feed ship=@t =space =app =bucket =log]
       [%verify-feed ship=@t =space =app =bucket =log]
-  :: thisShip -> thisShip
+  :: ourShip -> ourShip
       [%watch-feed ship=@t =space =app =bucket =log]
       [%team-feed ship=@t =space =app =bucket =log]
   ::  actions for links (anything a foreign ship wants to associate with a post)

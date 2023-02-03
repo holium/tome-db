@@ -49,7 +49,7 @@ export class KeyValueStore extends DataStore {
                     value: valueStr,
                 },
             }
-            if (this.tomeShip === this.thisShip) {
+            if (this.tomeShip === this.ourShip) {
                 await this.api.poke({
                     app: agent,
                     mark: kvMark,
@@ -87,6 +87,8 @@ export class KeyValueStore extends DataStore {
                 if (success) {
                     this.cache.set(key, value)
                     this.dataUpdateCallback()
+                } else {
+                    // TODO get current foreign perms
                 }
             }
             return success
@@ -96,7 +98,7 @@ export class KeyValueStore extends DataStore {
     /**
      * Remove a specific key-value pair from the store.
      * @param key The key to remove.
-     * @returns True if an element in the Store existed and has been removed, or false if the element does not exist.
+     * @returns True if an element in the Store existed and has been removed, or False if the element does not exist.
      */
     public async remove(key: string): Promise<boolean> {
         if (!key) {
@@ -119,7 +121,7 @@ export class KeyValueStore extends DataStore {
                     key,
                 },
             }
-            if (this.tomeShip === this.thisShip) {
+            if (this.tomeShip === this.ourShip) {
                 await this.api.poke({
                     app: agent,
                     mark: kvMark,
@@ -163,7 +165,7 @@ export class KeyValueStore extends DataStore {
 
     /**
      * Discard all values in the store.
-     * @returns True on success, false on failure.
+     * @returns True on success, False on failure.
      */
     public async clear(): Promise<boolean> {
         if (!this.mars) {
@@ -181,7 +183,7 @@ export class KeyValueStore extends DataStore {
                     bucket: this.bucket,
                 },
             }
-            if (this.tomeShip === this.thisShip) {
+            if (this.tomeShip === this.ourShip) {
                 await this.api.poke({
                     app: agent,
                     mark: kvMark,

@@ -49,6 +49,7 @@ export function App() {
                 },
             })
             setFeed(feed)
+            console.log(feed)
             // const id = await feed.post(
             //     'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
             // )
@@ -58,7 +59,7 @@ export function App() {
         init()
     }, [])
     const ListItems = data.map((item: any, index: number) => {
-        console.log(item, index)
+        // console.log(item, index)
         return (
             <MemeBlock
                 zIndex={data.length - index}

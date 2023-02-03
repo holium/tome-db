@@ -54,8 +54,9 @@ export interface InitStoreOptions {
     type?: StoreType
     isLog?: boolean
     perm?: Perm
-    thisShip?: string
+    ourShip?: string
     locked?: boolean
+    inRealm?: boolean
     preload?: boolean
     onReadyChange?: (ready: boolean) => void
     onWriteChange?: (write: boolean) => void

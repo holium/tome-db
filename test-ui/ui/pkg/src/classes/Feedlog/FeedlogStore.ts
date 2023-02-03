@@ -48,7 +48,7 @@ export abstract class FeedlogStore extends DataStore {
                 content: contentStr,
             },
         }
-        if (this.tomeShip === this.thisShip) {
+        if (this.tomeShip === this.ourShip) {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
@@ -121,7 +121,7 @@ export abstract class FeedlogStore extends DataStore {
         if (action === 'set-post-link') {
             json[action].value = JSON.stringify(value)
         }
-        if (this.tomeShip === this.thisShip) {
+        if (this.tomeShip === this.ourShip) {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
@@ -194,7 +194,7 @@ export abstract class FeedlogStore extends DataStore {
                 id,
             },
         }
-        if (this.tomeShip === this.thisShip) {
+        if (this.tomeShip === this.ourShip) {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
@@ -241,7 +241,7 @@ export abstract class FeedlogStore extends DataStore {
                 log: this.isLog,
             },
         }
-        if (this.tomeShip === this.thisShip) {
+        if (this.tomeShip === this.ourShip) {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,

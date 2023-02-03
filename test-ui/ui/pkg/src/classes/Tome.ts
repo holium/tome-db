@@ -16,12 +16,13 @@ export class Tome {
     protected api: Urbit
     protected mars: boolean
 
-    protected thisShip: string
+    protected ourShip: string
     protected tomeShip: string
     protected space: string
     protected app: string
     protected perm: Perm
     protected locked: boolean // if true, Tome is locked to the initial ship and space.
+    protected inRealm: boolean
 
     protected static async initTomePoke(
         api: Urbit,
@@ -51,15 +52,24 @@ export class Tome {
     protected constructor(options?: InitStoreOptions) {
         if (options !== undefined) {
             this.mars = true
-            const { api, tomeShip, thisShip, space, app, perm, locked } =
-                options
+            const {
+                api,
+                tomeShip,
+                ourShip,
+                space,
+                app,
+                perm,
+                locked,
+                inRealm,
+            } = options
             this.api = api
             this.tomeShip = tomeShip
-            this.thisShip = thisShip
+            this.ourShip = ourShip
             this.space = space
             this.app = app
             this.perm = perm
             this.locked = locked
+            this.inRealm = inRealm
         } else {
             this.mars = false
             this.app = 'tome-db'
@@ -82,6 +92,7 @@ export class Tome {
             let locked = false
             let tomeShip = `~${api.ship}`
             let space = 'our'
+            let inRealm = true
 
             // verify that spaces agent is installed and configured
             try {
@@ -93,6 +104,7 @@ export class Tome {
                 tomeShip = spacePath[1]
                 space = spacePath[2]
             } catch (e) {
+                inRealm = false
                 console.warn(
                     'Tome: no current space found. Is Realm installed / configured?'
                 )
@@ -112,7 +124,7 @@ export class Tome {
                 space = options.space
             }
             // save api.ship so we know who we are.
-            const thisShip = `~${api.ship}`
+            const ourShip = `~${api.ship}`
             if (app === undefined) {
                 app = 'all'
             }
@@ -123,11 +135,12 @@ export class Tome {
             return new Tome({
                 api,
                 tomeShip,
-                thisShip,
+                ourShip,
                 space,
                 app,
                 perm,
                 locked,
+                inRealm,
             })
         }
         return new Tome()
@@ -139,7 +152,7 @@ export class Tome {
         isLog: boolean
     ) {
         let permissions = options.permissions ? options.permissions : this.perm
-        if (this.app === 'all' && this.tomeShip === this.thisShip) {
+        if (this.app === 'all' && this.tomeShip === this.ourShip) {
             console.warn(
                 `Tome-${type}: Permissions on 'all' are ignored. Setting permissions levels to 'our' instead...`
             )
@@ -153,7 +166,7 @@ export class Tome {
             type,
             api: this.api,
             tomeShip: this.tomeShip,
-            thisShip: this.thisShip,
+            ourShip: this.ourShip,
             space: this.space,
             app: this.app,
             perm: permissions,
@@ -165,6 +178,7 @@ export class Tome {
             onAdminChange: options.onAdminChange,
             onDataChange: options.onDataChange,
             isLog,
+            inRealm: this.inRealm,
         })
     }
 

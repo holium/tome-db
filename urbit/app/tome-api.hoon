@@ -641,7 +641,6 @@
         [%perm ~]
       %-  fe-emit
       [%give %fact ~ %feed-update !>(`feed-update`fe-team)]
-        :: [%give %kick ~[perm-pax] `src.bol]
     ::
         [%data %all ~]
       %-  fe-emit

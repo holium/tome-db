@@ -38,8 +38,8 @@ export abstract class DataStore extends Tome {
     public static async initDataStore(
         options: InitStoreOptions
     ): Promise<DataStore> {
-        const { tomeShip, thisShip, type, isLog } = options
-        if (tomeShip === thisShip) {
+        const { tomeShip, ourShip, type, isLog } = options
+        if (tomeShip === ourShip) {
             await DataStore.initBucket(options)
             const newOptions = { ...options, write: true, admin: true }
             switch (type) {
@@ -61,7 +61,7 @@ export abstract class DataStore extends Tome {
         } as const
         await DataStore.initBucket({ ...options, perm: foreignPerm })
         await DataStore.startWatchingForeignBucket(options)
-        await DataStore.startWatchingForeignPerms(options)
+        await DataStore._getCurrentForeignPerms(options)
         switch (type) {
             case 'kv':
                 return new KeyValueStore(options)
@@ -110,10 +110,10 @@ export abstract class DataStore extends Tome {
                 this.loaded = false
                 this.subscribeAll()
             }
-            // TODO only do if %spaces exists.  Assume it does for now.
-            this.watchCurrentSpace()
-            // TODO turn this back on
-            // this.watchPerms()
+            if (this.inRealm) {
+                this.watchCurrentSpace()
+            }
+            this.watchPerms()
             this.setReady(true)
         } else {
             // This should only be called by KeyValueStore.
@@ -131,10 +131,14 @@ export abstract class DataStore extends Tome {
                 )
             },
             event: async (perms: Perm) => {
-                const write = perms.write === 'yes'
-                const admin = perms.admin === 'yes'
-                this.setWrite(write)
-                this.setAdmin(admin)
+                if (perms.write !== 'unset') {
+                    const write = perms.write === 'yes'
+                    this.setWrite(write)
+                }
+                if (perms.admin !== 'unset') {
+                    const admin = perms.admin === 'yes'
+                    this.setAdmin(admin)
+                }
             },
             quit: this.watchPerms,
         })
@@ -179,7 +183,7 @@ export abstract class DataStore extends Tome {
         // changing the top level tome, so we reinitialize
         await Tome.initTomePoke(this.api, tomeShip, space, this.app)
         const perm =
-            tomeShip === this.thisShip
+            tomeShip === this.ourShip
                 ? this.perm
                 : ({ read: 'yes', write: 'unset', admin: 'unset' } as const)
 
@@ -194,13 +198,13 @@ export abstract class DataStore extends Tome {
             perm,
         }
         // if not ours, we need to make sure we have read access first.
-        if (tomeShip !== this.thisShip) {
+        if (tomeShip !== this.ourShip) {
             await DataStore.checkExistsAndCanRead(options)
         }
         // that succeeded, whether ours or not initialize the bucket.
         await DataStore.initBucket(options)
         // if not us, we want Hoon side to start a subscription.
-        if (tomeShip !== this.thisShip) {
+        if (tomeShip !== this.ourShip) {
             await DataStore.startWatchingForeignBucket(options)
         }
 
@@ -212,7 +216,7 @@ export abstract class DataStore extends Tome {
             await this.subscribeAll()
         }
 
-        if (this.tomeShip === this.thisShip) {
+        if (this.tomeShip === this.ourShip) {
             this.write = true
             this.admin = true
         } else {
@@ -321,7 +325,20 @@ export abstract class DataStore extends Tome {
         })
     }
 
-    protected static async startWatchingForeignPerms(
+    // called by subclasses
+    protected async getCurrentForeignPerms() {
+        return await DataStore._getCurrentForeignPerms({
+            api: this.api,
+            tomeShip: this.tomeShip,
+            space: this.space,
+            app: this.app,
+            bucket: this.bucket,
+            type: this.type,
+            isLog: this.isLog,
+        })
+    }
+
+    private static async _getCurrentForeignPerms(
         options: InitStoreOptions
     ): Promise<void> {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
