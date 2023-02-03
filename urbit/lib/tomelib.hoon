@@ -40,7 +40,7 @@
       %set     (frond key.upd s+value.upd)
       %remove  (frond key.upd ~)
       %clear   (pairs ~)
-      %perm    (pairs ~[[%read s+read.upd] [%write s+write.upd] [%admin s+admin.upd]])
+      %perm    (pairs ~[[%write s+write.upd] [%admin s+admin.upd]])
       %get     value.upd
       %all     o+data.upd
     ==
@@ -68,7 +68,7 @@
       %clear        (frond %type s+'clear')
       %set-link     (pairs ~[[%type s+'set-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd] [%value s+value.upd]])]])
       %remove-link  (pairs ~[[%type s+'remove-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd]])]])
-      %perm         (pairs ~[[%read s+read.upd] [%write s+write.upd] [%admin s+admin.upd]])
+      %perm         (pairs ~[[%write s+write.upd] [%admin s+admin.upd]])
       %get          value.upd
         %all
       =/  fon        ((on @da feed-value) gth)  :: mop needs this to work

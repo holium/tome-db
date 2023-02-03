@@ -362,7 +362,7 @@ export abstract class DataStore extends Tome {
             json: body,
             onError: (error) => {
                 throw new Error(
-                    `Tome-${type}: Initializing permissions watch failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
+                    `Tome-${type}: Starting permissions watch failed.  Make sure the ship and Tome agent are both running.\nError: ${error}`
                 )
             },
         })

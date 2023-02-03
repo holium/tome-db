@@ -324,7 +324,7 @@
                     [%pass perm-pax %agent [shi %tome-api] %leave ~]
                 ==
         %=  kv
-          per   +.upd
+          per   [read=%yes +.upd]
           caz   (welp lc caz)
         ==
       ::
@@ -477,13 +477,12 @@
         is-member.memb
       ==
     ==
-  ::  +kv-team: get read/write/admin permissions for a ship
+  ::  +kv-team: get write/admin permissions for a ship
   ::
   ++  kv-team
-    =/  read    ?:((kv-perm %read) %yes %no)
     =/  write   ?:((kv-perm %create) %yes %no)
     =/  admin   ?:((kv-perm %overwrite) %yes %no)
-    [%perm read write admin]
+    [%perm write admin]
   ::
   --
 ::
@@ -625,7 +624,7 @@
                     [%pass perm-pax %agent [shi %tome-api] %leave ~]
                 ==
         %=  fe
-          per   +.upd
+          per   [read=%yes +.upd]
           caz   (welp lc caz)
         ==
       ::
@@ -811,10 +810,9 @@
   ::  +fe-team: get read/write/admin permissions for a ship
   ::
   ++  fe-team
-    =/  read    ?:((fe-perm %read) %yes %no)
     =/  write   ?:((fe-perm %create) %yes %no)
     =/  admin   ?:((fe-perm %overwrite) %yes %no)
-    [%perm read write admin]
+    [%perm write admin]
   ::
   --
 --

@@ -81,6 +81,9 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
+            if (!success) {
+                this.getCurrentForeignPerms()
+            }
         }
         if (success) {
             return id
@@ -154,6 +157,9 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
+            if (!success) {
+                this.getCurrentForeignPerms()
+            }
         }
         return success
     }
@@ -225,6 +231,9 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
+            if (!success) {
+                this.getCurrentForeignPerms()
+            }
         }
         return success
     }
@@ -274,6 +283,9 @@ export abstract class FeedlogStore extends DataStore {
                     return undefined
                 })
             success = result === 'success'
+            if (!success) {
+                this.getCurrentForeignPerms()
+            }
         }
         return success
     }

@@ -88,7 +88,8 @@ export class KeyValueStore extends DataStore {
                     this.cache.set(key, value)
                     this.dataUpdateCallback()
                 } else {
-                    // TODO get current foreign perms
+                    // we check on failure to notify user of any changes to permissions
+                    this.getCurrentForeignPerms()
                 }
             }
             return success
@@ -157,6 +158,8 @@ export class KeyValueStore extends DataStore {
                 if (success) {
                     this.cache.delete(key)
                     this.dataUpdateCallback()
+                } else {
+                    this.getCurrentForeignPerms()
                 }
             }
             return success
@@ -217,6 +220,8 @@ export class KeyValueStore extends DataStore {
                 if (success) {
                     this.cache.clear()
                     this.dataUpdateCallback()
+                } else {
+                    this.getCurrentForeignPerms()
                 }
             }
             return success
