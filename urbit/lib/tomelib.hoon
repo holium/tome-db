@@ -50,10 +50,10 @@
     ^-  json
     %-  pairs
     :~  [%id s+id.v.x]
-        [%created-by s+(scot %p created-by.v.x)]
-        [%updated-by s+(scot %p updated-by.v.x)]
-        [%created-at (time created-at.v.x)]
-        [%updated-at (time updated-at.v.x)]
+        [%'createdBy' s+(scot %p created-by.v.x)]
+        [%'updatedBy' s+(scot %p updated-by.v.x)]
+        [%'createdAt' (time created-at.v.x)]
+        [%'updatedAt' (time updated-at.v.x)]
         [%content content.v.x]
         :: [%links o+links.v.x]  :: TODO make links keys strings instead? probably just turn them here
     ==

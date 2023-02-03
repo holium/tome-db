@@ -79,6 +79,14 @@ These don't exist yet:
 Invites are stored as separate whitelists / blacklists, and used in addition to the specified permission level.
 To use only a list of invited peers, set the relevant permission level to `our`.
 
+### Random notes
+
+User-facing ship names will always be specified and returned without the leading sig. i.e. `zod` instead of `~zod`.
+
+In the javascript client we store them as `'~zod'`, and in Hoon they are an @p.
+
+## OLD
+
 ### Tome-level permissioning:
 
 In the actual settings for a Realm space I'd like to eventually be able to set Tome's permissions like so:
@@ -90,10 +98,3 @@ Visible: who is allowed to know the Tome exists for a space, whether it has stor
 New: Who is allowed to create new apps and buckets in our space. In the default case, `our`, the space owner must download an app for it to be available to others. With a list of invites, any invited users could use an app in the space, and they would be allowed to initialize the necessary buckets for it to work.
 
 New gives any of the listed ships ability to download apps that store arbitrary data on the host ship, so it should be admins only. This could tie into admins for a space.
-
-
-### Random notes
-
-`@p` provided in a subscription path includes the `~`.
-
-`@p` in a poke does not.

@@ -153,7 +153,7 @@ export abstract class DataStore extends Tome {
             event: async (current: JSON) => {
                 // @ts-expect-error
                 const spacePath = current.current.path.split('/')
-                const tomeShip = spacePath[1].slice(1)
+                const tomeShip = spacePath[1]
                 const space = spacePath[2]
                 if (tomeShip !== this.tomeShip || space !== this.space) {
                     if (this.locked) {
@@ -389,13 +389,16 @@ export abstract class DataStore extends Tome {
                         data.map((entry: FeedlogEntry) => {
                             // save the IDs in time order so they are easier to find later
                             this.order.push(entry.id)
+                            // ship has ~, so we need to remove it
+                            entry.createdBy = entry.createdBy.slice(1)
+                            entry.updatedBy = entry.updatedBy.slice(1)
                             entry.content = JSON.parse(entry.content)
-                            entry.links = Object.fromEntries(
-                                Object.entries(entry.links).map(([k, v]) => [
-                                    k,
-                                    JSON.parse(v),
-                                ])
-                            )
+                            // entry.links = Object.fromEntries(
+                            //     Object.entries(entry.links).map(([k, v]) => [
+                            //         k.slice(1),
+                            //         JSON.parse(v),
+                            //     ])
+                            // )
                             return entry
                         })
                         this.feedlog = data as object[]
@@ -408,12 +411,13 @@ export abstract class DataStore extends Tome {
                         switch (data.type) {
                             case 'new': {
                                 this.order.unshift(data.body.id)
+                                const ship = data.body.ship.slice(1)
                                 const entry = {
                                     id: data.body.id,
-                                    'created-at': data.body.time,
-                                    'updated-at': data.body.time,
-                                    'created-by': data.body.ship,
-                                    'updated-by': data.body.ship,
+                                    createdAt: data.body.time,
+                                    updatedAt: data.body.time,
+                                    createdBy: ship,
+                                    updatedBy: ship,
                                     content: data.body.content,
                                     links: {},
                                 }
@@ -426,8 +430,8 @@ export abstract class DataStore extends Tome {
                                     this.feedlog[index] = {
                                         ...this.feedlog[index],
                                         content: JSON.parse(data.body.content),
-                                        'updated-at': data.body.time,
-                                        'updated-by': data.body.ship,
+                                        updatedAt: data.body.time,
+                                        updatedBy: data.body.ship.slice(1),
                                     }
                                 }
                                 break
@@ -448,9 +452,8 @@ export abstract class DataStore extends Tome {
                                         ...this.feedlog[index],
                                         links: {
                                             ...this.feedlog[index].links,
-                                            [data.body.ship]: JSON.parse(
-                                                data.body.value
-                                            ),
+                                            [data.body.ship.slice(1)]:
+                                                JSON.parse(data.body.value),
                                         },
                                     }
                                 }
@@ -461,7 +464,7 @@ export abstract class DataStore extends Tome {
                                     this.feedlog[index] = {
                                         ...this.feedlog[index],
                                         links: (({
-                                            [data.body.ship]: _,
+                                            [data.body.ship.slice(1)]: _,
                                             ...o
                                         }) => o)(this.feedlog[index].links), // remove data.body.ship
                                     }
@@ -480,7 +483,7 @@ export abstract class DataStore extends Tome {
     }
 
     protected dataSubscribePath(key?: string): string {
-        let path = `/${this.type}/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
+        let path = `/${this.type}/${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
             path += this.isLog ? 'log/' : 'feed/'
         }
@@ -494,7 +497,7 @@ export abstract class DataStore extends Tome {
     }
 
     protected permsSubscribePath(): string {
-        let path = `/${this.type}/~${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
+        let path = `/${this.type}/${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
             path += this.isLog ? 'log/' : 'feed/'
         }

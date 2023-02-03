@@ -80,7 +80,7 @@ export class Tome {
         const mars = api !== undefined
         if (mars) {
             let locked = false
-            let tomeShip = api.ship
+            let tomeShip = `~${api.ship}`
             let space = 'our'
 
             // verify that spaces agent is installed and configured
@@ -111,11 +111,8 @@ export class Tome {
                 tomeShip = options.ship
                 space = options.space
             }
-            if (tomeShip.startsWith('~')) {
-                tomeShip = tomeShip.slice(1) // remove leading sig
-            }
             // save api.ship so we know who we are.
-            const thisShip = api.ship
+            const thisShip = `~${api.ship}`
             if (app === undefined) {
                 app = 'all'
             }

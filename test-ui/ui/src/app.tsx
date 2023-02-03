@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import Urbit from '@urbit/http-api'
 import { Button, Flex, MemeBlock } from '@holium/design-system'
 import Tome, { FeedStore } from '../pkg/src/index'
-// import { MemeBlock } from '@holium/design-system'
 
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
@@ -39,11 +38,12 @@ export function App() {
                 },
             })
             setFeed(feed)
-            testFeed(feed)
+            // testFeed(feed)
         }
         init()
     }, [])
     const ListItems = data.map((item: any, index: number) => {
+        console.log(item, index)
         return (
             <MemeBlock
                 zIndex={data.length - index}
@@ -51,7 +51,7 @@ export function App() {
                 id={item.id}
                 image={item.content}
                 by={item.ship}
-                date={new Date(item.time).toUTCString()}
+                date={new Date(item.createdAt).toUTCString()}
                 reactions={item.reactions || []}
                 onReaction={(payload) => {
                     console.log(payload)
@@ -75,7 +75,7 @@ export function App() {
                         Add new
                     </Button.Primary>
                 ) : (
-                    <p>welcome...</p>
+                    <p>loading...</p>
                 )}
                 {ListItems}
             </Flex>

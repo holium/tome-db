@@ -172,7 +172,7 @@
     ?+    mar  ~|(bad-tome-mark/mar !!)
         %tome-action
       =/  act     !<(tome-action vaz)
-      =/  ship    `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      =/  ship    `@p`(slav %p ship.act)
       ?-    -.act
           %init-tome
         ?.  =(our.bol src.bol)  ~|('no-foreign-init-tome' !!)
@@ -201,7 +201,7 @@
     ::
         %kv-action
       =/  act   !<(kv-action vaz)
-      =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      =/  ship  `@p`(slav %p ship.act)
       =*  do    kv-abet:(kv-poke:(kv-abed:kv [ship space.act app.act bucket.act]) act)
       ?-  -.act
         %set-value     do
@@ -218,7 +218,7 @@
     ::
         %feed-action
       =/  act   !<(feed-action vaz)
-      =/  ship  `@p`(slav %p `@t`(cat 3 '~' ship.act))
+      =/  ship  `@p`(slav %p ship.act)
       =*  do    fe-abet:(fe-poke:(fe-abed:fe [ship space.act app.act bucket.act log.act]) act)
       ?-    -.act
         %new-post          do

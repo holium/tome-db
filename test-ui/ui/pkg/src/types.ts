@@ -15,10 +15,10 @@ export interface FeedlogUpdate {
 
 export interface FeedlogEntry {
     id: string
-    'created-by': string
-    'updated-by': string
-    'created-at': number
-    'updated-at': number
+    createdAt: number
+    updatedAt: number
+    createdBy: string
+    updatedBy: string
     content: string
     links: object
 }
