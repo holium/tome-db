@@ -133,7 +133,7 @@
   =^  cards  state
     ?+    pol  ~|(bad-dude-wire/pol !!)
         [%kv ship=@ space=@ app=@ bucket=@ rest=*]
-      ::  local store should already have 
+      ::
       =/  ship  `@p`(slav %p ship.pol)
       ?+  -.sig  `state
         %fact  kv-abet:(kv-dude:(kv-abed:kv [ship space.pol app.pol bucket.pol]) cage.sig)
@@ -147,7 +147,7 @@
         ?~(p.sig same (slog leaf/"kv-watch nack" ~))
       ==
         [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
-      ::  local store should already have 
+      ::
       =/  ship    `@p`(slav %p ship.pol)
       =/  log=?   =(log.pol 'log')
       ?+  -.sig  `state
@@ -414,7 +414,6 @@
   ++  kv-view
     |=  rest=(pole knot)
     ^+  kv
-    ::  TODO when we get kicked from these watches, we need to remove them from subs.
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
       ?:  (~(has in subs) perm-pax)  kv
@@ -577,7 +576,8 @@
         ==
       ::
           %delete
-        ::  TODO maybe do nothing if we don't have the entry?
+        :: don't have it, ignore
+        ?.  (~(has by ids) id.upd)  fe
         =/  res  (del:fon data time.upd)
         %=  fe
           ids   (~(del by ids) id.upd)
@@ -593,7 +593,8 @@
         ==
       ::
           %set-link
-        ::  TODO maybe do nothing if we don't have the entry? check IDs
+        :: don't have the post, ignore
+        ?.  (~(has by ids) id.upd)  fe
         =/  post   (got:fon data time.upd)
         =.  links.post  (~(put by links.post) ship.upd s+value.upd)
         %=  fe
@@ -602,8 +603,11 @@
         ==
       ::
           %remove-link
-        ::  TODO maybe do nothing if we don't have the entry? check IDs
+        :: don't have the post, ignore
+        ?.  (~(has by ids) id.upd)  fe
         =/  post   (got:fon data time.upd)
+        :: don't have the link, ignore
+        ?.  (~(has by links.post) ship.upd)  fe
         =.  links.post  (~(del by links.post) ship.upd)
         %=  fe
           data  (put:fon data time.upd post)
@@ -611,8 +615,8 @@
         ==
       ::
           %all
-        ::  TODO run through data and add all entries to ids?
         %=  fe
+          ids   (malt (turn (tap:fon data.upd) |=([=time =feed-value] [id.feed-value time])))
           data  data.upd
           caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
         ==
@@ -656,7 +660,7 @@
     =/  fon  ((on time feed-value) gth)  :: mop needs this to work
     ?+    -.act  ~|('bad-feed-action' !!)
         %new-post
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))  :: TODO maybe do error prints here instead (and similar)
+      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       %=  fe
         ids   (~(put by ids) id.act now.bol)
@@ -666,8 +670,8 @@
     ::
         %edit-post
       =+  time=(~(gut by ids) id.act ~)
-      ?~  time  :: if no post, do nothing
-        fe
+      ?~  time  ~|('no-post-to-edit' !!)  :: TODO maybe just create new post?
+      ::
       =/  curr  (got:fon data time)
       =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
@@ -710,8 +714,8 @@
         %set-post-link  :: links are currently only supported by feeds, not logs
       ?>  =(lo %.n)
       =+  time=(~(gut by ids) id.act ~)
-      ?~  time  :: if no post, do nothing.  TODO: should these all be crashes? Probably depends
-        fe
+      ?~  time  ~|('no-post-for-set-link' !!)
+      ::
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
