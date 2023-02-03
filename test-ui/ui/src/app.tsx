@@ -38,7 +38,11 @@ export function App() {
                 },
             })
             setFeed(feed)
-            // testFeed(feed)
+            const id = await feed.post(
+                'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
+            )
+            await feed.setLink(id, '1f60d')
+            //testFeed(feed)
         }
         init()
     }, [])

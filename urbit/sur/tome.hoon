@@ -35,7 +35,7 @@
 +$  feed-ids  (map id time)
 ::
 :: +$  replies     ((mop time reply-value) gth)
-+$  links   (map ship json-value)
++$  links   (map @t json-value)
 ::
 :: +$  reply-value
 ::   $:  created-by=ship
@@ -109,8 +109,8 @@
       [%watch-feed ship=@t =space =app =bucket =log]
       [%team-feed ship=@t =space =app =bucket =log]
   ::  actions for links (anything a foreign ship wants to associate with a post)
-      [%set-post-link ship=@t =space =app =bucket =log =id =value]      :: src.bol is the ship to set the link for
-      [%remove-post-link ship=@t =space =app =bucket =log =id]          :: only you can do this currently (uses src.bol for ship to remove)
+      [%set-post-link ship=@t =space =app =bucket =log =id =value]
+      [%remove-post-link ship=@t =space =app =bucket =log =id]
   ==
 ::
 +$  feed-update
@@ -119,8 +119,8 @@
       [%delete =id =time]
       [%clear ~]
     ::
-      [%set-link =id =time =ship =value]
-      [%remove-link =id =time =ship]
+      [%set-link =id =time ship=@t =value] :: these are @t to make returning them easier
+      [%remove-link =id =time ship=@t]
     ::
       [%get value=?(~ json-value)]
       [%all data=feed-data]

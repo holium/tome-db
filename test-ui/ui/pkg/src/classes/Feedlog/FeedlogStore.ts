@@ -89,7 +89,10 @@ export abstract class FeedlogStore extends DataStore {
         }
     }
 
-    private async _setOrRemoveLink(id: string, value?: Value) {
+    private async _setOrRemoveLink(
+        id: string,
+        value?: Value
+    ): Promise<boolean> {
         if (!validate(id)) {
             console.error('Invalid ID.')
             return false

@@ -393,12 +393,12 @@ export abstract class DataStore extends Tome {
                             entry.createdBy = entry.createdBy.slice(1)
                             entry.updatedBy = entry.updatedBy.slice(1)
                             entry.content = JSON.parse(entry.content)
-                            // entry.links = Object.fromEntries(
-                            //     Object.entries(entry.links).map(([k, v]) => [
-                            //         k.slice(1),
-                            //         JSON.parse(v),
-                            //     ])
-                            // )
+                            entry.links = Object.fromEntries(
+                                Object.entries(entry.links).map(([k, v]) => [
+                                    k.slice(1),
+                                    JSON.parse(v),
+                                ])
+                            )
                             return entry
                         })
                         this.feedlog = data as object[]

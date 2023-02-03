@@ -55,7 +55,7 @@
         [%'createdAt' (time created-at.v.x)]
         [%'updatedAt' (time updated-at.v.x)]
         [%content content.v.x]
-        :: [%links o+links.v.x]  :: TODO make links keys strings instead? probably just turn them here
+        [%links o+links.v.x]
     ==
   ::
   ++  feed-update
@@ -66,8 +66,8 @@
       %edit         (pairs ~[[%type s+'edit'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]]) :: time is updated-time, ship is updated-by
       %delete       (pairs ~[[%type s+'delete'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)]])]])
       %clear        (frond %type s+'clear')
-      %set-link     (pairs ~[[%type s+'set-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%value s+value.upd]])]])
-      %remove-link  (pairs ~[[%type s+'remove-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)]])]])
+      %set-link     (pairs ~[[%type s+'set-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd] [%value s+value.upd]])]])
+      %remove-link  (pairs ~[[%type s+'remove-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd]])]])
       %get          value.upd
       %perm         (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
         %all

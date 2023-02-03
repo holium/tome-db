@@ -715,11 +715,11 @@
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
-      =/  new-links  (~(put by links.curr) src.bol s+value.act)
+      =/  ship-str   `@t`(scot %p src.bol)
+      =/  new-links  (~(put by links.curr) ship-str s+value.act)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
-        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%set-link id.act time src.bol value.act])] caz]
-        :: caz
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%set-link id.act time ship-str value.act])] caz]
       ==
     ::
         %remove-post-link
@@ -730,10 +730,11 @@
       ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
-      =/  new-links  (~(del by links.curr) src.bol)
+      =/  ship-str   `@t`(scot %p src.bol)
+      =/  new-links  (~(del by links.curr) ship-str)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
-        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%remove-link id.act time src.bol])] caz]
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%remove-link id.act time ship-str])] caz]
       ==
     ::
     ==
