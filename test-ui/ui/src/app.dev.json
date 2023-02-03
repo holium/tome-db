@@ -1,0 +1,17 @@
+{
+    "tome-db": {
+        "id": "tome-db-dev",
+        "title": "Tome DB - Dev",
+        "type": "dev",
+        "color": "#cebef0",
+        "icon": "https://lomder-librun.sfo3.digitaloceanspaces.com/tiles/ballot-app-tile.svg",
+        "config": {
+            "size": [3, 7],
+            "showTitlebar": true,
+            "titlebarBorder": false
+        },
+        "web": {
+            "url": "http://localhost:3000/apps/tome-db/"
+        }
+    }
+}
