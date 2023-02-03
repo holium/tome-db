@@ -35,10 +35,7 @@ export default ({ mode }) => {
                 ? parseInt(process.env.VITE_PORT)
                 : 3000,
             fs: {
-                allow: [
-                    '../../../realm/lib/design-system/',
-                    '../',
-                ],
+                allow: ['../../../realm/lib/design-system/', '../'],
             },
         },
         plugins: [
