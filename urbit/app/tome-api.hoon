@@ -592,6 +592,24 @@
           caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
         ==
       ::
+          %set-link
+        ::  TODO maybe do nothing if we don't have the entry? check IDs
+        =/  post   (got:fon data time.upd)
+        =.  links.post  (~(put by links.post) ship.upd s+value.upd)
+        %=  fe
+          data  (put:fon data time.upd post)
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
+          %remove-link
+        ::  TODO maybe do nothing if we don't have the entry? check IDs
+        =/  post   (got:fon data time.upd)
+        =.  links.post  (~(del by links.post) ship.upd)
+        %=  fe
+          data  (put:fon data time.upd post)
+          caz   [[%give %fact ~[data-pax] %feed-update !>(upd)] caz]
+        ==
+      ::
           %all
         ::  TODO run through data and add all entries to ids?
         %=  fe
@@ -700,6 +718,7 @@
       =/  new-links  (~(put by links.curr) src.bol s+value.act)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%set-link id.act time src.bol value.act])] caz]
         :: caz
       ==
     ::
@@ -714,7 +733,7 @@
       =/  new-links  (~(del by links.curr) src.bol)
       %=  fe
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
-        :: caz
+        caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%remove-link id.act time src.bol])] caz]
       ==
     ::
     ==

@@ -27,9 +27,8 @@
         verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
         watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
         team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
-        :: these don't work because ?????
-        :: set-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/so value/so])
-        :: remove-post-link/(ot ~[ship/so space/so app/so bucket/so log/so id/so])
+        set-post-link/(ot ~[ship/so space/so app/so bucket/so log/bo id/so value/so])
+        remove-post-link/(ot ~[ship/so space/so app/so bucket/so log/bo id/so])
     ==
   --
 ++  enjs  =,  enjs:format
@@ -48,18 +47,29 @@
   ::
   ++  feed-convert
     |=  x=[k=@da v=feed-value]
-      (pairs ~[[%id s+id.v.x] [%time (time k.x)] [%ship s+(scot %p created-by.v.x)] [%content content.v.x]])
+    ^-  json
+    %-  pairs
+    :~  [%id s+id.v.x]
+        [%created-by s+(scot %p created-by.v.x)]
+        [%updated-by s+(scot %p updated-by.v.x)]
+        [%created-at (time created-at.v.x)]
+        [%updated-at (time updated-at.v.x)]
+        [%content content.v.x]
+        :: [%links o+links.v.x]  :: TODO make links keys strings instead? probably just turn them here
+    ==
   ::
   ++  feed-update
     |=  upd=^feed-update
     ^-  json
     ?-  -.upd
-      %new     (pairs ~[[%type s+'new'] [%value (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]])
-      %edit    (pairs ~[[%type s+'edit'] [%value (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]]) :: time is updated-time, ship is updated-by
-      %delete  (pairs ~[[%type s+'delete'] [%value (pairs ~[[%id s+id.upd] [%time (time time.upd)]])]])
-      %clear   (frond %type s+'clear')
-      %get     value.upd
-      %perm    (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
+      %new          (pairs ~[[%type s+'new'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]])
+      %edit         (pairs ~[[%type s+'edit'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%content s+content.upd]])]]) :: time is updated-time, ship is updated-by
+      %delete       (pairs ~[[%type s+'delete'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)]])]])
+      %clear        (frond %type s+'clear')
+      %set-link     (pairs ~[[%type s+'set-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)] [%value s+value.upd]])]])
+      %remove-link  (pairs ~[[%type s+'remove-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+(scot %p ship.upd)]])]])
+      %get          value.upd
+      %perm         (pairs ~[[%read s+read.perm.upd] [%write s+write.perm.upd] [%admin s+admin.perm.upd]])
         %all
       =/  fon        ((on @da feed-value) gth)  :: mop needs this to work
       =/  data-list  (tap:fon data.upd)

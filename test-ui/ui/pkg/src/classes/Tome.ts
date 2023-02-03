@@ -34,9 +34,9 @@ export class Tome {
             mark: tomeMark,
             json: {
                 'init-tome': {
-                    ship: ship,
-                    space: space,
-                    app: app,
+                    ship,
+                    space,
+                    app,
                 },
             },
             onError: (error) => {
@@ -119,7 +119,7 @@ export class Tome {
             if (app === undefined) {
                 app = 'all'
             }
-            let perm = options.permissions
+            const perm = options.permissions
                 ? options.permissions
                 : ({ read: 'space', write: 'our', admin: 'our' } as const)
             await Tome.initTomePoke(api, tomeShip, space, app)
@@ -153,7 +153,7 @@ export class Tome {
             } as const
         }
         return await DataStore.initDataStore({
-            type: type,
+            type,
             api: this.api,
             tomeShip: this.tomeShip,
             thisShip: this.thisShip,
@@ -167,7 +167,7 @@ export class Tome {
             onWriteChange: options.onWriteChange,
             onAdminChange: options.onAdminChange,
             onDataChange: options.onDataChange,
-            isLog: isLog,
+            isLog,
         })
     }
 

@@ -11,6 +11,18 @@ export function App() {
     const [data, setData] = useState([])
     const [feed, setFeed] = useState<FeedStore>()
 
+    const testFeed = async (feed: FeedStore) => {
+        const id = await feed.post(
+            'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
+        )
+        await feed.edit(id, 'helloworld!')
+        await feed.setLink(
+            id,
+            'https://twitter.com/urbit/status/1380000000000000000'
+        )
+        console.log(feed)
+    }
+
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
@@ -26,6 +38,7 @@ export function App() {
                 },
             })
             setFeed(feed)
+            testFeed(feed)
         }
         init()
     }, [])

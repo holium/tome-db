@@ -1,4 +1,12 @@
-import { FeedlogEntry, InitStoreOptions, Perm, StoreType, Value } from '../index'
+/* eslint-disable @typescript-eslint/no-misused-promises */
+import {
+    FeedlogEntry,
+    InitStoreOptions,
+    Perm,
+    StoreType,
+    SubscribeUpdate,
+    Value,
+} from '../index'
 import { LogStore, FeedStore, KeyValueStore, Tome } from './index'
 import { agent, kvMark, feedMark, tomeMark } from './constants'
 
@@ -16,8 +24,8 @@ export abstract class DataStore extends Tome {
     protected onDataChange: (data: any) => void
 
     protected cache: Map<string, Value> // cache key-value pairs
-    protected feedlog: Array<Value> // array of objects (feed entries)
-    protected order: Array<string> // ids of feed entries in order
+    protected feedlog: object[] // array of objects (feed entries)
+    protected order: string[] // ids of feed entries in order
 
     protected bucket: string
     protected write: boolean
@@ -27,7 +35,9 @@ export abstract class DataStore extends Tome {
     protected isLog: boolean
 
     // assumes MARZ
-    public static async initDataStore(options: InitStoreOptions) {
+    public static async initDataStore(
+        options: InitStoreOptions
+    ): Promise<DataStore> {
         const { tomeShip, thisShip, type, isLog } = options
         if (tomeShip === thisShip) {
             await DataStore.initBucket(options)
@@ -104,7 +114,7 @@ export abstract class DataStore extends Tome {
             // TODO only do if %spaces exists.  Assume it does for now.
             this.watchCurrentSpace()
             // TODO turn this back on
-            //this.watchPerms()
+            // this.watchPerms()
             this.setReady(true)
         } else {
             // This should only be called by KeyValueStore.
@@ -112,7 +122,7 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    private async watchPerms() {
+    private async watchPerms(): Promise<void> {
         await this.api.subscribe({
             app: agent,
             path: this.permsSubscribePath(),
@@ -122,8 +132,8 @@ export abstract class DataStore extends Tome {
                 )
             },
             event: async (perms: Perm) => {
-                const write = perms.write === 'yes' ? true : false
-                const admin = perms.admin === 'yes' ? true : false
+                const write = perms.write === 'yes'
+                const admin = perms.admin === 'yes'
                 this.setWrite(write)
                 this.setAdmin(admin)
             },
@@ -131,7 +141,7 @@ export abstract class DataStore extends Tome {
         })
     }
 
-    private async watchCurrentSpace() {
+    private async watchCurrentSpace(): Promise<void> {
         this.spaceSubscriptionID = await this.api.subscribe({
             app: 'spaces',
             path: '/current',
@@ -141,7 +151,7 @@ export abstract class DataStore extends Tome {
                 )
             },
             event: async (current: JSON) => {
-                // @ts-ignore
+                // @ts-expect-error
                 const spacePath = current.current.path.split('/')
                 const tomeShip = spacePath[1].slice(1)
                 const space = spacePath[2]
@@ -159,7 +169,10 @@ export abstract class DataStore extends Tome {
     }
 
     // this seems like pretty dirty update method, is there a better way?
-    private async _wipeAndChangeSpace(tomeShip: string, space: string) {
+    private async _wipeAndChangeSpace(
+        tomeShip: string,
+        space: string
+    ): Promise<void> {
         this.setReady(false)
         if (this.storeSubscriptionID) {
             await this.api.unsubscribe(this.storeSubscriptionID)
@@ -179,7 +192,7 @@ export abstract class DataStore extends Tome {
             bucket: this.bucket,
             type: this.type,
             isLog: this.isLog,
-            perm: perm,
+            perm,
         }
         // if not ours, we need to make sure we have read access first.
         if (tomeShip !== this.thisShip) {
@@ -209,20 +222,22 @@ export abstract class DataStore extends Tome {
         this.setReady(true)
     }
 
-    protected static async checkExistsAndCanRead(options: InitStoreOptions) {
+    protected static async checkExistsAndCanRead(
+        options: InitStoreOptions
+    ): Promise<void> {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
         const action = `verify-${type}`
         const body = {
             [action]: {
                 ship: tomeShip,
-                space: space,
-                app: app,
-                bucket: bucket,
+                space,
+                app,
+                bucket,
             },
         }
         if (type === 'feed') {
-            // @ts-ignore
-            body[action]['log'] = isLog
+            // @ts-expect-error
+            body[action].log = isLog
         }
         // Tunnel poke to Tome ship
         const result = await api
@@ -247,21 +262,23 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    protected static async initBucket(options: InitStoreOptions) {
+    protected static async initBucket(
+        options: InitStoreOptions
+    ): Promise<void> {
         const { api, tomeShip, space, app, bucket, type, isLog, perm } = options
         const action = `init-${type}`
         const body = {
             [action]: {
                 ship: tomeShip,
-                space: space,
-                app: app,
-                bucket: bucket,
-                perm: perm,
+                space,
+                app,
+                bucket,
+                perm,
             },
         }
         if (type === 'feed') {
-            // @ts-ignore
-            body[action]['log'] = isLog
+            // @ts-expect-error
+            body[action].log = isLog
         }
         await api.poke({
             app: agent,
@@ -277,25 +294,25 @@ export abstract class DataStore extends Tome {
 
     protected static async startWatchingForeignBucket(
         options: InitStoreOptions
-    ) {
+    ): Promise<void> {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
         const action = `watch-${type}`
         const mark = type === 'kv' ? kvMark : feedMark
         const body = {
             [action]: {
                 ship: tomeShip,
-                space: space,
-                app: app,
-                bucket: bucket,
+                space,
+                app,
+                bucket,
             },
         }
         if (type === 'feed') {
-            // @ts-ignore
-            body[action]['log'] = isLog
+            // @ts-expect-error
+            body[action].log = isLog
         }
         await api.poke({
             app: agent,
-            mark: mark,
+            mark,
             json: body,
             onError: (error) => {
                 throw new Error(
@@ -307,25 +324,25 @@ export abstract class DataStore extends Tome {
 
     protected static async startWatchingForeignPerms(
         options: InitStoreOptions
-    ) {
+    ): Promise<void> {
         const { api, tomeShip, space, app, bucket, type, isLog } = options
         const action = `team-${type}`
         const mark = type === 'kv' ? kvMark : feedMark
         const body = {
             [action]: {
                 ship: tomeShip,
-                space: space,
-                app: app,
-                bucket: bucket,
+                space,
+                app,
+                bucket,
             },
         }
         if (type === 'feed') {
-            // @ts-ignore
-            body[action]['log'] = isLog
+            // @ts-expect-error
+            body[action].log = isLog
         }
         await api.poke({
             app: agent,
-            mark: mark,
+            mark,
             json: body,
             onError: (error) => {
                 throw new Error(
@@ -336,7 +353,7 @@ export abstract class DataStore extends Tome {
     }
 
     // subscribe to all values in the store, and keep cache synced.
-    protected async subscribeAll() {
+    protected async subscribeAll(): Promise<void> {
         this.storeSubscriptionID = await this.api.subscribe({
             app: agent,
             path: this.dataSubscribePath(),
@@ -345,9 +362,10 @@ export abstract class DataStore extends Tome {
                     `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
                 )
             },
-            event: async (data: Value) => {
+            event: async (data: SubscribeUpdate) => {
                 if (this.type === 'kv') {
-                    const entries: [string, string][] = Object.entries(data)
+                    const entries: Array<[string, string]> =
+                        Object.entries(data)
                     if (entries.length === 0) {
                         // received an empty object, clear the cache.
                         this.cache.clear()
@@ -372,32 +390,49 @@ export abstract class DataStore extends Tome {
                             // save the IDs in time order so they are easier to find later
                             this.order.push(entry.id)
                             entry.content = JSON.parse(entry.content)
+                            entry.links = Object.fromEntries(
+                                Object.entries(entry.links).map(([k, v]) => [
+                                    k,
+                                    JSON.parse(v),
+                                ])
+                            )
                             return entry
                         })
-                        this.feedlog = data
+                        this.feedlog = data as object[]
                     } else {
                         // %all update overwrites the array, so we need to wait here
                         // TODO can this block forever? might depend on update order
                         await this.waitForLoaded()
-                        // %new, %edit, %delete, %clear
+                        // %new, %edit, %delete, %clear, %set-link, %remove-link
                         let index: number
                         switch (data.type) {
-                            case 'new':
-                                this.order.unshift(data.value.id)
-                                this.feedlog.unshift(data.value)
+                            case 'new': {
+                                this.order.unshift(data.body.id)
+                                const entry = {
+                                    id: data.body.id,
+                                    'created-at': data.body.time,
+                                    'updated-at': data.body.time,
+                                    'created-by': data.body.ship,
+                                    'updated-by': data.body.ship,
+                                    content: data.body.content,
+                                    links: {},
+                                }
+                                this.feedlog.unshift(entry)
                                 break
+                            }
                             case 'edit':
-                                index = this.order.indexOf(data.value.id)
+                                index = this.order.indexOf(data.body.id)
                                 if (index > -1) {
-                                    // TODO for now we don't store updated time or author
                                     this.feedlog[index] = {
                                         ...this.feedlog[index],
-                                        content: JSON.parse(data.value.content),
+                                        content: JSON.parse(data.body.content),
+                                        'updated-at': data.body.time,
+                                        'updated-by': data.body.ship,
                                     }
                                 }
                                 break
                             case 'delete':
-                                index = this.order.indexOf(data.value.id)
+                                index = this.order.indexOf(data.body.id)
                                 if (index > -1) {
                                     this.feedlog.splice(index, 1)
                                     this.order.splice(index, 1)
@@ -405,6 +440,32 @@ export abstract class DataStore extends Tome {
                                 break
                             case 'clear':
                                 this.wipeLocalValues()
+                                break
+                            case 'set-link':
+                                index = this.order.indexOf(data.body.id)
+                                if (index > -1) {
+                                    this.feedlog[index] = {
+                                        ...this.feedlog[index],
+                                        links: {
+                                            ...this.feedlog[index].links,
+                                            [data.body.ship]: JSON.parse(
+                                                data.body.value
+                                            ),
+                                        },
+                                    }
+                                }
+                                break
+                            case 'remove-link':
+                                index = this.order.indexOf(data.body.id)
+                                if (index > -1) {
+                                    this.feedlog[index] = {
+                                        ...this.feedlog[index],
+                                        links: (({
+                                            [data.body.ship]: _,
+                                            ...o
+                                        }) => o)(this.feedlog[index].links), // remove data.body.ship
+                                    }
+                                }
                                 break
                             default:
                                 console.error('Tome-feed: unknown update type')
@@ -441,7 +502,7 @@ export abstract class DataStore extends Tome {
         return path
     }
 
-    protected setReady(ready: boolean) {
+    protected setReady(ready: boolean): void {
         if (ready !== this.ready) {
             this.ready = ready
             if (this.onReadyChange) {
@@ -450,7 +511,7 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    protected setWrite(write: boolean) {
+    protected setWrite(write: boolean): void {
         if (write !== this.write) {
             this.write = write
             if (this.onWriteChange) {
@@ -459,7 +520,7 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    protected setAdmin(admin: boolean) {
+    protected setAdmin(admin: boolean): void {
         if (admin !== this.admin) {
             this.admin = admin
             if (this.onAdminChange) {
@@ -468,8 +529,8 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    protected waitForReady(): Promise<void> {
-        return new Promise((resolve) => {
+    protected async waitForReady(): Promise<void> {
+        return await new Promise((resolve) => {
             while (!this.ready) {
                 setTimeout(() => {}, 50)
             }
@@ -477,8 +538,8 @@ export abstract class DataStore extends Tome {
         })
     }
 
-    protected waitForLoaded(): Promise<void> {
-        return new Promise((resolve) => {
+    protected async waitForLoaded(): Promise<void> {
+        return await new Promise((resolve) => {
             while (!this.loaded) {
                 setTimeout(() => {}, 50)
             }
@@ -499,10 +560,10 @@ export abstract class DataStore extends Tome {
         return false
     }
 
-    protected dataUpdateCallback() {
+    protected dataUpdateCallback(): void {
         switch (this.type) {
             case 'kv':
-                if (this.onDataChange) { 
+                if (this.onDataChange) {
                     this.onDataChange(this.cache)
                 }
                 break
@@ -514,7 +575,7 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    private wipeLocalValues() {
+    private wipeLocalValues(): void {
         this.cache.clear()
         this.order.length = 0
         this.feedlog.length = 0

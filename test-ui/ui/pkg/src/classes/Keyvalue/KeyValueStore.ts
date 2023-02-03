@@ -45,7 +45,7 @@ export class KeyValueStore extends DataStore {
                     space: this.space,
                     app: this.app,
                     bucket: this.bucket,
-                    key: key,
+                    key,
                     value: valueStr,
                 },
             }
@@ -53,7 +53,7 @@ export class KeyValueStore extends DataStore {
                 await this.api.poke({
                     app: agent,
                     mark: kvMark,
-                    json: json,
+                    json,
                     onSuccess: () => {
                         this.cache.set(key, value)
                         this.dataUpdateCallback()
@@ -116,14 +116,14 @@ export class KeyValueStore extends DataStore {
                     space: this.space,
                     app: this.app,
                     bucket: this.bucket,
-                    key: key,
+                    key,
                 },
             }
             if (this.tomeShip === this.thisShip) {
                 await this.api.poke({
                     app: agent,
                     mark: kvMark,
-                    json: json,
+                    json,
                     onSuccess: () => {
                         this.cache.delete(key)
                         this.dataUpdateCallback()
@@ -185,7 +185,7 @@ export class KeyValueStore extends DataStore {
                 await this.api.poke({
                     app: agent,
                     mark: kvMark,
-                    json: json,
+                    json,
                     onSuccess: () => {
                         this.cache.clear()
                         this.dataUpdateCallback()
@@ -319,7 +319,7 @@ export class KeyValueStore extends DataStore {
                         this.cache.delete(key)
                     }
                 },
-                quit: () => this._getValueFromUrbit(key),
+                quit: async () => await this._getValueFromUrbit(key),
             })
             .then(async (id) => {
                 await this.api.unsubscribe(id)
@@ -339,7 +339,8 @@ export class KeyValueStore extends DataStore {
                     )
                 },
                 event: (data: Value) => {
-                    const entries: [string, string][] = Object.entries(data)
+                    const entries: Array<[string, string]> =
+                        Object.entries(data)
                     const newCache = new Map<string, Value>()
                     for (let [key, value] of entries) {
                         // TODO foreign strings are getting stripped of their quotes? This is a workaround.
@@ -350,7 +351,7 @@ export class KeyValueStore extends DataStore {
                     }
                     this.cache = newCache
                 },
-                quit: () => this._getAllFromUrbit(),
+                quit: async () => await this._getAllFromUrbit(),
             })
             .then(async (id) => {
                 await this.api.unsubscribe(id)

@@ -1,4 +1,10 @@
-import { Content, DataStore, InitStoreOptions, Value } from '../../index'
+import {
+    Content,
+    DataStore,
+    FeedlogEntry,
+    InitStoreOptions,
+    Value,
+} from '../../index'
 import { agent, feedMark, feedThread } from '../constants'
 import { v4 as uuid, validate } from 'uuid'
 
@@ -14,7 +20,7 @@ export abstract class FeedlogStore extends DataStore {
         content: Content,
         id?: string
     ): Promise<string | undefined> {
-        let action = id === undefined ? 'new-post' : 'edit-post'
+        const action = id === undefined ? 'new-post' : 'edit-post'
         if (action === 'new-post') {
             id = uuid()
         } else {
@@ -38,7 +44,7 @@ export abstract class FeedlogStore extends DataStore {
                 app: this.app,
                 bucket: this.bucket,
                 log: this.isLog,
-                id: id,
+                id,
                 content: contentStr,
             },
         }
@@ -46,7 +52,7 @@ export abstract class FeedlogStore extends DataStore {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
-                json: json,
+                json,
                 onSuccess: () => {
                     success = true
                 },
@@ -88,7 +94,8 @@ export abstract class FeedlogStore extends DataStore {
             console.error('Invalid ID.')
             return false
         }
-        let action = value !== undefined ? 'set-post-link' : 'remove-post-link'
+        const action =
+            value !== undefined ? 'set-post-link' : 'remove-post-link'
         if (action === 'set-post-link') {
             if (!this.canStore(value)) {
                 console.error('value is an invalid type.')
@@ -105,23 +112,23 @@ export abstract class FeedlogStore extends DataStore {
                 app: this.app,
                 bucket: this.bucket,
                 log: this.isLog,
-                id: id,
+                id,
             },
         }
         if (action === 'set-post-link') {
-            json[action]['value'] = JSON.stringify(value)
+            json[action].value = JSON.stringify(value)
         }
         if (this.tomeShip === this.thisShip) {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
-                json: json,
+                json,
                 onSuccess: () => {
                     success = true
                 },
                 onError: () => {
                     console.error(
-                        `Tome-${this.name}: Failed to save content to the ${this.name}.`
+                        `Tome-${this.name}: Failed to modify link in the ${this.name}.`
                     )
                 },
             })
@@ -139,7 +146,7 @@ export abstract class FeedlogStore extends DataStore {
                 })
                 .catch(() => {
                     console.error(
-                        `Tome-${this.name}: Failed to save content to the ${this.name}.`
+                        `Tome-${this.name}: Failed to modify link in the ${this.name}.`
                     )
                     return undefined
                 })
@@ -181,14 +188,14 @@ export abstract class FeedlogStore extends DataStore {
                 app: this.app,
                 bucket: this.bucket,
                 log: this.isLog,
-                id: id,
+                id,
             },
         }
         if (this.tomeShip === this.thisShip) {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
-                json: json,
+                json,
                 onSuccess: () => {
                     success = true
                 },
@@ -235,7 +242,7 @@ export abstract class FeedlogStore extends DataStore {
             await this.api.poke({
                 app: agent,
                 mark: feedMark,
-                json: json,
+                json,
                 onSuccess: () => {
                     success = true
                 },
@@ -296,7 +303,7 @@ export abstract class FeedlogStore extends DataStore {
         }
     }
 
-    public async all(useCache: boolean = false): Promise<Array<Content>> {
+    public async all(useCache: boolean = false): Promise<Content[]> {
         await this.waitForReady()
         if (this.preload) {
             await this.waitForLoaded()
@@ -310,7 +317,7 @@ export abstract class FeedlogStore extends DataStore {
 
     // TODO just make this a scry (same for get and for KVStore)
     // TODO - does this have race conditions?
-    private async _getAllFromUrbit(): Promise<Array<Content>> {
+    private async _getAllFromUrbit(): Promise<Content[]> {
         return await this.api
             .subscribe({
                 app: agent,
@@ -320,11 +327,11 @@ export abstract class FeedlogStore extends DataStore {
                         `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
                     )
                 },
-                event: (data: Content[]) => {
+                event: (data: FeedlogEntry[]) => {
                     // TODO loop over feedlog and add ids to order
                     this.feedlog = data
                 },
-                quit: () => this._getAllFromUrbit(),
+                quit: async () => await this._getAllFromUrbit(),
             })
             .then(async (id) => {
                 await this.api.unsubscribe(id)
@@ -347,7 +354,7 @@ export abstract class FeedlogStore extends DataStore {
                     // TODO
                     console.log(value)
                 },
-                quit: () => this._getValueFromUrbit(id),
+                quit: async () => await this._getValueFromUrbit(id),
             })
             .then(async (id) => {
                 await this.api.unsubscribe(id)

@@ -90,6 +90,7 @@
   $%  [%set =key =value]
       [%remove =key]
       [%clear ~]
+    ::
       [%get value=?(~ json-value)]
       [%all data=kv-data]
       [%perm =perm]
@@ -110,8 +111,6 @@
   ::  actions for links (anything a foreign ship wants to associate with a post)
       [%set-post-link ship=@t =space =app =bucket =log =id =value]      :: src.bol is the ship to set the link for
       [%remove-post-link ship=@t =space =app =bucket =log =id]          :: only you can do this currently (uses src.bol for ship to remove)
-  ::  actions on replies
-      :: [%add-reply ship=@t =space =app =bucket =log post=id =value]
   ==
 ::
 +$  feed-update
@@ -119,6 +118,10 @@
       [%edit =id =time =ship =content]  :: ship is who updated, time is update time
       [%delete =id =time]
       [%clear ~]
+    ::
+      [%set-link =id =time =ship =value]
+      [%remove-link =id =time =ship]
+    ::
       [%get value=?(~ json-value)]
       [%all data=feed-data]
       [%perm =perm]
