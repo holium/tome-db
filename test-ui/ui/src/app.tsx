@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Urbit from '@urbit/http-api'
 import { Button, Flex, MemeBlock } from '@holium/design-system'
 import Tome, { FeedStore } from '../pkg/src/index'
+import { v4 as uuid } from 'uuid'
 
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
@@ -31,6 +32,7 @@ export function App() {
                 permissions: { read: 'space', write: 'space', admin: 'our' },
                 onReadyChange: setReady,
                 onDataChange: (data) => {
+                    console.log(data)
                     // newest records first.
                     // if you want a different order, you can sort the data here.
                     // need to spread array to trigger re-render
@@ -38,7 +40,7 @@ export function App() {
                 },
             })
             const feed = await db.feed({
-                preload: true,
+                preload: false,
                 permissions: { read: 'space', write: 'space', admin: 'our' },
                 onReadyChange: setReady,
                 onDataChange: (data) => {
@@ -48,8 +50,12 @@ export function App() {
                     setData([...data])
                 },
             })
-            setFeed(feed)
-            console.log(feed)
+            // setFeed(feed)
+            // console.log(feed)
+            await kv.set('test', 'hello world!')
+            // console.log(await kv.get('test'))
+            //console.log()
+            //console.log('hello world!')
             // const id = await feed.post(
             //     'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
             // )

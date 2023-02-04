@@ -69,7 +69,9 @@
       %set-link     (pairs ~[[%type s+'set-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd] [%value s+value.upd]])]])
       %remove-link  (pairs ~[[%type s+'remove-link'] [%body (pairs ~[[%id s+id.upd] [%time (time time.upd)] [%ship s+ship.upd]])]])
       %perm         (pairs ~[[%write s+write.upd] [%admin s+admin.upd]])
-      %get          value.upd
+        %get
+      ?~  post.upd  ~
+      (feed-convert [*@da post.upd])
         %all
       =/  fon        ((on @da feed-value) gth)  :: mop needs this to work
       =/  data-list  (tap:fon data.upd)
