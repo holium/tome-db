@@ -194,7 +194,7 @@ export class Tome {
      */
     public async keyvalue(options: StoreOptions = {}): Promise<KeyValueStore> {
         if (this.mars) {
-            return await this.initStore(options, 'kv', false)
+            return (await this.initStore(options, 'kv', false)) as KeyValueStore
         } else {
             return new KeyValueStore()
         }
@@ -202,7 +202,7 @@ export class Tome {
 
     public async feed(options: StoreOptions = {}): Promise<FeedStore> {
         if (this.mars) {
-            return await this.initStore(options, 'feed', false)
+            return (await this.initStore(options, 'feed', false)) as FeedStore
         } else {
             throw new Error(
                 'Tome-feed: Feed can only be used with Urbit. Try using `keyvalue` instead.'
@@ -212,7 +212,7 @@ export class Tome {
 
     public async log(options: StoreOptions = {}): Promise<LogStore> {
         if (this.mars) {
-            return await this.initStore(options, 'feed', true)
+            return (await this.initStore(options, 'feed', true)) as LogStore
         } else {
             throw new Error(
                 'Tome-log: Log can only be used with Urbit. Try using `keyvalue` instead.'
