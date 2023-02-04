@@ -27,18 +27,18 @@ export function App() {
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
-            const kv = await db.keyvalue({
-                preload: true,
-                permissions: { read: 'space', write: 'space', admin: 'our' },
-                onReadyChange: setReady,
-                onDataChange: (data) => {
-                    console.log(data)
-                    // newest records first.
-                    // if you want a different order, you can sort the data here.
-                    // need to spread array to trigger re-render
-                    setData([...data])
-                },
-            })
+            // const kv = await db.keyvalue({
+            //     preload: true,
+            //     permissions: { read: 'space', write: 'space', admin: 'our' },
+            //     onReadyChange: setReady,
+            //     onDataChange: (data) => {
+            //         console.log(data)
+            //         // newest records first.
+            //         // if you want a different order, you can sort the data here.
+            //         // need to spread array to trigger re-render
+            //         setData([...data])
+            //     },
+            // })
             const feed = await db.feed({
                 preload: false,
                 permissions: { read: 'space', write: 'space', admin: 'our' },
@@ -52,14 +52,22 @@ export function App() {
             })
             // setFeed(feed)
             // console.log(feed)
-            await kv.set('test', 'hello world!')
+            //await kv.set('test', 'hello world!')
             // console.log(await kv.get('test'))
             //console.log()
             //console.log('hello world!')
-            // const id = await feed.post(
-            //     'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
-            // )
-            // await feed.setLink(id, '1f60d')
+            const id = await feed.post(
+                'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
+            )
+            await feed.setLink(id, ':zodzodzod:')
+            await feed.blockShip('zod')
+            // const result = await kv.set('key', 4)
+            // await kv.setPermissions({
+            //     read: 'space',
+            //     write: 'our',
+            //     admin: 'our',
+            // })
+            //console.log(result)
             //testFeed(feed)
         }
         init()

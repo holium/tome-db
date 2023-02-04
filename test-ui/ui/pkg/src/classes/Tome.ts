@@ -219,4 +219,8 @@ export class Tome {
             )
         }
     }
+
+    public isOurStore(): boolean {
+        return this.tomeShip === this.ourShip
+    }
 }

@@ -1,4 +1,7 @@
-::  a space agent skeleton
+::  Tome DB - a Holium collaboration
+::  by ~larryx-woldyr
+::  TODO: add link to docs
+::   
 /-  *tome, s-p=spaces-path
 /+  r-l=realm-lib
 /+  verb, dbug, defa=default-agent
@@ -9,9 +12,6 @@
 +$  versioned-state  $%(state-0)
 ::
 +$  state-0  [%0 tome=(mip path:s-p app tome-data) subs=(set path)] :: subs is data paths we are subscribed to
-::
-::
-::  boilerplate
 ::
 +$  card  card:agent:gall
 --
@@ -143,8 +143,20 @@
         kv-abet:(kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
       ::
           %watch-ack
-        %.  `state
-        ?~(p.sig same (slog leaf/"kv-watch nack" ~))
+        ?+    rest.pol  ~|(bad-kv-watch-ack-path/rest.pol !!)
+            [%data %all ~]
+          ?~  p.sig
+            ::  sub success, store that we're subscribed
+            =.  subs  (~(put in subs) pol)
+            `state
+          ((slog leaf/"kv-watch nack" ~) `state)          
+        ::
+            [%perm ~]
+          %.  `state
+          ?~(p.sig same (slog leaf/"kv-watch nack" ~))
+        ::
+        ==
+      ::
       ==
         [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
       ::
@@ -158,8 +170,18 @@
         fe-abet:(fe-view:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
       ::
           %watch-ack
-        %.  `state
-        ?~(p.sig same (slog leaf/"feed-watch nack" ~))
+        ?+    rest.pol  ~|(bad-feed-watch-ack-path/rest.pol !!)
+            [%data %all ~]
+          ?~  p.sig
+            =.  subs  (~(put in subs) pol)
+            `state
+          ((slog leaf/"feed-watch nack" ~) `state)          
+        ::
+            [%perm ~]
+          %.  `state
+          ?~(p.sig same (slog leaf/"feed-watch nack" ~))
+        ::
+        ==
       ==
     ::
     ==
@@ -187,7 +209,7 @@
         =+  tod=(~(got bi tome) [ship space.act] app.act)
         ?:  (~(has by store.tod) bucket.act)
           `state
-        =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *invited *kv-meta *kv-data])
+        =.  store.tod  (~(put by store.tod) bucket.act [perm.act *invited *kv-meta *kv-data])
         `state(tome (~(put bi tome) [ship space.act] app.act tod))
       ::
           %init-feed
@@ -195,7 +217,7 @@
         =+  tod=(~(got bi tome) [ship space.act] app.act)
         ?:  (~(has by feed.tod) [bucket.act log.act])
           `state
-        =.  feed.tod  (~(put by feed.tod) [bucket.act log.act] [perm.act *feed-ids *invited *invited *feed-data])
+        =.  feed.tod  (~(put by feed.tod) [bucket.act log.act] [perm.act *feed-ids *invited *feed-data])
         `state(tome (~(put bi tome) [ship space.act] app.act tod))
       ::
       ==
@@ -209,8 +231,14 @@
         %remove-value  do
         %clear-kv      do
         %verify-kv     do
+          %perm-kv
+        ?.  =(our.bol ship)  ~|('no-perm-foreign-kv' !!)
+        do
+          %invite-kv
+        ?.  =(our.bol ship)  ~|('no-invite-foreign-kv' !!)
+        do
           %team-kv
-        ?:  =(our.bol ship)  ~|('no-perm-local-kv' !!)
+        ?:  =(our.bol ship)  ~|('no-team-local-kv' !!)
         kv-abet:(kv-view:(kv-abed:kv [ship space.act app.act bucket.act]) [%perm ~])
           %watch-kv
         ?:  =(our.bol ship)  ~|('no-watch-local-kv' !!)
@@ -229,8 +257,14 @@
         %verify-feed       do
         %set-post-link     do
         %remove-post-link  do
+          %perm-feed
+        ?.  =(our.bol ship)  ~|('no-perm-foreign-feed' !!)
+        do
+          %invite-feed
+        ?.  =(our.bol ship)  ~|('no-invite-foreign-feed' !!)
+        do
           %team-feed
-        ?:  =(our.bol ship)  ~|('no-perm-local-feed' !!)
+        ?:  =(our.bol ship)  ~|('no-team-local-feed' !!)
         fe-abet:(fe-view:(fe-abed:fe [ship space.act app.act bucket.act log.act]) [%perm ~])
           %watch-feed
         ?:  =(our.bol ship)  ~|('no-watch-local-feed' !!)
@@ -264,8 +298,7 @@
           buc=bucket
           tod=tome-data
           per=perm
-          whi=invited
-          bla=invited
+          inv=invited
           meta=kv-meta
           data=kv-data
           caz=(list card)
@@ -277,7 +310,7 @@
   ++  kv-emil  |=(lc=(list card) kv(caz (welp lc caz)))
   ++  kv-abet
     ^-  (quip card _state)
-    =.  store.tod  (~(put by store.tod) buc [per whi bla meta data])
+    =.  store.tod  (~(put by store.tod) buc [per inv meta data])
     [(flop caz) state(tome (~(put bi tome) [shi spa] app tod))]
   ::  +kv-abed: initialize nested core.  only works when the map entries already exist
   ::
@@ -285,7 +318,7 @@
     |=  [p=ship s=space a=^app b=bucket]
     =/  tod       (~(got bi tome) [p s] a)
     =/  sto       (~(got by store.tod) b)
-    =/  pp        `@tas`(scot %p p) :: planet for path
+    =/  pp        `@tas`(scot %p p)
     =/  data-pax  /kv/[pp]/[s]/[a]/[b]/data/all
     =/  perm-pax  /kv/[pp]/[s]/[a]/[b]/perm
     %=  kv
@@ -295,8 +328,7 @@
       buc       b
       tod       tod
       per       perm.sto
-      whi       whitelist.sto
-      bla       blacklist.sto
+      inv       invites.sto
       meta      meta.sto
       data      data.sto
       data-pax  data-pax
@@ -352,6 +384,7 @@
   ++  kv-watch
     |=  rest=(pole knot)
     ^+  kv
+    ?>  (kv-perm %read)
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
       %-  kv-emit
@@ -372,14 +405,14 @@
     ::  right now live updates only go to the subscribeAll endpoint
     ?+    -.act  ~|('bad-kv-action' !!)
         %set-value
-      ::  equivalent value is already set, do nothing.
-      ?:  =(s+value.act (~(gut by data) key.act ~))  kv
       =+  cm=(~(gut by meta) key.act ~)
       =*  lvl
         ?~  cm
           %create
         ?:(=(src.bol created-by.cm) %create %overwrite)
-      ?>  ?:(=(src.bol our.bol) %.y (kv-perm lvl))
+      ?>  (kv-perm lvl)
+      ::  equivalent value is already set, do nothing.
+      ?:  =(s+value.act (~(gut by data) key.act ~))  kv
       ::
       =/  nm
         ?~  cm
@@ -396,10 +429,14 @@
     ::
         %remove-value
       =+  cm=(~(gut by meta) key.act ~)
+      =*  lvl
+        ?~  cm
+          %create
+        ?:(=(src.bol created-by.cm) %create %overwrite)
+      ?>  (kv-perm lvl)
+      :: value doesn't exist, do nothing
       ?~  cm
         kv
-      =*  lvl  ?:(=(src.bol created-by.cm) %create %overwrite)
-      ?>  ?:(=(src.bol our.bol) %.y (kv-perm lvl))
       ::
       %=  kv
         meta  (~(del by meta) key.act)
@@ -408,9 +445,9 @@
       ==
     ::
         %clear-kv
-      ?~  meta  kv  :: nothing to clear
       ::  could check if all values are ours for %create perm level, but that's overkill
-      ?>  ?:(=(src.bol our.bol) %.y (kv-perm %overwrite))
+      ?>  (kv-perm %overwrite)
+      ?~  meta  kv  :: nothing to clear
       %=  kv
         meta  *kv-meta
         data  *kv-data
@@ -419,8 +456,19 @@
     ::
         %verify-kv
       :: The bucket must exist to get this far, so we just need to verify read permissions.
-      ?>  ?:(=(src.bol our.bol) %.y (kv-perm %read))
+      ?>  (kv-perm %read)
       kv
+    ::
+        %perm-kv
+      :: force everyone to re-subscribe
+      kv(per perm.act, caz [[%give %kick ~[data-pax] ~] caz])
+    ::
+        %invite-kv
+      =/  guy  `@p`(slav %p guy.act)
+      %=  kv
+        inv  (~(put by inv) guy level.act)
+        caz  [[%give %kick ~[data-pax] `guy] caz]
+      ==
     ::
     ==
   ::  +kv-peek: handle kv peek requests
@@ -448,7 +496,6 @@
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  kv
-      =.  subs  (~(put in subs) data-pax)
       (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
     ::
     ==
@@ -457,51 +504,55 @@
   ++  kv-perm
     |=  [lvl=?(%read %create %overwrite)]
     ^-  ?
+    ?:  =(src.bol our.bol)  %.y :: always allow local
+    =/  bro  (~(gut by inv) src.bol ~)
     ?-    lvl
         %read
-      ?:  (~(has in read.whi) src.bol)  %.y
-      ?:  (~(has in read.bla) src.bol)  %.n
-      ?-  read.per
-        %unset    %.n
-        %no       %.n
-        %our      =(our.bol src.bol)
-        %open     %.y
-        %yes      %.y
-          %space
-        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
-        ?>  ?=(%is-member -.memb)
-        is-member.memb
-      ==
+      ?~  bro
+        ?-  read.per
+          %unset    %.n
+          %no       %.n
+          %our      %.n :: it's not us, so no.
+          %open     %.y
+          %yes      %.y
+            %space
+          =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+          ?>  ?=(%is-member -.memb)
+          is-member.memb
+        ==
+      :: use invite level to determine
+      ?:(?=(%block bro) %.n %.y)
     ::
         %create
-      ?:  (~(has in write.whi) src.bol)  %.y
-      ?:  (~(has in write.bla) src.bol)  %.n
-      ?-  write.per
-        %unset    %.n
-        %no       %.n
-        %our      =(our.bol src.bol)
-        %open     %.y
-        %yes      %.y
-          %space
-        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
-        ?>  ?=(%is-member -.memb)
-        is-member.memb
-      ==
+      ?~  bro
+        ?-  write.per
+          %unset    %.n
+          %no       %.n
+          %our      %.n
+          %open     %.y
+          %yes      %.y
+            %space
+          =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+          ?>  ?=(%is-member -.memb)
+          is-member.memb
+        ==
+      ?:(?=(?(%block %read) bro) %.n %.y)
     ::
         %overwrite
-      ?:  (~(has in admin.whi) src.bol)  %.y
-      ?:  (~(has in admin.bla) src.bol)  %.n
-      ?-  admin.per
-        %unset    %.n
-        %no       %.n
-        %our      =(our.bol src.bol)
-        %open     %.y
-        %yes      %.y
-          %space
-        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
-        ?>  ?=(%is-member -.memb)
-        is-member.memb
-      ==
+      ?~  bro
+        ?-  admin.per
+          %unset    %.n
+          %no       %.n
+          %our      %.n
+          %open     %.y
+          %yes      %.y
+            %space
+          =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+          ?>  ?=(%is-member -.memb)
+          is-member.memb
+        ==
+      ?:(?=(?(%block %read %write) bro) %.n %.y)
+    ::
     ==
   ::  +kv-team: get write/admin permissions for a ship
   ::
@@ -523,8 +574,7 @@
           tod=tome-data
           per=perm
           ids=feed-ids
-          whi=invited
-          bla=invited
+          inv=invited
           data=feed-data
           caz=(list card)
           data-pax=path
@@ -535,7 +585,7 @@
   ++  fe-emil  |=(lc=(list card) fe(caz (welp lc caz)))
   ++  fe-abet
     ^-  (quip card _state)
-    =.  feed.tod  (~(put by feed.tod) [buc lo] [per ids whi bla data])
+    =.  feed.tod  (~(put by feed.tod) [buc lo] [per ids inv data])
     [(flop caz) state(tome (~(put bi tome) [shi spa] ap tod))]
   ::  +kv-abed: initialize nested core.  only works when the map entries already exist
   ::
@@ -543,7 +593,7 @@
     |=  [p=ship s=space a=app b=bucket l=log]
     =/  tod       (~(got bi tome) [p s] a)
     =/  fee       (~(got by feed.tod) [b l])
-    =/  pp        `@tas`(scot %p p) :: planet for path
+    =/  pp        `@tas`(scot %p p)
     =/  type      ?:(=(l %.y) %log %feed)
     %=  fe
       shi       p
@@ -554,8 +604,7 @@
       tod       tod
       per       perm.fee
       ids       ids.fee
-      whi       whitelist.fee
-      bla       blacklist.fee
+      inv       invites.fee
       data      data.fee
       data-pax  /feed/[pp]/[s]/[a]/[b]/[type]/data/all
       perm-pax  /feed/[pp]/[s]/[a]/[b]/[type]/perm
@@ -662,6 +711,7 @@
   ++  fe-watch
     |=  rest=(pole knot)
     ^+  fe
+    ?>  (fe-perm %read)
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
       %-  fe-emit
@@ -680,7 +730,7 @@
     =/  fon  ((on time feed-value) gth)  :: mop needs this to work
     ?+    -.act  ~|('bad-feed-action' !!)
         %new-post
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
+      ?>  (fe-perm %create)
       ::
       %=  fe
         ids   (~(put by ids) id.act now.bol)
@@ -690,11 +740,13 @@
     ::
         %edit-post
       =+  time=(~(gut by ids) id.act ~)
-      ?~  time  ~|('no-post-to-edit' !!)  :: TODO maybe just create new post?
+      ?~  time
+        ?>  (fe-perm ?:(=(lo %.y) %overwrite %create))
+        ~|('no-post-to-edit' !!)
       ::
       =/  curr  (got:fon data time)
       =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
+      ?>  (fe-perm lvl)
       ::
       %=  fe
         data  (put:fon data time [id.act created-by.curr src.bol created-at.curr now.bol s+content.act *links])
@@ -704,10 +756,12 @@
         %delete-post
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing
+        ?>  (fe-perm ?:(=(lo %.y) %overwrite %create))
         fe
+      ::
       =*  curr  (got:fon data time)
       =*  lvl   ?:(=(src.bol created-by.curr) ?:(=(lo %.y) %overwrite %create) %overwrite)
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm lvl))
+      ?>  (fe-perm lvl)
       ::
       =/  res  (del:fon data time)
       %=  fe
@@ -717,9 +771,9 @@
       ==
     ::
         %clear-feed
+      ?>  (fe-perm %overwrite)
       ?~  ids  fe  :: if no posts, do nothing
       ::
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %overwrite))
       %=  fe
         ids  *feed-ids
         data  *feed-data
@@ -728,15 +782,25 @@
     ::
         %verify-feed
       :: The bucket must exist to get this far, so we just need to verify read permissions.
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %read))
+      ?>  (fe-perm %read)
       fe
+    ::
+        %perm-feed
+      :: force everyone to re-subscribe
+      fe(per perm.act, caz [[%give %kick ~[data-pax] ~] caz])
+    ::
+        %invite-feed
+      =/  guy  `@p`(slav %p guy.act)
+      %=  fe
+        inv  (~(put by inv) guy level.act)
+        caz  [[%give %kick ~[data-pax] `guy] caz]
+      ==
     ::
         %set-post-link  :: links are currently only supported by feeds, not logs
       ?>  =(lo %.n)
+      ?>  (fe-perm %create)
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  ~|('no-post-for-set-link' !!)
-      ::
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
       =/  ship-str   `@t`(scot %p src.bol)
@@ -748,10 +812,10 @@
     ::
         %remove-post-link
       ?>  =(lo %.n)
+      ?>  (fe-perm %create)
       =+  time=(~(gut by ids) id.act ~)
       ?~  time  :: if no post, do nothing.
         fe
-      ?>  ?:(=(src.bol our.bol) %.y (fe-perm %create))
       ::
       =/  curr  (got:fon data time)
       =/  ship-str   `@t`(scot %p src.bol)
@@ -793,7 +857,6 @@
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  fe
-      =.  subs  (~(put in subs) data-pax)
       (fe-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
     ::
     ==
@@ -802,51 +865,55 @@
   ++  fe-perm
     |=  [lvl=?(%read %create %overwrite)]
     ^-  ?
+    ?:  =(src.bol our.bol)  %.y :: always allow local
+    =/  bro  (~(gut by inv) src.bol ~)
     ?-    lvl
         %read
-      ?:  (~(has in read.whi) src.bol)  %.y
-      ?:  (~(has in read.bla) src.bol)  %.n
-      ?-  read.per
-        %unset    %.n
-        %no       %.n
-        %our      =(our.bol src.bol)
-        %open     %.y
-        %yes      %.y
-          %space
-        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
-        ?>  ?=(%is-member -.memb)
-        is-member.memb
-      ==
+      ?~  bro
+        ?-  read.per
+          %unset    %.n
+          %no       %.n
+          %our      %.n :: it's not us, so no.
+          %open     %.y
+          %yes      %.y
+            %space
+          =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+          ?>  ?=(%is-member -.memb)
+          is-member.memb
+        ==
+      :: use invite level to determine
+      ?:(?=(%block bro) %.n %.y)
     ::
         %create
-      ?:  (~(has in write.whi) src.bol)  %.y
-      ?:  (~(has in write.bla) src.bol)  %.n
-      ?-  write.per
-        %unset    %.n
-        %no       %.n
-        %our      =(our.bol src.bol)
-        %open     %.y
-        %yes      %.y
-          %space
-        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
-        ?>  ?=(%is-member -.memb)
-        is-member.memb
-      ==
+      ?~  bro
+        ?-  write.per
+          %unset    %.n
+          %no       %.n
+          %our      %.n
+          %open     %.y
+          %yes      %.y
+            %space
+          =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+          ?>  ?=(%is-member -.memb)
+          is-member.memb
+        ==
+      ?:(?=(?(%block %read) bro) %.n %.y)
     ::
         %overwrite
-      ?:  (~(has in admin.whi) src.bol)  %.y
-      ?:  (~(has in admin.bla) src.bol)  %.n
-      ?-  admin.per
-        %unset    %.n
-        %no       %.n
-        %our      =(our.bol src.bol)
-        %open     %.y
-        %yes      %.y
-          %space
-        =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
-        ?>  ?=(%is-member -.memb)
-        is-member.memb
-      ==
+      ?~  bro
+        ?-  admin.per
+          %unset    %.n
+          %no       %.n
+          %our      %.n
+          %open     %.y
+          %yes      %.y
+            %space
+          =/  memb  .^(view:m-s:r-l %gx /(scot %p our.bol)/spaces/(scot %da now.bol)/(scot %p shi)/[spa]/is-member/(scot %p our.bol)/noun)
+          ?>  ?=(%is-member -.memb)
+          is-member.memb
+        ==
+      ?:(?=(?(%block %read %write) bro) %.n %.y)
+    ::
     ==
   ::  +fe-team: get read/write/admin permissions for a ship
   ::
