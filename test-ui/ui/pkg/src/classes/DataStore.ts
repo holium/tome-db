@@ -224,7 +224,7 @@ export abstract class DataStore extends Tome {
             await this.subscribeAll()
         }
 
-        if (this.tomeShip === this.ourShip) {
+        if (this.isOurStore()) {
             this.write = true
             this.admin = true
         } else {
@@ -337,7 +337,7 @@ export abstract class DataStore extends Tome {
     // called by subclasses
     protected async getCurrentForeignPerms() {
         // do nothing if not actually foreign
-        if (this.tomeShip === this.ourShip) {
+        if (this.isOurStore()) {
             return
         }
         return await DataStore._getCurrentForeignPerms({
@@ -690,7 +690,7 @@ export abstract class DataStore extends Tome {
     protected async pokeOrTunnel({ json, onSuccess, onError }) {
         await this.waitForReady()
         let success = false
-        if (this.tomeShip === this.ourShip) {
+        if (this.isOurStore()) {
             let result: any // what onSuccess or onError returns
             await this.api.poke({
                 app: agent,

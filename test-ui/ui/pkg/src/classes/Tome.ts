@@ -152,7 +152,7 @@ export class Tome {
         isLog: boolean
     ) {
         let permissions = options.permissions ? options.permissions : this.perm
-        if (this.app === 'all' && this.tomeShip === this.ourShip) {
+        if (this.app === 'all' && this.isOurStore()) {
             console.warn(
                 `Tome-${type}: Permissions on 'all' are ignored. Setting permissions levels to 'our' instead...`
             )
