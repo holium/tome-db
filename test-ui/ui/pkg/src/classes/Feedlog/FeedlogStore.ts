@@ -1,10 +1,4 @@
-import {
-    Content,
-    DataStore,
-    FeedlogEntry,
-    InitStoreOptions,
-    Value,
-} from '../../index'
+import { Content, DataStore, FeedlogEntry, InitStoreOptions } from '../../index'
 import { agent, feedMark, feedThread } from '../constants'
 import { v4 as uuid, validate } from 'uuid'
 
@@ -92,78 +86,6 @@ export abstract class FeedlogStore extends DataStore {
         }
     }
 
-    private async _setOrRemoveLink(
-        id: string,
-        value?: Value
-    ): Promise<boolean> {
-        if (!validate(id)) {
-            console.error('Invalid ID.')
-            return false
-        }
-        const action =
-            value !== undefined ? 'set-post-link' : 'remove-post-link'
-        if (action === 'set-post-link') {
-            if (!this.canStore(value)) {
-                console.error('value is an invalid type.')
-                return false
-            }
-        }
-        await this.waitForReady()
-        // maybe set in the cache, return, and poke / retry as necesssary?
-        let success = false
-        const json = {
-            [action]: {
-                ship: this.tomeShip,
-                space: this.space,
-                app: this.app,
-                bucket: this.bucket,
-                log: this.isLog,
-                id,
-            },
-        }
-        if (action === 'set-post-link') {
-            json[action].value = JSON.stringify(value)
-        }
-        if (this.tomeShip === this.ourShip) {
-            await this.api.poke({
-                app: agent,
-                mark: feedMark,
-                json,
-                onSuccess: () => {
-                    success = true
-                },
-                onError: () => {
-                    console.error(
-                        `Tome-${this.name}: Failed to modify link in the ${this.name}.`
-                    )
-                },
-            })
-        } else {
-            // Tunnel poke to Tome ship
-            const result = await this.api
-                .thread({
-                    inputMark: 'json',
-                    outputMark: 'json',
-                    threadName: feedThread,
-                    body: {
-                        ship: this.tomeShip,
-                        json: JSON.stringify(json),
-                    },
-                })
-                .catch(() => {
-                    console.error(
-                        `Tome-${this.name}: Failed to modify link in the ${this.name}.`
-                    )
-                    return undefined
-                })
-            success = result === 'success'
-            if (!success) {
-                this.getCurrentForeignPerms()
-            }
-        }
-        return success
-    }
-
     public async post(content: Content): Promise<string | undefined> {
         return await this._postOrEdit(content)
     }
@@ -173,14 +95,6 @@ export abstract class FeedlogStore extends DataStore {
         newContent: Content
     ): Promise<string | undefined> {
         return await this._postOrEdit(newContent, id)
-    }
-
-    public async setLink(id: string, value: Value): Promise<boolean> {
-        return await this._setOrRemoveLink(id, value)
-    }
-
-    public async removeLink(id: string): Promise<boolean> {
-        return await this._setOrRemoveLink(id)
     }
 
     public async delete(id: string): Promise<boolean> {
@@ -362,7 +276,7 @@ export abstract class FeedlogStore extends DataStore {
                 app: agent,
                 path: this.dataPath(),
             })
-            // wipe and replace cache
+            // wipe and replace feedlog
             this.order.length = 0
             this.feedlog = data.map((entry: FeedlogEntry) => {
                 this.order.push(entry.id)

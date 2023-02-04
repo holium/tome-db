@@ -39,27 +39,25 @@ export function App() {
                     setData([...data])
                 },
             })
-            const feed = await db.feed({
-                preload: false,
-                permissions: { read: 'space', write: 'space', admin: 'our' },
-                onReadyChange: setReady,
-                onDataChange: (data) => {
-                    // newest records first.
-                    // if you want a different order, you can sort the data here.
-                    // need to spread array to trigger re-render
-                    setData([...data])
-                },
-            })
+            // const feed = await db.feed({
+            //     preload: false,
+            //     permissions: { read: 'space', write: 'space', admin: 'our' },
+            //     onReadyChange: setReady,
+            //     onDataChange: (data) => {
+            //         // newest records first.
+            //         // if you want a different order, you can sort the data here.
+            //         // need to spread array to trigger re-render
+            //         setData([...data])
+            //     },
+            // })
             // setFeed(feed)
             // console.log(feed)
-            await kv.set('test', 'hello world!')
+            //await kv.set('test', 'hello world!')
             // console.log(await kv.get('test'))
             //console.log()
             //console.log('hello world!')
-            // const id = await feed.post(
-            //     'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
-            // )
-            // await feed.setLink(id, '1f60d')
+            const result = await kv.set('key', 4)
+            console.log(result)
             //testFeed(feed)
         }
         init()

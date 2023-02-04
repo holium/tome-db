@@ -2,6 +2,7 @@
 import {
     FeedlogEntry,
     InitStoreOptions,
+    InviteLevel,
     Perm,
     StoreType,
     SubscribeUpdate,
@@ -17,9 +18,9 @@ export abstract class DataStore extends Tome {
     // then we know we can use the cache.
     protected preload: boolean
     protected loaded: boolean
-    protected ready: boolean // if false, we are switching spaces.  TODO could we consolidate this and "loaded"?
+    protected ready: boolean // if false, we are switching spaces.
     protected onReadyChange: (ready: boolean) => void
-    protected onWriteChange: (write: boolean) => void // TODO consider consolidating into "onPermsChange".  What about read?
+    protected onWriteChange: (write: boolean) => void
     protected onAdminChange: (admin: boolean) => void
     protected onDataChange: (data: any) => void
 
@@ -406,7 +407,6 @@ export abstract class DataStore extends Tome {
                         this.feedlog = data as object[]
                     } else {
                         // %all update overwrites the array, so we need to wait here
-                        // TODO can this block forever? might depend on update order
                         await this.waitForLoaded()
                         // %new, %edit, %delete, %clear, %set-link, %remove-link
                         let index: number
@@ -482,6 +482,81 @@ export abstract class DataStore extends Tome {
             },
             quit: this.subscribeAll,
         })
+    }
+
+    public async setPermissions(permissions: Perm): Promise<void> {
+        if (!this.isOurStore()) {
+            throw new Error(
+                `Tome-${this.type}: You can only set permissions on your own ship's store.`
+            )
+        }
+        const action = `perm-${this.type}`
+        const mark = this.type === 'kv' ? kvMark : feedMark
+        const body = {
+            [action]: {
+                ship: this.tomeShip,
+                space: this.space,
+                app: this.app,
+                bucket: this.bucket,
+                perm: permissions,
+            },
+        }
+        if (this.type === 'feed') {
+            // @ts-expect-error
+            body[action].log = isLog
+        }
+        await this.api.poke({
+            app: agent,
+            mark,
+            json: body,
+            onError: (error) => {
+                throw new Error(
+                    `Tome-${this.type}: Updating permissions failed.\nError: ${error}`
+                )
+            },
+        })
+    }
+
+    // manually set permissions for a ship.  this takes precedence over Tome's permissions.
+    public async inviteShip(ship: string, level: InviteLevel): Promise<void> {
+        if (!this.isOurStore()) {
+            throw new Error(
+                `Tome-${this.type}: You can only manage permissions on your own ship's store.`
+            )
+        }
+        if (!ship.startsWith('~')) {
+            ship = `~${ship}`
+        }
+        const action = `invite-${this.type}`
+        const mark = this.type === 'kv' ? kvMark : feedMark
+        const body = {
+            [action]: {
+                ship: this.tomeShip,
+                space: this.space,
+                app: this.app,
+                bucket: this.bucket,
+                guy: ship,
+                level,
+            },
+        }
+        if (this.type === 'feed') {
+            // @ts-expect-error
+            body[action].log = isLog
+        }
+        await this.api.poke({
+            app: agent,
+            mark,
+            json: body,
+            onError: (error) => {
+                throw new Error(
+                    `Tome-${this.type}: Setting ship permissions failed.\nError: ${error}`
+                )
+            },
+        })
+    }
+
+    public async blockShip(ship: string): Promise<void> {
+        await this.inviteShip(ship, 'block')
     }
 
     protected dataPath(key?: string): string {

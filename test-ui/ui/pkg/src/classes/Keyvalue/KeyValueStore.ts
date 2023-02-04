@@ -67,8 +67,8 @@ export class KeyValueStore extends DataStore {
                 })
             } else {
                 // Tunnel poke to Tome ship
-                const result = await this.api
-                    .thread({
+                try {
+                    const result = await this.api.thread({
                         inputMark: 'json',
                         outputMark: 'json',
                         threadName: kvThread,
@@ -77,18 +77,17 @@ export class KeyValueStore extends DataStore {
                             json: JSON.stringify(json),
                         },
                     })
-                    .catch(() => {
-                        console.error(
-                            'Failed to add key-value pair to the Store.'
-                        )
-                        return undefined
-                    })
-                success = result === 'success'
-                if (success) {
-                    this.cache.set(key, value)
-                    this.dataUpdateCallback()
-                } else {
-                    // we check on failure to notify user of any changes to permissions
+                    success = result === 'success'
+                    if (success) {
+                        this.cache.set(key, value)
+                        this.dataUpdateCallback()
+                    } else {
+                        console.warn('failed to set value, checking perms...')
+                        // we check on failure to callback with any permissions changes
+                        this.getCurrentForeignPerms()
+                    }
+                } catch (e) {
+                    console.warn('failed to set value, checking perms...')
                     this.getCurrentForeignPerms()
                 }
             }
@@ -106,7 +105,6 @@ export class KeyValueStore extends DataStore {
             console.error('missing key parameter')
             return false
         }
-
         if (!this.mars) {
             localStorage.removeItem(localKvPrefix + key)
             return true
@@ -138,8 +136,8 @@ export class KeyValueStore extends DataStore {
                 })
             } else {
                 // Tunnel poke to Tome ship
-                const result = await this.api
-                    .thread({
+                try {
+                    const result = await this.api.thread({
                         inputMark: 'json',
                         outputMark: 'json',
                         threadName: kvThread,
@@ -148,17 +146,19 @@ export class KeyValueStore extends DataStore {
                             json: JSON.stringify(json),
                         },
                     })
-                    .catch(() => {
-                        console.error(
-                            'Failed to remove key-value pair from the Store.'
+                    success = result === 'success'
+                    if (success) {
+                        this.cache.delete(key)
+                        this.dataUpdateCallback()
+                    } else {
+                        console.warn(
+                            'failed to remove value, checking perms...'
                         )
-                        return undefined
-                    })
-                success = result === 'success'
-                if (success) {
-                    this.cache.delete(key)
-                    this.dataUpdateCallback()
-                } else {
+                        // we check on failure to callback with any permissions changes
+                        this.getCurrentForeignPerms()
+                    }
+                } catch (e) {
+                    console.warn('failed to remove value, checking perms...')
                     this.getCurrentForeignPerms()
                 }
             }
@@ -172,7 +172,6 @@ export class KeyValueStore extends DataStore {
      */
     public async clear(): Promise<boolean> {
         if (!this.mars) {
-            // TODO - if we're only wiping a bucket, this might be the wrong method.
             localStorage.clear()
             return true
         } else {
@@ -202,8 +201,8 @@ export class KeyValueStore extends DataStore {
                 })
             } else {
                 // Tunnel poke to Tome ship
-                const result = await this.api
-                    .thread({
+                try {
+                    const result = await this.api.thread({
                         inputMark: 'json',
                         outputMark: 'json',
                         threadName: kvThread,
@@ -212,15 +211,19 @@ export class KeyValueStore extends DataStore {
                             json: JSON.stringify(json),
                         },
                     })
-                    .catch(() => {
-                        console.error('Failed to clear Store.')
-                        return undefined
-                    })
-                success = result === 'success'
-                if (success) {
-                    this.cache.clear()
-                    this.dataUpdateCallback()
-                } else {
+                    success = result === 'success'
+                    if (success) {
+                        this.cache.clear()
+                        this.dataUpdateCallback()
+                    } else {
+                        console.warn(
+                            'failed to clear values, checking perms...'
+                        )
+                        // we check on failure to callback with any permissions changes
+                        this.getCurrentForeignPerms()
+                    }
+                } catch (e) {
+                    console.warn('failed to clear values, checking perms...')
                     this.getCurrentForeignPerms()
                 }
             }

@@ -1,6 +1,7 @@
 import Urbit from '@urbit/http-api'
 
-type Level = 'our' | 'space' | 'open' | 'unset' | 'yes' | 'no'
+type PermLevel = 'our' | 'space' | 'open' | 'unset' | 'yes' | 'no'
+export type InviteLevel = 'read' | 'write' | 'admin' | 'block'
 export type StoreType = 'kv' | 'feed'
 
 type T = string | number | boolean | object | T[]
@@ -24,9 +25,9 @@ export interface FeedlogEntry {
 }
 
 export interface Perm {
-    read: Level
-    write: Level
-    admin: Level
+    read: PermLevel
+    write: PermLevel
+    admin: PermLevel
 }
 
 export interface TomeOptions {
