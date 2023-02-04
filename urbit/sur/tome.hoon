@@ -122,7 +122,7 @@
       [%set-link =id =time ship=@t =value] :: these are @t to make returning them easier
       [%remove-link =id =time ship=@t]
     ::
-      [%get value=?(~ json-value)]
+      [%get post=?(~ feed-value)]
       [%all data=feed-data]
       [%perm write=?(%yes %no) admin=?(%yes %no)]
   ==

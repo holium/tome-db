@@ -301,14 +301,14 @@ export abstract class FeedlogStore extends DataStore {
         await this.waitForReady()
         if (allowCachedValue) {
             const index = this.order.indexOf(id)
-            if (index !== undefined) {
+            if (index > -1) {
                 return this.feedlog[index]
             }
         }
         if (this.preload) {
             await this.waitForLoaded()
             const index = this.order.indexOf(id)
-            if (index === undefined) {
+            if (index === -1) {
                 console.error(`id ${id} not found`)
                 return undefined
             }
@@ -330,51 +330,50 @@ export abstract class FeedlogStore extends DataStore {
         return await this._getAllFromUrbit()
     }
 
-    // TODO just make this a scry (same for get and for KVStore)
-    // TODO - does this have race conditions?
-    private async _getAllFromUrbit(): Promise<Content[]> {
-        return await this.api
-            .subscribe({
+    private async _getValueFromUrbit(id: string): Promise<Content> {
+        try {
+            let post = await this.api.scry({
                 app: agent,
-                path: this.dataSubscribePath(),
-                err: () => {
-                    throw new Error(
-                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
-                    )
-                },
-                event: (data: FeedlogEntry[]) => {
-                    // TODO loop over feedlog and add ids to order
-                    this.feedlog = data
-                },
-                quit: async () => await this._getAllFromUrbit(),
+                path: this.dataPath(id),
             })
-            .then(async (id) => {
-                await this.api.unsubscribe(id)
-                return this.feedlog
-            })
+            if (post === null) {
+                return undefined
+            }
+            post = this.parseFeedlogEntry(post)
+            const index = this.order.indexOf(id)
+            if (index === -1) {
+                // TODO find the actual right place to insert this (based on times)?
+                this.order.unshift(id)
+                this.feedlog.unshift(post)
+            } else {
+                this.feedlog[index] = post
+            }
+            return post
+        } catch (e) {
+            throw new Error(
+                `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+            )
+        }
     }
 
-    // TODO - does this have race conditions?
-    private async _getValueFromUrbit(id: string): Promise<Content> {
-        return await this.api
-            .subscribe({
+    private async _getAllFromUrbit(): Promise<Content[]> {
+        try {
+            const data = await this.api.scry({
                 app: agent,
-                path: this.dataSubscribePath(id),
-                err: () => {
-                    throw new Error(
-                        `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
-                    )
-                },
-                event: (value: string) => {
-                    // TODO
-                    console.log(value)
-                },
-                quit: async () => await this._getValueFromUrbit(id),
+                path: this.dataPath(),
             })
-            .then(async (id) => {
-                await this.api.unsubscribe(id)
-                return 'placeholder!'
+            // wipe and replace cache
+            this.order.length = 0
+            this.feedlog = data.map((entry: FeedlogEntry) => {
+                this.order.push(entry.id)
+                return this.parseFeedlogEntry(entry)
             })
+            return this.feedlog
+        } catch (e) {
+            throw new Error(
+                `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
+            )
+        }
     }
 
     // other useful methods

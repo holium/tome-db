@@ -59,7 +59,7 @@
     |=  =path
     ~>  %bout.[0 '%tome-api +on-peek']
     ^-  (unit (unit cage))
-    [~ ~]
+    (peek:eng path)
   ::
   ++  on-agent
     |=  [pol=(pole knot) sig=sign:agent:gall]
@@ -78,7 +78,7 @@
   |=  =path
   ~>  %bout.[0 '%tome-api +on-watch']
   ^-  (quip card _this)
-  =^  cards  state  abet:(peer:eng path)
+  =^  cards  state  abet:(watch:eng path)
   [cards this]
   ::
   ++  on-fail
@@ -106,23 +106,23 @@
   ^+  dat
   ?>  ?=([%0 *] q.vaz)
   dat(state !<(state-0 vaz))
-::  +peer: handle on-watch
+::  +watch: handle on-watch
 ::
-++  peer
+++  watch
   |=  pol=(pole knot)
   ^+  dat
   ?+    pol  ~|(bad-watch-path/pol !!)
       [%kv ship=@ space=@ app=@ bucket=@ rest=*]
     =/  ship  `@p`(slav %p ship.pol)
     =^  cards  state
-      kv-abet:(kv-peer:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
+      kv-abet:(kv-watch:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
     (emil cards)
   ::
       [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
     =/  ship    `@p`(slav %p ship.pol)
     =/  log=?   =(log.pol 'log')
     =^  cards  state
-      fe-abet:(fe-peer:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
+      fe-abet:(fe-watch:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
     (emil cards)
   ==
 ::  +dude: handle on-agent
@@ -168,6 +168,7 @@
 ::
 ++  poke
   |=  [mar=mark vaz=vase]
+  ^+  dat
   =^  cards  state
     ?+    mar  ~|(bad-tome-mark/mar !!)
         %tome-action
@@ -237,6 +238,22 @@
       ==
     ==
   (emil cards)
+::  +peek: handle on-peek
+::
+++  peek
+  |=  pol=(pole knot)
+  ^-  (unit (unit cage))
+  ?+    pol  ~|(bad-tome-peek-path/pol !!)
+      [%x %kv ship=@ space=@ app=@ bucket=@ rest=*]
+    =/  ship  `@p`(slav %p ship.pol)
+    (kv-peek:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
+  ::
+      [%x %feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
+    =/  ship  `@p`(slav %p ship.pol)
+    =/  log=?   =(log.pol 'log')
+    (fe-peek:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
+  ::
+  ==
 ::
 ::  +kv: keyvalue engine
 ::
@@ -330,9 +347,9 @@
       ::
       ==
     ==
-  ::  +kv-peer: handle incoming kv watch requests
+  ::  +kv-watch: handle incoming kv watch requests
   ::
-  ++  kv-peer
+  ++  kv-watch
     |=  rest=(pole knot)
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
@@ -343,11 +360,6 @@
         [%data %all ~]
       %-  kv-emit
       [%give %fact ~ %kv-update !>(`kv-update`[%all data])]
-    ::
-        [%data %key k=@t ~]
-      %-  kv-emit
-      [%give %fact ~ %kv-update !>(`kv-update`[%get (~(gut by data) k.rest ~)])]
-        :: [%give %kick ~[data-pax] `src.bol]
     ::
     ==
   ::  +kv-poke: handle kv poke requests
@@ -409,6 +421,20 @@
       :: The bucket must exist to get this far, so we just need to verify read permissions.
       ?>  ?:(=(src.bol our.bol) %.y (kv-perm %read))
       kv
+    ::
+    ==
+  ::  +kv-peek: handle kv peek requests
+  ::
+  ++  kv-peek
+    |=  rest=(pole knot)
+    ^-  (unit (unit cage))
+    ::  no perms check since no remote scry
+    ?+    rest  ~|(bad-kv-peek-path/rest !!)
+        [%data %all ~]
+      ``kv-update+!>(`kv-update`[%all data])
+    ::
+        [%data %key key=@t ~]
+      ``kv-update+!>(`kv-update`[%get (~(gut by data) key.rest ~)])
     ::
     ==
   ::  +kv-view: start watching foreign kv (permissions or path)
@@ -631,9 +657,9 @@
       ==
     ==
 
-  ::  +fe-peer: handle incoming watch requests
+  ::  +fe-watch: handle incoming watch requests
   ::
-  ++  fe-peer
+  ++  fe-watch
     |=  rest=(pole knot)
     ^+  fe
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
@@ -644,11 +670,6 @@
         [%data %all ~]
       %-  fe-emit
       [%give %fact ~ %feed-update !>(`feed-update`[%all data])]
-    ::
-      ::   [%data %key k=@t ~]  :: TODO these should eventually be scries.
-      :: %-  fe-emit
-      ::   [%give %fact ~ %feed-update !>(`feed-update`[%get (~(gut by data) k.rest ~)])]
-      ::   :: [%give %kick ~[data-pax] `src.bol]
     ::
     ==
   ::  +fe-poke: handle log/feed pokes
@@ -739,6 +760,26 @@
         data  (put:fon data time [id.act created-by.curr updated-by.curr created-at.curr updated-at.curr content.curr new-links])
         caz   [[%give %fact ~[data-pax] %feed-update !>(`feed-update`[%remove-link id.act time ship-str])] caz]
       ==
+    ::
+    ==
+  ::  +fe-peek: handle kv peek requests
+  ::
+  ++  fe-peek
+    |=  rest=(pole knot)
+    ^-  (unit (unit cage))
+    ::  no perms check since no remote scry
+    ?+    rest  ~|(bad-feed-peek-path/rest !!)
+        [%data %all ~]
+      ``feed-update+!>(`feed-update`[%all data])
+    ::
+        [%data %key id=@t ~]
+      =/  fon   ((on time feed-value) gth)
+      =/  time  (~(gut by ids) id.rest ~)
+      =/  post
+        ?~  time  ~
+        (got:fon data time)
+      ::
+      ``feed-update+!>(`feed-update`[%get post])
     ::
     ==
   ::  fe-view: start watching foreign feed

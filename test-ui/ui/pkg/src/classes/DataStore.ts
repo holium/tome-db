@@ -124,7 +124,7 @@ export abstract class DataStore extends Tome {
     private async watchPerms(): Promise<void> {
         await this.api.subscribe({
             app: agent,
-            path: this.permsSubscribePath(),
+            path: this.permsPath(),
             err: () => {
                 console.error(
                     `Tome-${this.type}: unable to watch perms for this bucket.`
@@ -372,7 +372,7 @@ export abstract class DataStore extends Tome {
     protected async subscribeAll(): Promise<void> {
         this.storeSubscriptionID = await this.api.subscribe({
             app: agent,
-            path: this.dataSubscribePath(),
+            path: this.dataPath(),
             err: () => {
                 throw new Error(
                     `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
@@ -386,15 +386,11 @@ export abstract class DataStore extends Tome {
                         // received an empty object, clear the cache.
                         this.cache.clear()
                     } else {
-                        for (let [key, value] of entries) {
+                        for (const [key, value] of entries) {
                             if (value === null) {
                                 this.cache.delete(key)
                             } else {
-                                // TODO foreign strings are getting stripped of their quotes? This is a workaround.
-                                if (value.constructor !== String) {
-                                    value = JSON.parse(value)
-                                }
-                                this.cache.set(key, value)
+                                this.cache.set(key, JSON.parse(value))
                             }
                         }
                     }
@@ -405,17 +401,7 @@ export abstract class DataStore extends Tome {
                         data.map((entry: FeedlogEntry) => {
                             // save the IDs in time order so they are easier to find later
                             this.order.push(entry.id)
-                            // ship has ~, so we need to remove it
-                            entry.createdBy = entry.createdBy.slice(1)
-                            entry.updatedBy = entry.updatedBy.slice(1)
-                            entry.content = JSON.parse(entry.content)
-                            entry.links = Object.fromEntries(
-                                Object.entries(entry.links).map(([k, v]) => [
-                                    k.slice(1),
-                                    JSON.parse(v),
-                                ])
-                            )
-                            return entry
+                            return this.parseFeedlogEntry(entry)
                         })
                         this.feedlog = data as object[]
                     } else {
@@ -498,7 +484,7 @@ export abstract class DataStore extends Tome {
         })
     }
 
-    protected dataSubscribePath(key?: string): string {
+    protected dataPath(key?: string): string {
         let path = `/${this.type}/${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
             path += this.isLog ? 'log/' : 'feed/'
@@ -512,7 +498,7 @@ export abstract class DataStore extends Tome {
         return path
     }
 
-    protected permsSubscribePath(): string {
+    protected permsPath(): string {
         let path = `/${this.type}/${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
             path += this.isLog ? 'log/' : 'feed/'
@@ -599,5 +585,18 @@ export abstract class DataStore extends Tome {
         this.order.length = 0
         this.feedlog.length = 0
         this.dataUpdateCallback()
+    }
+
+    protected parseFeedlogEntry(entry: FeedlogEntry): FeedlogEntry {
+        entry.createdBy = entry.createdBy.slice(1)
+        entry.updatedBy = entry.updatedBy.slice(1)
+        entry.content = JSON.parse(entry.content)
+        entry.links = Object.fromEntries(
+            Object.entries(entry.links).map(([k, v]) => [
+                k.slice(1),
+                JSON.parse(v),
+            ])
+        )
+        return entry
     }
 }
