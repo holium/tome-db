@@ -143,9 +143,19 @@
         kv-abet:(kv-view:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
       ::
           %watch-ack
-        :: TODO if positive watch-ack, add to subs (data only)
-        %.  `state
-        ?~(p.sig same (slog leaf/"kv-watch nack" ~))
+        ?+    rest.pol  ~|(bad-kv-watch-ack-path/rest.pol !!)
+            [%data %all ~]
+          ?~  p.sig
+            =.  subs  (~(put in subs) pol)
+            `state
+          ((slog leaf/"kv-watch nack" ~) `state)          
+        ::
+            [%perm ~]
+          %.  `state
+          ?~(p.sig same (slog leaf/"kv-watch nack" ~))
+        ::
+        ==
+      ::
       ==
         [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
       ::
@@ -159,9 +169,18 @@
         fe-abet:(fe-view:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
       ::
           %watch-ack
-        :: TODO if positive watch-ack, add to subs (data only)
-        %.  `state
-        ?~(p.sig same (slog leaf/"feed-watch nack" ~))
+        ?+    rest.pol  ~|(bad-feed-watch-ack-path/rest.pol !!)
+            [%data %all ~]
+          ?~  p.sig
+            =.  subs  (~(put in subs) pol)
+            `state
+          ((slog leaf/"feed-watch nack" ~) `state)          
+        ::
+            [%perm ~]
+          %.  `state
+          ?~(p.sig same (slog leaf/"feed-watch nack" ~))
+        ::
+        ==
       ==
     ::
     ==
