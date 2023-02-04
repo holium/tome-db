@@ -141,7 +141,7 @@ export abstract class DataStore extends Tome {
                     this.setAdmin(admin)
                 }
             },
-            quit: this.watchPerms,
+            quit: async () => await this.watchPerms(),
         })
     }
 
@@ -168,7 +168,7 @@ export abstract class DataStore extends Tome {
                     await this._wipeAndChangeSpace(tomeShip, space)
                 }
             },
-            quit: this.watchCurrentSpace,
+            quit: async () => await this.watchCurrentSpace(),
         })
     }
 
@@ -480,7 +480,7 @@ export abstract class DataStore extends Tome {
                 this.loaded = true
                 this.dataUpdateCallback()
             },
-            quit: this.subscribeAll,
+            quit: async () => await this.subscribeAll(),
         })
     }
 
@@ -503,7 +503,7 @@ export abstract class DataStore extends Tome {
         }
         if (this.type === 'feed') {
             // @ts-expect-error
-            body[action].log = isLog
+            body[action].log = this.isLog
         }
         await this.api.poke({
             app: agent,
@@ -541,7 +541,7 @@ export abstract class DataStore extends Tome {
         }
         if (this.type === 'feed') {
             // @ts-expect-error
-            body[action].log = isLog
+            body[action].log = this.isLog
         }
         await this.api.poke({
             app: agent,

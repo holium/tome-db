@@ -5,6 +5,8 @@
   ++  kv-action
     |=  jon=json
     ^-  ^kv-action
+    =*  perl  (su (perk [%our %space %open %unset %yes %no ~]))
+    =*  invl  (su (perk [%read %write %admin %block ~]))
     %.  jon
     %-  of
     :~  set-value/(ot ~[ship/so space/so app/so bucket/so key/so value/so])
@@ -13,11 +15,15 @@
         verify-kv/(ot ~[ship/so space/so app/so bucket/so])
         watch-kv/(ot ~[ship/so space/so app/so bucket/so])
         team-kv/(ot ~[ship/so space/so app/so bucket/so])
+        perm-kv/(ot ~[ship/so space/so app/so bucket/so perm/(ot ~[read/perl write/perl admin/perl])])
+        invite-kv/(ot ~[ship/so space/so app/so bucket/so guy/so level/invl])
     ==
   ::
   ++  feed-action
     |=  jon=json
     ^-  ^feed-action
+    =*  perl  (su (perk [%our %space %open %unset %yes %no ~]))
+    =*  invl  (su (perk [%read %write %admin %block ~]))
     %.  jon
     %-  of
     :~  new-post/(ot ~[ship/so space/so app/so bucket/so log/bo id/so content/so])
@@ -27,6 +33,8 @@
         verify-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
         watch-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
         team-feed/(ot ~[ship/so space/so app/so bucket/so log/bo])
+        perm-feed/(ot ~[ship/so space/so app/so bucket/so log/bo perm/(ot ~[read/perl write/perl admin/perl])])
+        invite-feed/(ot ~[ship/so space/so app/so bucket/so log/bo guy/so level/invl])
         set-post-link/(ot ~[ship/so space/so app/so bucket/so log/bo id/so value/so])
         remove-post-link/(ot ~[ship/so space/so app/so bucket/so log/bo id/so])
     ==

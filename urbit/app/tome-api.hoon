@@ -146,6 +146,7 @@
         ?+    rest.pol  ~|(bad-kv-watch-ack-path/rest.pol !!)
             [%data %all ~]
           ?~  p.sig
+            ::  sub success, store that we're subscribed
             =.  subs  (~(put in subs) pol)
             `state
           ((slog leaf/"kv-watch nack" ~) `state)          

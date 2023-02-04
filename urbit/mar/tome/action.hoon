@@ -10,8 +10,8 @@
   ++  json
     =,  dejs:format
     |=  jon=json
-    =*  levels  (su (perk [%our %space %open %unset %yes %no ~]))
     ^-  tome-action
+    =*  levels  (su (perk [%our %space %open %unset %yes %no ~]))
     %.  jon
     %-  of
     :~  init-tome/(ot ~[ship/so space/so app/so])
