@@ -1,5 +1,5 @@
 import { DataStore, InitStoreOptions, Value } from '../../index'
-import { agent, kvMark, localKvPrefix, kvThread } from '../constants'
+import { agent, localKvPrefix } from '../constants'
 
 export class KeyValueStore extends DataStore {
     public constructor(options?: InitStoreOptions) {
@@ -36,9 +36,6 @@ export class KeyValueStore extends DataStore {
                 return false
             }
         } else {
-            await this.waitForReady()
-            // maybe set in the cache, return, and poke / retry as necesssary?
-            let success = false
             const json = {
                 'set-value': {
                     ship: this.tomeShip,
@@ -49,49 +46,19 @@ export class KeyValueStore extends DataStore {
                     value: valueStr,
                 },
             }
-            if (this.tomeShip === this.ourShip) {
-                await this.api.poke({
-                    app: agent,
-                    mark: kvMark,
-                    json,
-                    onSuccess: () => {
-                        this.cache.set(key, value)
-                        this.dataUpdateCallback()
-                        success = true
-                    },
-                    onError: () => {
-                        console.error(
-                            'Failed to set key-value pair in the Store.'
-                        )
-                    },
-                })
-            } else {
-                // Tunnel poke to Tome ship
-                try {
-                    const result = await this.api.thread({
-                        inputMark: 'json',
-                        outputMark: 'json',
-                        threadName: kvThread,
-                        body: {
-                            ship: this.tomeShip,
-                            json: JSON.stringify(json),
-                        },
-                    })
-                    success = result === 'success'
-                    if (success) {
-                        this.cache.set(key, value)
-                        this.dataUpdateCallback()
-                    } else {
-                        console.warn('failed to set value, checking perms...')
-                        // we check on failure to callback with any permissions changes
-                        this.getCurrentForeignPerms()
-                    }
-                } catch (e) {
-                    console.warn('failed to set value, checking perms...')
+            return await this.pokeOrTunnel({
+                json,
+                onSuccess: () => {
+                    this.cache.set(key, value)
+                    this.dataUpdateCallback()
+                    return true
+                },
+                onError: () => {
+                    console.error('Failed to set key-value pair in the Store.')
                     this.getCurrentForeignPerms()
-                }
-            }
-            return success
+                    return false
+                },
+            })
         }
     }
 
@@ -109,8 +76,6 @@ export class KeyValueStore extends DataStore {
             localStorage.removeItem(localKvPrefix + key)
             return true
         } else {
-            await this.waitForReady()
-            let success = false
             const json = {
                 'remove-value': {
                     ship: this.tomeShip,
@@ -120,49 +85,21 @@ export class KeyValueStore extends DataStore {
                     key,
                 },
             }
-            if (this.tomeShip === this.ourShip) {
-                await this.api.poke({
-                    app: agent,
-                    mark: kvMark,
-                    json,
-                    onSuccess: () => {
-                        this.cache.delete(key)
-                        this.dataUpdateCallback()
-                        success = true
-                    },
-                    onError: (error) => {
-                        console.error(error)
-                    },
-                })
-            } else {
-                // Tunnel poke to Tome ship
-                try {
-                    const result = await this.api.thread({
-                        inputMark: 'json',
-                        outputMark: 'json',
-                        threadName: kvThread,
-                        body: {
-                            ship: this.tomeShip,
-                            json: JSON.stringify(json),
-                        },
-                    })
-                    success = result === 'success'
-                    if (success) {
-                        this.cache.delete(key)
-                        this.dataUpdateCallback()
-                    } else {
-                        console.warn(
-                            'failed to remove value, checking perms...'
-                        )
-                        // we check on failure to callback with any permissions changes
-                        this.getCurrentForeignPerms()
-                    }
-                } catch (e) {
-                    console.warn('failed to remove value, checking perms...')
+            return await this.pokeOrTunnel({
+                json,
+                onSuccess: () => {
+                    this.cache.delete(key)
+                    this.dataUpdateCallback()
+                    return true
+                },
+                onError: () => {
+                    console.error(
+                        'Failed to remove key-value pair from the Store.'
+                    )
                     this.getCurrentForeignPerms()
-                }
-            }
-            return success
+                    return false
+                },
+            })
         }
     }
 
@@ -175,8 +112,6 @@ export class KeyValueStore extends DataStore {
             localStorage.clear()
             return true
         } else {
-            await this.waitForReady()
-            let success = false
             const json = {
                 'clear-kv': {
                     ship: this.tomeShip,
@@ -185,49 +120,19 @@ export class KeyValueStore extends DataStore {
                     bucket: this.bucket,
                 },
             }
-            if (this.tomeShip === this.ourShip) {
-                await this.api.poke({
-                    app: agent,
-                    mark: kvMark,
-                    json,
-                    onSuccess: () => {
-                        this.cache.clear()
-                        this.dataUpdateCallback()
-                        success = true
-                    },
-                    onError: () => {
-                        console.error('Failed to clear Store')
-                    },
-                })
-            } else {
-                // Tunnel poke to Tome ship
-                try {
-                    const result = await this.api.thread({
-                        inputMark: 'json',
-                        outputMark: 'json',
-                        threadName: kvThread,
-                        body: {
-                            ship: this.tomeShip,
-                            json: JSON.stringify(json),
-                        },
-                    })
-                    success = result === 'success'
-                    if (success) {
-                        this.cache.clear()
-                        this.dataUpdateCallback()
-                    } else {
-                        console.warn(
-                            'failed to clear values, checking perms...'
-                        )
-                        // we check on failure to callback with any permissions changes
-                        this.getCurrentForeignPerms()
-                    }
-                } catch (e) {
-                    console.warn('failed to clear values, checking perms...')
+            return await this.pokeOrTunnel({
+                json,
+                onSuccess: () => {
+                    this.cache.clear()
+                    this.dataUpdateCallback()
+                    return true
+                },
+                onError: () => {
+                    console.error('Failed to clear Store.')
                     this.getCurrentForeignPerms()
-                }
-            }
-            return success
+                    return false
+                },
+            })
         }
     }
 

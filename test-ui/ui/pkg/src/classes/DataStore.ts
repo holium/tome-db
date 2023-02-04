@@ -9,7 +9,14 @@ import {
     Value,
 } from '../index'
 import { LogStore, FeedStore, KeyValueStore, Tome } from './index'
-import { agent, kvMark, feedMark, tomeMark } from './constants'
+import {
+    agent,
+    kvMark,
+    feedMark,
+    tomeMark,
+    kvThread,
+    feedThread,
+} from './constants'
 
 export abstract class DataStore extends Tome {
     protected storeSubscriptionID: number
@@ -329,6 +336,10 @@ export abstract class DataStore extends Tome {
 
     // called by subclasses
     protected async getCurrentForeignPerms() {
+        // do nothing if not actually foreign
+        if (this.tomeShip === this.ourShip) {
+            return
+        }
         return await DataStore._getCurrentForeignPerms({
             api: this.api,
             tomeShip: this.tomeShip,
@@ -421,7 +432,7 @@ export abstract class DataStore extends Tome {
                                     updatedAt: data.body.time,
                                     createdBy: ship,
                                     updatedBy: ship,
-                                    content: data.body.content,
+                                    content: JSON.parse(data.body.content),
                                     links: {},
                                 }
                                 this.feedlog.unshift(entry)
@@ -674,5 +685,40 @@ export abstract class DataStore extends Tome {
             ])
         )
         return entry
+    }
+
+    protected async pokeOrTunnel({ json, onSuccess, onError }) {
+        await this.waitForReady()
+        let success = false
+        if (this.tomeShip === this.ourShip) {
+            let result: any // what onSuccess or onError returns
+            await this.api.poke({
+                app: agent,
+                mark: this.type === 'kv' ? kvMark : feedMark,
+                json,
+                onSuccess: () => {
+                    result = onSuccess()
+                },
+                onError: () => {
+                    result = onError()
+                },
+            })
+            return result
+        } else {
+            // Tunnel poke to Tome ship
+            try {
+                const result = await this.api.thread({
+                    inputMark: 'json',
+                    outputMark: 'json',
+                    threadName: this.type === 'kv' ? kvThread : feedThread,
+                    body: {
+                        ship: this.tomeShip,
+                        json: JSON.stringify(json),
+                    },
+                })
+                success = result === 'success'
+            } catch (e) {}
+        }
+        return success ? onSuccess() : onError()
     }
 }

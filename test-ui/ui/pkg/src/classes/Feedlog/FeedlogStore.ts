@@ -1,5 +1,5 @@
 import { Content, DataStore, FeedlogEntry, InitStoreOptions } from '../../index'
-import { agent, feedMark, feedThread } from '../constants'
+import { agent } from '../constants'
 import { v4 as uuid, validate } from 'uuid'
 
 export abstract class FeedlogStore extends DataStore {
@@ -28,9 +28,6 @@ export abstract class FeedlogStore extends DataStore {
             return undefined
         }
         const contentStr = JSON.stringify(content)
-        await this.waitForReady()
-        // maybe set in the cache, return, and poke / retry as necesssary?
-        let success = false
         const json = {
             [action]: {
                 ship: this.tomeShip,
@@ -42,48 +39,20 @@ export abstract class FeedlogStore extends DataStore {
                 content: contentStr,
             },
         }
-        if (this.tomeShip === this.ourShip) {
-            await this.api.poke({
-                app: agent,
-                mark: feedMark,
-                json,
-                onSuccess: () => {
-                    // TODO add to local feedlog?
-                    success = true
-                },
-                onError: () => {
-                    console.error(
-                        `Tome-${this.name}: Failed to save content to the ${this.name}.`
-                    )
-                },
-            })
-        } else {
-            // Tunnel poke to Tome ship
-            try {
-                const result = await this.api.thread({
-                    inputMark: 'json',
-                    outputMark: 'json',
-                    threadName: feedThread,
-                    body: {
-                        ship: this.tomeShip,
-                        json: JSON.stringify(json),
-                    },
-                })
-                success = result === 'success'
-                if (!success) {
-                    console.warn(
-                        `Tome-${this.name}: Failed to save content to the ${this.name}. Checking perms...`
-                    )
-                    this.getCurrentForeignPerms()
-                }
-            } catch (e) {
-                console.warn(
+        return await this.pokeOrTunnel({
+            json,
+            onSuccess: () => {
+                // cache somewhere?
+                return id
+            },
+            onError: () => {
+                console.error(
                     `Tome-${this.name}: Failed to save content to the ${this.name}. Checking perms...`
                 )
                 this.getCurrentForeignPerms()
-            }
-        }
-        return success ? id : undefined
+                return undefined
+            },
+        })
     }
 
     public async post(content: Content): Promise<string | undefined> {
@@ -102,8 +71,6 @@ export abstract class FeedlogStore extends DataStore {
             console.error('Invalid ID.')
             return false
         }
-        await this.waitForReady()
-        let success = false
         const json = {
             'delete-post': {
                 ship: this.tomeShip,
@@ -114,52 +81,23 @@ export abstract class FeedlogStore extends DataStore {
                 id,
             },
         }
-        if (this.tomeShip === this.ourShip) {
-            await this.api.poke({
-                app: agent,
-                mark: feedMark,
-                json,
-                onSuccess: () => {
-                    success = true
-                },
-                onError: (e) => {
-                    console.error(
-                        `Tome-${this.name}: Failed to delete post ${id}.`
-                    )
-                },
-            })
-        } else {
-            // Tunnel poke to Tome ship
-            try {
-                const result = await this.api.thread({
-                    inputMark: 'json',
-                    outputMark: 'json',
-                    threadName: feedThread,
-                    body: {
-                        ship: this.tomeShip,
-                        json: JSON.stringify(json),
-                    },
-                })
-                success = result === 'success'
-                if (!success) {
-                    console.warn(
-                        `Tome-${this.name}: Failed to delete content from the ${this.name}. Checking perms...`
-                    )
-                    this.getCurrentForeignPerms()
-                }
-            } catch (e) {
-                console.warn(
-                    `Tome-${this.name}: Failed to delete content from the ${this.name}. Checking perms...`
+        return await this.pokeOrTunnel({
+            json,
+            onSuccess: () => {
+                // cache somewhere?
+                return true
+            },
+            onError: () => {
+                console.error(
+                    `Tome-${this.name}: Failed to delete post from ${this.name}. Checking perms...`
                 )
                 this.getCurrentForeignPerms()
-            }
-        }
-        return success
+                return false
+            },
+        })
     }
 
     public async clear(): Promise<boolean> {
-        await this.waitForReady()
-        let success = false
         const json = {
             'clear-feed': {
                 ship: this.tomeShip,
@@ -169,47 +107,20 @@ export abstract class FeedlogStore extends DataStore {
                 log: this.isLog,
             },
         }
-        if (this.tomeShip === this.ourShip) {
-            await this.api.poke({
-                app: agent,
-                mark: feedMark,
-                json,
-                onSuccess: () => {
-                    success = true
-                },
-                onError: () => {
-                    console.error(
-                        `Tome-${this.name}: Failed to clear ${this.name}.`
-                    )
-                },
-            })
-        } else {
-            // Tunnel poke to Tome ship
-            try {
-                const result = await this.api.thread({
-                    inputMark: 'json',
-                    outputMark: 'json',
-                    threadName: feedThread,
-                    body: {
-                        ship: this.tomeShip,
-                        json: JSON.stringify(json),
-                    },
-                })
-                const success = result === 'success'
-                if (!success) {
-                    console.warn(
-                        `Tome-${this.name}: Failed to clear ${this.name}. Checking perms...`
-                    )
-                    this.getCurrentForeignPerms()
-                }
-            } catch (e) {
-                console.warn(
+        return await this.pokeOrTunnel({
+            json,
+            onSuccess: () => {
+                // cache somewhere?
+                return true
+            },
+            onError: () => {
+                console.error(
                     `Tome-${this.name}: Failed to clear ${this.name}. Checking perms...`
                 )
                 this.getCurrentForeignPerms()
-            }
-        }
-        return success
+                return false
+            },
+        })
     }
 
     public async get(

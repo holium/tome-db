@@ -1,5 +1,4 @@
 import { Value } from '../../index'
-import { agent, feedMark, feedThread } from '../constants'
 import { validate } from 'uuid'
 import { FeedlogStore } from './FeedlogStore'
 export class FeedStore extends FeedlogStore {
@@ -19,8 +18,6 @@ export class FeedStore extends FeedlogStore {
                 return false
             }
         }
-        await this.waitForReady()
-        let success = false
         const json = {
             [action]: {
                 ship: this.tomeShip,
@@ -35,47 +32,20 @@ export class FeedStore extends FeedlogStore {
             // @ts-expect-error
             json[action].value = JSON.stringify(value)
         }
-        if (this.tomeShip === this.ourShip) {
-            await this.api.poke({
-                app: agent,
-                mark: feedMark,
-                json,
-                onSuccess: () => {
-                    success = true
-                },
-                onError: () => {
-                    console.error(
-                        `Tome-${this.name}: Failed to modify link in the ${this.name}.`
-                    )
-                },
-            })
-        } else {
-            // Tunnel poke to Tome ship
-            try {
-                const result = await this.api.thread({
-                    inputMark: 'json',
-                    outputMark: 'json',
-                    threadName: feedThread,
-                    body: {
-                        ship: this.tomeShip,
-                        json: JSON.stringify(json),
-                    },
-                })
-                const success = result === 'success'
-                if (!success) {
-                    console.warn(
-                        `Tome-${this.name}: Failed to modify link in the ${this.name}. Checking perms...`
-                    )
-                    this.getCurrentForeignPerms()
-                }
-            } catch (e) {
-                console.warn(
-                    `Tome-${this.name}: Failed to modify link in the ${this.name}. Checking perms...`
+        return await this.pokeOrTunnel({
+            json,
+            onSuccess: () => {
+                // cache somewhere?
+                return true
+            },
+            onError: () => {
+                console.error(
+                    `Tome-${this.name}: Failed to modify link in the ${this.name}.`
                 )
                 this.getCurrentForeignPerms()
-            }
-        }
-        return success
+                return false
+            },
+        })
     }
 
     public async setLink(id: string, value: Value): Promise<boolean> {

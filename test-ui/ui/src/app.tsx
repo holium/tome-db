@@ -14,11 +14,13 @@ export function App() {
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
+            const kv = await db.keyvalue()
             const feed = await db.feed({
                 preload: true,
                 permissions: { read: 'space', write: 'space', admin: 'our' },
                 onReadyChange: setReady,
                 onDataChange: (data) => {
+                    console.log(data)
                     // newest records first.
                     // if you want a different order, you can sort the data here.
                     // need to spread array to trigger re-render
@@ -33,8 +35,6 @@ export function App() {
     }, [])
 
     const ListItems = data.map((item: any, index: number) => {
-        console.log(item, index)
-        console.log(Object.entries(item.links))
         const reactions = []
         Object.entries(item.links).map(([author, emoji]) => {
             const reaction = {}
