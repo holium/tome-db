@@ -15,7 +15,7 @@
         "isolatedModules": true,
         "noEmit": true,
         "noImplicitReturns": true,
-        "jsx": "react"
+        "jsx": "react-jsx"
     },
-    "include": ["./src", "../../design-system/Flex"]
+    "include": ["./src", "../../design-system"]
 }
