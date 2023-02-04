@@ -48,6 +48,7 @@ export abstract class FeedlogStore extends DataStore {
                 mark: feedMark,
                 json,
                 onSuccess: () => {
+                    // TODO add to local feedlog?
                     success = true
                 },
                 onError: () => {
@@ -58,8 +59,8 @@ export abstract class FeedlogStore extends DataStore {
             })
         } else {
             // Tunnel poke to Tome ship
-            const result = await this.api
-                .thread({
+            try {
+                const result = await this.api.thread({
                     inputMark: 'json',
                     outputMark: 'json',
                     threadName: feedThread,
@@ -68,22 +69,21 @@ export abstract class FeedlogStore extends DataStore {
                         json: JSON.stringify(json),
                     },
                 })
-                .catch(() => {
-                    console.error(
-                        `Tome-${this.name}: Failed to save content to the ${this.name}.`
+                success = result === 'success'
+                if (!success) {
+                    console.warn(
+                        `Tome-${this.name}: Failed to save content to the ${this.name}. Checking perms...`
                     )
-                    return undefined
-                })
-            success = result === 'success'
-            if (!success) {
+                    this.getCurrentForeignPerms()
+                }
+            } catch (e) {
+                console.warn(
+                    `Tome-${this.name}: Failed to save content to the ${this.name}. Checking perms...`
+                )
                 this.getCurrentForeignPerms()
             }
         }
-        if (success) {
-            return id
-        } else {
-            return undefined
-        }
+        return success ? id : undefined
     }
 
     public async post(content: Content): Promise<string | undefined> {
@@ -122,14 +122,16 @@ export abstract class FeedlogStore extends DataStore {
                 onSuccess: () => {
                     success = true
                 },
-                onError: (error) => {
-                    console.error(error)
+                onError: (e) => {
+                    console.error(
+                        `Tome-${this.name}: Failed to delete post ${id}.`
+                    )
                 },
             })
         } else {
             // Tunnel poke to Tome ship
-            const result = await this.api
-                .thread({
+            try {
+                const result = await this.api.thread({
                     inputMark: 'json',
                     outputMark: 'json',
                     threadName: feedThread,
@@ -138,14 +140,17 @@ export abstract class FeedlogStore extends DataStore {
                         json: JSON.stringify(json),
                     },
                 })
-                .catch((e) => {
-                    console.error(
-                        'Failed to remove key-value pair from the Store.'
+                success = result === 'success'
+                if (!success) {
+                    console.warn(
+                        `Tome-${this.name}: Failed to delete content from the ${this.name}. Checking perms...`
                     )
-                    return undefined
-                })
-            success = result === 'success'
-            if (!success) {
+                    this.getCurrentForeignPerms()
+                }
+            } catch (e) {
+                console.warn(
+                    `Tome-${this.name}: Failed to delete content from the ${this.name}. Checking perms...`
+                )
                 this.getCurrentForeignPerms()
             }
         }
@@ -180,8 +185,8 @@ export abstract class FeedlogStore extends DataStore {
             })
         } else {
             // Tunnel poke to Tome ship
-            const result = await this.api
-                .thread({
+            try {
+                const result = await this.api.thread({
                     inputMark: 'json',
                     outputMark: 'json',
                     threadName: feedThread,
@@ -190,14 +195,17 @@ export abstract class FeedlogStore extends DataStore {
                         json: JSON.stringify(json),
                     },
                 })
-                .catch(() => {
-                    console.error(
-                        `Tome-${this.name}: Failed to clear ${this.name}.`
+                const success = result === 'success'
+                if (!success) {
+                    console.warn(
+                        `Tome-${this.name}: Failed to clear ${this.name}. Checking perms...`
                     )
-                    return undefined
-                })
-            success = result === 'success'
-            if (!success) {
+                    this.getCurrentForeignPerms()
+                }
+            } catch (e) {
+                console.warn(
+                    `Tome-${this.name}: Failed to clear ${this.name}. Checking perms...`
+                )
                 this.getCurrentForeignPerms()
             }
         }

@@ -20,7 +20,6 @@ export class FeedStore extends FeedlogStore {
             }
         }
         await this.waitForReady()
-        // maybe set in the cache, return, and poke / retry as necesssary?
         let success = false
         const json = {
             [action]: {
@@ -52,8 +51,8 @@ export class FeedStore extends FeedlogStore {
             })
         } else {
             // Tunnel poke to Tome ship
-            const result = await this.api
-                .thread({
+            try {
+                const result = await this.api.thread({
                     inputMark: 'json',
                     outputMark: 'json',
                     threadName: feedThread,
@@ -62,14 +61,17 @@ export class FeedStore extends FeedlogStore {
                         json: JSON.stringify(json),
                     },
                 })
-                .catch(() => {
-                    console.error(
-                        `Tome-${this.name}: Failed to modify link in the ${this.name}.`
+                const success = result === 'success'
+                if (!success) {
+                    console.warn(
+                        `Tome-${this.name}: Failed to modify link in the ${this.name}. Checking perms...`
                     )
-                    return undefined
-                })
-            success = result === 'success'
-            if (!success) {
+                    this.getCurrentForeignPerms()
+                }
+            } catch (e) {
+                console.warn(
+                    `Tome-${this.name}: Failed to modify link in the ${this.name}. Checking perms...`
+                )
                 this.getCurrentForeignPerms()
             }
         }

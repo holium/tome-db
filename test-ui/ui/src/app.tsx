@@ -26,12 +26,21 @@ export function App() {
                 },
             })
             setFeed(feed)
+            //console.log(await feed.clear())
+            //console.log(feed)
         }
         init()
     }, [])
 
     const ListItems = data.map((item: any, index: number) => {
         console.log(item, index)
+        console.log(Object.entries(item.links))
+        const reactions = []
+        Object.entries(item.links).map(([author, emoji]) => {
+            const reaction = {}
+            Object.assign(reaction, { author, emoji })
+            reactions.push(reaction)
+        })
         return (
             <MemeBlock
                 zIndex={data.length - index}
@@ -40,7 +49,7 @@ export function App() {
                 image={item.content}
                 by={item.createdBy}
                 date={new Date(item.createdAt).toUTCString()}
-                reactions={Object.values(item.links)}
+                reactions={reactions}
                 onReaction={(payload) => {
                     feed?.setLink(item.id, payload.emoji)
                 }}

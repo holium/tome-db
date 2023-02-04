@@ -244,8 +244,8 @@ export abstract class DataStore extends Tome {
             body[action].log = isLog
         }
         // Tunnel poke to Tome ship
-        const result = await api
-            .thread({
+        try {
+            const result = await api.thread({
                 inputMark: 'json',
                 outputMark: 'json',
                 threadName: `${type}-poke-tunnel`,
@@ -254,12 +254,13 @@ export abstract class DataStore extends Tome {
                     json: JSON.stringify(body),
                 },
             })
-            .catch(() => {
-                console.error(`Tome-${type}: Failed to verify ${type}.`)
-                return undefined
-            })
-        const success = result === 'success'
-        if (!success) {
+            const success = result === 'success'
+            if (!success) {
+                throw new Error(
+                    `Tome-${type}: the requested bucket does not exist, or you do not have permission to access it.`
+                )
+            }
+        } catch (e) {
             throw new Error(
                 `Tome-${type}: the requested bucket does not exist, or you do not have permission to access it.`
             )
