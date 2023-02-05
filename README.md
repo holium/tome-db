@@ -1,100 +1,41 @@
-## Client Design
+---
+description: A Web3 and Composability bridge for Urbit
+---
 
-```js
+# TomeDB
+
+TomeDB is an **Urbit database and JavaScript client package** with native permissioning and subscription support.  With TomeDB, developers can full-stack Urbit applications entirely in JavaScript **(no Hoon)**.  Tome currently supports multiple storage types, including key-value, log, and feed.
+
+## **Features**
+
+* _Designed for migration from preexisting dApps_:  With the key-value store, TomeDB can dynamically use JavaScript local storage if an Urbit connection is not made. This means that developers can prepare and **distribute applications both on and off Urbit from a single codebase**.
+* _Enables app composability_:  With Urbit, your users' data is theirs, forever.  Applications using TomeDB can directly read and write from other data stores, with the simplicity of saving files to disk.
+* _Preload, caching, and callback system_:  TomeDB supports both preloading and caching values directly in JavaScript, reducing the number of requests to Urbit and making it easy to deliver a snappy user experience.  Callback functions are also provided to make re-rendering and state management a breeze.
+* _Fully integrated and modular permissions_:  Developers can specify exactly which users or groups have read / write / overwrite access for each data store.
+* _Bootstraps Automatically_:  Applications using TomeDB will create and set access to data stores on launch - no user or developer configuration required.
+
+## Example
+
+Here’s a simple example of setting and retrieving a value with Tome and an Urbit connection:
+
+```tsx
+import Urbit from '@urbit/http-api'
 import Tome from '@holium/tome-db'
 
 const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
-// If we're running in a space, Tome finds the space and ship associated and sets those by default.
-// If ship and space are hardcoded, the Tome is "locked" i.e. will throw an error if changed to outside the correct space. (maybe useful for DAO tools?)
-// "app", "agent", "desk" are all synonymous here. This keeps data separate from other applications / desks.  If not set, it's a "free-for-all" a la Settings Store.
-const db = await Tome.init(api, app: 'Lexicon', {
-    ship: 'lomder-librun', // sig will be automatically removed
-    space: 'Realm Forerunners',
-    permissions: { read: 'space', write: 'our', overwrite: 'our' }, // this is just a default to use for subclasses.  It's not persisted in Urbit.
-})
+const db = await Tome.init(api)
+const store = await db.keyvalue()
 
-// if no api, it uses localStorage instead.
+const result = await store.set('foo', 'bar')
+// result === true
 
-// current defaults:
-// no ship = our ship
-// no space = "our" space (personal space?)
-// no app = "all" apps.  A %settings-store replacement for Realm
-// no permissions: { read: 'space', create: 'our', overwrite: 'our' }
-
-const appPreferences = db.keyvalue({
-    bucket: 'app.preferences',
-    permissions: ..., // if not set, uses the Tome specified permissions
-    preload: true, // preload and cache the bucket values.  (Improves response time.)
-})
-
-// uses 'def' as bucket name if none is specified.
-const kv = db.keyvalue()
-
-appPreferences.set('theme', 'dark')
-res = appPreferences.get('theme')
-//  remove, clear, all..
+const value = await store.get('foo')
+// value === 'bar'
 ```
 
-## Backend Design
+## Limitations
 
-### Subscriptions
-
-Where `type` is one of `kv`, `log`, `feed`, etc:
-
-`/${type}/${space}/${app}/${bucket}/perm`: Get whether you are a writer and/or admin.
-NACK if can't read. Kicks after the first response.
-
-If a poke errors, you should check this again to see if your privileges have been revoked.
-
-`/kv/~${ship}/${space}/${app}/${bucket}/data/all`: Get all values and live updates.
-
-`/kv/~${ship}/${space}/${app}/${bucket}/data/key/${key}`: Get the value of a key.
-
-These don't exist yet:
-
-`/kv/~${ship}/${space}/${app}/${bucket}/meta/all`: Get all metadata and live updates.
-
-`/kv/~${ship}/${space}/${app}/${bucket}/meta/key/${key}`: Get the metadata of a key.
-
-## Permissioning:
-
-### Permission types:
-
-`read`: can view everything in the store, log, feed, etc.
-
-`write`: can add to the store, log, feed. Edit or delete _your own_ values, if supported.
-
-`admin`: can add, edit, or delete anything as supported.
-
-### Permission levels:
-
-`our`: any desk on our ship.
-
-`space`: all space members.
-
-`open`: anyone on the network.
-
-Invites are stored as separate whitelists / blacklists, and used in addition to the specified permission level.
-To use only a list of invited peers, set the relevant permission level to `our`.
-
-### Random notes
-
-User-facing ship names will always be specified and returned without the leading sig. i.e. `zod` instead of `~zod`.
-
-In the javascript client we store them as `'~zod'`, and in Hoon they are an @p.
-
-## OLD
-
-### Tome-level permissioning:
-
-In the actual settings for a Realm space I'd like to eventually be able to set Tome's permissions like so:
-
-`permissions: { visible: 'space', new: 'our' }`
-
-Visible: who is allowed to know the Tome exists for a space, whether it has stores / logs / feeds, and what the names of them are. Visible does not mean they can actually read the values associated, however.
-
-New: Who is allowed to create new apps and buckets in our space. In the default case, `our`, the space owner must download an app for it to be available to others. With a list of invites, any invited users could use an app in the space, and they would be allowed to initialize the necessary buckets for it to work.
-
-New gives any of the listed ships ability to download apps that store arbitrary data on the host ship, so it should be admins only. This could tie into admins for a space.
+* TomeDB currently cannot support large datasets or concurrent user counts.  All data is stored and delivered by the host ship, whose max capacity is \~2-8 GB.  Future plans include support for load balancing and data distribution.
+* Data stores are somewhat static (key-value, log, or feed). TomeDB is not a full graph or relational database replacement.  It can still be useful for rapid prototyping, however.
