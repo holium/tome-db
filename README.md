@@ -1,5 +1,5 @@
 ---
-description: A Web3 and Composability bridge for Urbit
+description: Urbit's web3 and composability bridge
 ---
 
 # TomeDB
@@ -44,3 +44,4 @@ const value = await store.get('foo')
 
 * [GitHub](https://github.com/holium/tome-db)
 * [Documentation](https://tomedb.gitbook.io/tomedb/)
+* [Report bugs or request new features](https://github.com/holium/tome-db/issues)
