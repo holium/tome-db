@@ -394,9 +394,9 @@ export abstract class DataStore extends Tome {
             },
             event: async (update: SubscribeUpdate) => {
                 if (this.type === 'kv') {
-                    this._handleKvUpdates(update)
+                    await this._handleKvUpdates(update)
                 } else {
-                    this._handleFeedUpdates(
+                    await this._handleFeedUpdates(
                         update as FeedlogEntry[] | FeedlogUpdate
                     )
                 }
