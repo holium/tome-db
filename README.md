@@ -39,3 +39,8 @@ const value = await store.get('foo')
 
 * TomeDB currently cannot support large datasets or concurrent user counts.  All data is stored and delivered by the host ship, whose max capacity is \~2-8 GB.  Future plans include support for load balancing and data distribution.
 * Data stores are somewhat static (key-value, log, or feed). TomeDB is not a full graph or relational database replacement.  It can still be useful for rapid prototyping, however.
+
+## Quick Links
+
+* [GitHub](https://github.com/holium/tome-db)
+* [Documentation](https://tomedb.gitbook.io/tomedb/)
