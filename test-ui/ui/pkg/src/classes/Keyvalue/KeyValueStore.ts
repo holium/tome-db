@@ -12,9 +12,10 @@ export class KeyValueStore extends DataStore {
 
     /**
      * Set a key-value pair in the store.
+     *
      * @param key The key to set.
-     * @param value The string or JSON value to associate with the key.
-     * @returns true if successful, false if not.
+     * @param value The value to associate with the key.  Can be a string, number, boolean, Array, or JSON.
+     * @returns true on success, false on failure.
      */
     public async set(key: string, value: Value): Promise<boolean> {
         if (!key) {
@@ -63,9 +64,10 @@ export class KeyValueStore extends DataStore {
     }
 
     /**
-     * Remove a specific key-value pair from the store.
+     * Remove a key-value pair from the store.
+     *
      * @param key The key to remove.
-     * @returns True if an element in the Store existed and has been removed, or False if the element does not exist.
+     * @returns true on success, false on failure.  If the key does not exist, returns true.
      */
     public async remove(key: string): Promise<boolean> {
         if (!key) {
@@ -105,7 +107,8 @@ export class KeyValueStore extends DataStore {
 
     /**
      * Discard all values in the store.
-     * @returns True on success, False on failure.
+     *
+     * @returns true on success, false on failure.
      */
     public async clear(): Promise<boolean> {
         if (!this.mars) {
@@ -137,11 +140,12 @@ export class KeyValueStore extends DataStore {
     }
 
     /**
-     * Retrieve the value associated with a specific key in the store.
+     * Get the value associated with a key in the store.
+     *
      * @param key  The key to retrieve.
      * @param allowCachedValue  Whether we can check for cached values first.
      * If false, we will always check Urbit for the latest value. Default is true.
-     * @returns The JSON value associated with the key, or undefined if the key does not exist.
+     * @returns The value associated with the key, or undefined if the key does not exist.
      */
     public async get(
         key: string,
@@ -183,6 +187,7 @@ export class KeyValueStore extends DataStore {
 
     /**
      * Get all key-value pairs in the store.
+     *
      * @param useCache return the cache instead of querying Urbit.  Only relevant if preload was set to false.
      * @returns A map of all key-value pairs in the store.
      */

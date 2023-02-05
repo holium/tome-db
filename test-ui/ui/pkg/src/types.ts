@@ -5,8 +5,8 @@ export type InviteLevel = 'read' | 'write' | 'admin' | 'block'
 export type StoreType = 'kv' | 'feed'
 
 type T = string | number | boolean | object | T[]
-export type Value = object | object[] | T
-export type Content = T | JSON
+export type Value = T
+export type Content = T
 
 export type SubscribeUpdate = object | FeedlogEntry[] | FeedlogUpdate
 

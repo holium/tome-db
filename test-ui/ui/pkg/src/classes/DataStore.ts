@@ -407,6 +407,11 @@ export abstract class DataStore extends Tome {
         })
     }
 
+    /**
+     * Set new permission levels for a store after initialization.
+     *
+     * @param permissions the new permissions to set.
+     */
     public async setPermissions(permissions: Perm): Promise<void> {
         if (!this.isOurStore()) {
             throw new Error(
@@ -440,7 +445,12 @@ export abstract class DataStore extends Tome {
         })
     }
 
-    // manually set permissions for a ship.  this takes precedence over Tome's permissions.
+    /**
+     * Set permission level for a specific ship.  This takes precedence over bucket-level permissions.
+     *
+     * @param ship The ship to set permissions for.
+     * @param level The permission level to set.
+     */
     public async inviteShip(ship: string, level: InviteLevel): Promise<void> {
         if (!this.isOurStore()) {
             throw new Error(
@@ -478,6 +488,11 @@ export abstract class DataStore extends Tome {
         })
     }
 
+    /**
+     * Block a specific ship from accessing this store.
+     *
+     * @param ship The ship to block.
+     */
     public async blockShip(ship: string): Promise<void> {
         await this.inviteShip(ship, 'block')
     }

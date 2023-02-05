@@ -78,7 +78,7 @@ export class Tome {
 
     /**
      * @param api The optional Urbit connection to be used for requests.
-     * @param app An optional app name to be used for requests. Defaults to `'all'`.
+     * @param app An optional app name to store under. Defaults to `'all'`.
      * @param options Optional ship, space, and permissions for initializing a Tome.
      * @returns A new Tome instance.
      */
@@ -146,7 +146,7 @@ export class Tome {
         return new Tome()
     }
 
-    private async initStore(
+    private async _initStore(
         options: StoreOptions,
         type: StoreType,
         isLog: boolean
@@ -182,27 +182,35 @@ export class Tome {
         })
     }
 
-    // TODO make this docstring better
     /**
-     * Initialize or retrieve the keyvalue Store for this Tome.
+     * Initialize or connect to a key-value store.
      *
-     * @param options  Optional bucket name, permissions, preload configuration, and callbacks for the store. `permisssions` will
-     * default to the Tome's permissions, `bucket` to `'def'`, and `preload` will default to true. Preload definess whether
-     * the frontend should stay subscribed to and cache all data / updates from the store.
-     * If false, the frontend will access values from Urbit only when requested, which may take longer.
-     * @returns A Store instance.
+     * @param options  Optional bucket, permissions, preload flag, and callbacks for the store. `permisssions`
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * @returns A `KeyValueStore`.
      */
     public async keyvalue(options: StoreOptions = {}): Promise<KeyValueStore> {
         if (this.mars) {
-            return (await this.initStore(options, 'kv', false)) as KeyValueStore
+            return (await this._initStore(
+                options,
+                'kv',
+                false
+            )) as KeyValueStore
         } else {
             return new KeyValueStore()
         }
     }
 
+    /**
+     * Initialize or connect to a feed store.
+     *
+     * @param options  Optional bucket, permissions, preload flag, and callbacks for the feed. `permisssions`
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * @returns A `FeedStore`.
+     */
     public async feed(options: StoreOptions = {}): Promise<FeedStore> {
         if (this.mars) {
-            return (await this.initStore(options, 'feed', false)) as FeedStore
+            return (await this._initStore(options, 'feed', false)) as FeedStore
         } else {
             throw new Error(
                 'Tome-feed: Feed can only be used with Urbit. Try using `keyvalue` instead.'
@@ -210,9 +218,16 @@ export class Tome {
         }
     }
 
+    /**
+     * Initialize or connect to a log store.
+     *
+     * @param options  Optional bucket, permissions, preload flag, and callbacks for the log. `permisssions`
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * @returns A `LogStore`.
+     */
     public async log(options: StoreOptions = {}): Promise<LogStore> {
         if (this.mars) {
-            return (await this.initStore(options, 'feed', true)) as LogStore
+            return (await this._initStore(options, 'feed', true)) as LogStore
         } else {
             throw new Error(
                 'Tome-log: Log can only be used with Urbit. Try using `keyvalue` instead.'
