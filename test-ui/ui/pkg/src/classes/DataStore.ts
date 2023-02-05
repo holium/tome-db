@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import {
     FeedlogEntry,
+    FeedlogUpdate,
     InitStoreOptions,
     InviteLevel,
     Perm,
@@ -32,7 +33,7 @@ export abstract class DataStore extends Tome {
     protected onDataChange: (data: any) => void
 
     protected cache: Map<string, Value> // cache key-value pairs
-    protected feedlog: object[] // array of objects (feed entries)
+    protected feedlog: FeedlogEntry[] // array of objects (feed entries)
     protected order: string[] // ids of feed entries in order
 
     protected bucket: string
@@ -224,7 +225,7 @@ export abstract class DataStore extends Tome {
             await this.subscribeAll()
         }
 
-        if (this.tomeShip === this.ourShip) {
+        if (this.isOurStore()) {
             this.write = true
             this.admin = true
         } else {
@@ -337,7 +338,7 @@ export abstract class DataStore extends Tome {
     // called by subclasses
     protected async getCurrentForeignPerms() {
         // do nothing if not actually foreign
-        if (this.tomeShip === this.ourShip) {
+        if (this.isOurStore()) {
             return
         }
         return await DataStore._getCurrentForeignPerms({
@@ -391,103 +392,13 @@ export abstract class DataStore extends Tome {
                     `Tome-${this.type}: the store being used has been removed, or your access has been revoked.`
                 )
             },
-            event: async (data: SubscribeUpdate) => {
+            event: async (update: SubscribeUpdate) => {
                 if (this.type === 'kv') {
-                    const entries: Array<[string, string]> =
-                        Object.entries(data)
-                    if (entries.length === 0) {
-                        // received an empty object, clear the cache.
-                        this.cache.clear()
-                    } else {
-                        for (const [key, value] of entries) {
-                            if (value === null) {
-                                this.cache.delete(key)
-                            } else {
-                                this.cache.set(key, JSON.parse(value))
-                            }
-                        }
-                    }
+                    this._handleKvUpdates(update)
                 } else {
-                    // Feed
-                    if (data.constructor === Array) {
-                        // update is %all
-                        data.map((entry: FeedlogEntry) => {
-                            // save the IDs in time order so they are easier to find later
-                            this.order.push(entry.id)
-                            return this.parseFeedlogEntry(entry)
-                        })
-                        this.feedlog = data as object[]
-                    } else {
-                        // %all update overwrites the array, so we need to wait here
-                        await this.waitForLoaded()
-                        // %new, %edit, %delete, %clear, %set-link, %remove-link
-                        let index: number
-                        switch (data.type) {
-                            case 'new': {
-                                this.order.unshift(data.body.id)
-                                const ship = data.body.ship.slice(1)
-                                const entry = {
-                                    id: data.body.id,
-                                    createdAt: data.body.time,
-                                    updatedAt: data.body.time,
-                                    createdBy: ship,
-                                    updatedBy: ship,
-                                    content: JSON.parse(data.body.content),
-                                    links: {},
-                                }
-                                this.feedlog.unshift(entry)
-                                break
-                            }
-                            case 'edit':
-                                index = this.order.indexOf(data.body.id)
-                                if (index > -1) {
-                                    this.feedlog[index] = {
-                                        ...this.feedlog[index],
-                                        content: JSON.parse(data.body.content),
-                                        updatedAt: data.body.time,
-                                        updatedBy: data.body.ship.slice(1),
-                                    }
-                                }
-                                break
-                            case 'delete':
-                                index = this.order.indexOf(data.body.id)
-                                if (index > -1) {
-                                    this.feedlog.splice(index, 1)
-                                    this.order.splice(index, 1)
-                                }
-                                break
-                            case 'clear':
-                                this.wipeLocalValues()
-                                break
-                            case 'set-link':
-                                index = this.order.indexOf(data.body.id)
-                                if (index > -1) {
-                                    this.feedlog[index] = {
-                                        ...this.feedlog[index],
-                                        links: {
-                                            ...this.feedlog[index].links,
-                                            [data.body.ship.slice(1)]:
-                                                JSON.parse(data.body.value),
-                                        },
-                                    }
-                                }
-                                break
-                            case 'remove-link':
-                                index = this.order.indexOf(data.body.id)
-                                if (index > -1) {
-                                    this.feedlog[index] = {
-                                        ...this.feedlog[index],
-                                        links: (({
-                                            [data.body.ship.slice(1)]: _,
-                                            ...o
-                                        }) => o)(this.feedlog[index].links), // remove data.body.ship
-                                    }
-                                }
-                                break
-                            default:
-                                console.error('Tome-feed: unknown update type')
-                        }
-                    }
+                    this._handleFeedUpdates(
+                        update as FeedlogEntry[] | FeedlogUpdate
+                    )
                 }
                 this.loaded = true
                 this.dataUpdateCallback()
@@ -496,6 +407,11 @@ export abstract class DataStore extends Tome {
         })
     }
 
+    /**
+     * Set new permission levels for a store after initialization.
+     *
+     * @param permissions the new permissions to set.
+     */
     public async setPermissions(permissions: Perm): Promise<void> {
         if (!this.isOurStore()) {
             throw new Error(
@@ -529,7 +445,12 @@ export abstract class DataStore extends Tome {
         })
     }
 
-    // manually set permissions for a ship.  this takes precedence over Tome's permissions.
+    /**
+     * Set permission level for a specific ship.  This takes precedence over bucket-level permissions.
+     *
+     * @param ship The ship to set permissions for.
+     * @param level The permission level to set.
+     */
     public async inviteShip(ship: string, level: InviteLevel): Promise<void> {
         if (!this.isOurStore()) {
             throw new Error(
@@ -567,6 +488,11 @@ export abstract class DataStore extends Tome {
         })
     }
 
+    /**
+     * Block a specific ship from accessing this store.
+     *
+     * @param ship The ship to block.
+     */
     public async blockShip(ship: string): Promise<void> {
         await this.inviteShip(ship, 'block')
     }
@@ -690,7 +616,7 @@ export abstract class DataStore extends Tome {
     protected async pokeOrTunnel({ json, onSuccess, onError }) {
         await this.waitForReady()
         let success = false
-        if (this.tomeShip === this.ourShip) {
+        if (this.isOurStore()) {
             let result: any // what onSuccess or onError returns
             await this.api.poke({
                 app: agent,
@@ -720,5 +646,111 @@ export abstract class DataStore extends Tome {
             } catch (e) {}
         }
         return success ? onSuccess() : onError()
+    }
+
+    private async _handleKvUpdates(update: object): Promise<void> {
+        const entries: Array<[string, string]> = Object.entries(update)
+        if (entries.length === 0) {
+            // received an empty object, clear the cache.
+            this.cache.clear()
+        } else {
+            for (const [key, value] of entries) {
+                if (value === null) {
+                    this.cache.delete(key)
+                } else {
+                    this.cache.set(key, JSON.parse(value))
+                }
+            }
+        }
+    }
+
+    private _handleFeedAll(update: FeedlogEntry[]): void {
+        update.map((entry: FeedlogEntry) => {
+            // save the IDs in time order so they are easier to find later
+            this.order.push(entry.id)
+            return this.parseFeedlogEntry(entry)
+        })
+        this.feedlog = update
+    }
+
+    private async _handleFeedUpdate(update: FeedlogUpdate): Promise<void> {
+        await this.waitForLoaded()
+        // %new, %edit, %delete, %clear, %set-link, %remove-link
+        let index: number
+        switch (update.type) {
+            case 'new': {
+                this.order.unshift(update.body.id)
+                const ship = update.body.ship.slice(1)
+                const entry = {
+                    id: update.body.id,
+                    createdAt: update.body.time,
+                    updatedAt: update.body.time,
+                    createdBy: ship,
+                    updatedBy: ship,
+                    content: JSON.parse(update.body.content),
+                    links: {},
+                }
+                this.feedlog.unshift(entry)
+                break
+            }
+            case 'edit':
+                index = this.order.indexOf(update.body.id)
+                if (index > -1) {
+                    this.feedlog[index] = {
+                        ...this.feedlog[index],
+                        content: JSON.parse(update.body.content),
+                        updatedAt: update.body.time,
+                        updatedBy: update.body.ship.slice(1),
+                    }
+                }
+                break
+            case 'delete':
+                index = this.order.indexOf(update.body.id)
+                if (index > -1) {
+                    this.feedlog.splice(index, 1)
+                    this.order.splice(index, 1)
+                }
+                break
+            case 'clear':
+                this.wipeLocalValues()
+                break
+            case 'set-link':
+                index = this.order.indexOf(update.body.id)
+                if (index > -1) {
+                    this.feedlog[index] = {
+                        ...this.feedlog[index],
+                        links: {
+                            ...this.feedlog[index].links,
+                            [update.body.ship.slice(1)]: JSON.parse(
+                                update.body.value
+                            ),
+                        },
+                    }
+                }
+                break
+            case 'remove-link':
+                index = this.order.indexOf(update.body.id)
+                if (index > -1) {
+                    this.feedlog[index] = {
+                        ...this.feedlog[index],
+                        // @ts-expect-error
+                        links: (({ [update.body.ship.slice(1)]: _, ...o }) =>
+                            o)(this.feedlog[index].links), // remove data.body.ship
+                    }
+                }
+                break
+            default:
+                console.error('Tome-feed: unknown update type')
+        }
+    }
+
+    private async _handleFeedUpdates(
+        update: FeedlogEntry[] | FeedlogUpdate
+    ): Promise<void> {
+        if (update.constructor === Array) {
+            this._handleFeedAll(update)
+        } else {
+            await this._handleFeedUpdate(update as FeedlogUpdate)
+        }
     }
 }

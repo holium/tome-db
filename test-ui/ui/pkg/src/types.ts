@@ -5,13 +5,14 @@ export type InviteLevel = 'read' | 'write' | 'admin' | 'block'
 export type StoreType = 'kv' | 'feed'
 
 type T = string | number | boolean | object | T[]
-export type Value = object | object[] | T
-export type Content = T | JSON
+export type Value = T
+export type Content = T
 
 export type SubscribeUpdate = object | FeedlogEntry[] | FeedlogUpdate
 
 export interface FeedlogUpdate {
-    type: 'new' | 'edit' | 'delete' | 'clear'
+    type: 'new' | 'edit' | 'delete' | 'clear' | 'set-link' | 'remove-link'
+    body: FeedlogEntry
 }
 
 export interface FeedlogEntry {
@@ -22,6 +23,9 @@ export interface FeedlogEntry {
     updatedBy: string
     content: string
     links: object
+    ship?: string
+    time?: number
+    value?: string
 }
 
 export interface Perm {

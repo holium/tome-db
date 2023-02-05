@@ -55,10 +55,25 @@ export abstract class FeedlogStore extends DataStore {
         })
     }
 
+    /**
+     * Add a new post to the feedlog.  Automatically stores the creation time and author.
+     *
+     * @param content The Content to post to the feedlog.
+     * Can be a string, number, boolean, Array, or JSON.
+     * @returns The post ID on success, undefined on failure.
+     */
     public async post(content: Content): Promise<string | undefined> {
         return await this._postOrEdit(content)
     }
 
+    /**
+     * Edit a post in the feedlog.  Automatically stores the updated time and author.
+     *
+     * @param id The ID of the post to edit.
+     * @param newContent The newContent to replace with.
+     * Can be a string, number, boolean, Array, or JSON.
+     * @returns The post ID on success, undefined on failure.
+     */
     public async edit(
         id: string,
         newContent: Content
@@ -66,6 +81,12 @@ export abstract class FeedlogStore extends DataStore {
         return await this._postOrEdit(newContent, id)
     }
 
+    /**
+     * Delete a post from the feedlog.  If the post with ID does not exist, returns true.
+     *
+     * @param id The ID of the post to delete.
+     * @returns true on success, false on failure.
+     */
     public async delete(id: string): Promise<boolean> {
         if (!validate(id)) {
             console.error('Invalid ID.')
@@ -97,6 +118,11 @@ export abstract class FeedlogStore extends DataStore {
         })
     }
 
+    /**
+     * Clear all posts from the feedlog.
+     *
+     * @returns true on success, false on failure.
+     */
     public async clear(): Promise<boolean> {
         const json = {
             'clear-feed': {
@@ -123,6 +149,14 @@ export abstract class FeedlogStore extends DataStore {
         })
     }
 
+    /**
+     * Get the post from the feedlog with the given ID.
+     *
+     * @param id The ID of the post to retrieve.
+     * @param allowCachedValue If true, will return the cached value if it exists.
+     * If false, will always fetch from Urbit.  Defaults to true.
+     * @returns A FeedlogEntry on success, undefined on failure.
+     */
     public async get(
         id: string,
         allowCachedValue: boolean = true
@@ -151,6 +185,13 @@ export abstract class FeedlogStore extends DataStore {
         }
     }
 
+    /**
+     * Retrieve all posts from the feedlog, sorted by newest first.
+     *
+     * @param useCache If true, return the current cache instead of querying Urbit.
+     * Only relevant if preload was set to false.  Defaults to false.
+     * @returns A FeedlogEntry on success, undefined on failure.
+     */
     public async all(useCache: boolean = false): Promise<Content[]> {
         await this.waitForReady()
         if (this.preload) {
