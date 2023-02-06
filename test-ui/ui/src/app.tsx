@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Urbit from '@urbit/http-api'
-import { Button, Flex, MemeBlock } from '@holium/design-system'
+import { Button, Flex, MemeBlock, InputBox } from '@holium/design-system'
 import Tome, { FeedStore } from '../pkg/src/index'
 
 const api = new Urbit('', '', window.desk)
@@ -10,11 +10,11 @@ export function App() {
     const [ready, setReady] = useState(false)
     const [data, setData] = useState([])
     const [feed, setFeed] = useState<FeedStore>()
+    const [link, setLink] = useState('')
 
     useEffect(() => {
         async function init() {
             const db = await Tome.init(api)
-            const kv = await db.keyvalue()
             const feed = await db.feed({
                 preload: true,
                 permissions: { read: 'space', write: 'space', admin: 'our' },
@@ -28,8 +28,6 @@ export function App() {
                 },
             })
             setFeed(feed)
-            //console.log(await feed.clear())
-            //console.log(feed)
         }
         init()
     }, [])
@@ -51,31 +49,51 @@ export function App() {
                 date={new Date(item.createdAt).toUTCString()}
                 reactions={reactions}
                 onReaction={(payload) => {
-                    feed?.setLink(item.id, payload.emoji)
+                    console.log(payload)
+                    if (payload.action === 'remove') {
+                        feed?.removeLink(item.id)
+                    } else if (payload.action === 'add') {
+                        if (item.createdBy in item.links) {
+                            feed?.removeLink(item.id)
+                        }
+                        feed?.setLink(item.id, payload.emoji)
+                    }
                 }}
+                width={400}
             />
         )
     })
 
     return (
-        <main className="flex items-center justify-center">
+        <main>
             <Flex position="relative" my={2} flexDirection="column" gap={8}>
-                {ready && feed ? (
-                    <Button.Primary
-                        px={1}
-                        onClick={() =>
-                            feed.post(
-                                'https://pbs.twimg.com/media/FmHxG_UX0AACbZY?format=png&name=900x900'
-                            )
-                        }
-                    >
-                        Add new
-                    </Button.Primary>
-                ) : (
-                    <p>loading...</p>
-                )}
                 {ListItems}
             </Flex>
+            <InputBox
+                rightAdornment={
+                    <Button.Primary
+                        height={32}
+                        px={2}
+                        fontSize="16px"
+                        onClick={async () => {
+                            const id = await feed?.post(link)
+                            console.log(id)
+                            setLink('')
+                        }}
+                    >
+                        Post
+                    </Button.Primary>
+                }
+                inputId="input-2"
+            >
+                <input
+                    id="input-2"
+                    tabIndex={1}
+                    placeholder="Paste meme link"
+                    value={link}
+                    onChange={(event) => setLink(event.target.value)}
+                />
+            </InputBox>
         </main>
     )
 }
