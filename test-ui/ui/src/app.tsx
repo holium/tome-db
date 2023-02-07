@@ -138,8 +138,10 @@ export function App() {
                                 px={2}
                                 fontSize="16px"
                                 onClick={async () => {
-                                    const id = await feed?.post(link)
-                                    setLink('')
+                                    if (link !== '') {
+                                        const id = await feed?.post(link)
+                                        setLink('')
+                                    }
                                 }}
                             >
                                 Post
