@@ -14,6 +14,8 @@
         "lint": "eslint ./src --fix"
     },
     "dependencies": {
+        "@mantine/core": "^5.10.3",
+        "@react-hook/resize-observer": "^1.2.6",
         "@urbit/api": "^2.0.0",
         "@urbit/http-api": "^2.0.0",
         "react": "^18.0.0",
