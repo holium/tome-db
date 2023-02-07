@@ -90,38 +90,37 @@ export class Tome {
         const mars = api !== undefined
         if (mars) {
             let locked = false
-            let tomeShip = `~${api.ship}`
-            let space = 'our'
-            let inRealm = true
+            const inRealm = options.realm !== undefined ? options.realm : false
+            let tomeShip = options.ship !== undefined ? options.ship : api.ship
+            let space = options.space !== undefined ? options.space : 'our'
 
-            // verify that spaces agent is installed and configured
-            try {
-                const current = await api.scry({
-                    app: 'spaces',
-                    path: '/current',
-                })
-                const spacePath = current.current.path.split('/')
-                tomeShip = spacePath[1]
-                space = spacePath[2]
-            } catch (e) {
-                inRealm = false
-                console.warn(
-                    'Tome: no current space found. Is Realm installed / configured?'
-                )
-                console.warn(
-                    "Tome: falling back to current ship and 'our' space."
-                )
-            }
-
-            if (options.ship && options.space) {
-                if (options.ship !== tomeShip || options.space !== space) {
+            if (inRealm) {
+                if (options.ship && options.space) {
+                    locked = true
+                } else if (!options.ship && !options.space) {
+                    try {
+                        const current = await api.scry({
+                            app: 'spaces',
+                            path: '/current',
+                        })
+                        const spacePath = current.current.path.split('/')
+                        tomeShip = spacePath[1]
+                        space = spacePath[2]
+                    } catch (e) {
+                        throw new Error(
+                            'Tome: no current space found. Make sure Realm is installed / configured, ' +
+                                'or pass `realm: false` to `Tome.init`.'
+                        )
+                    }
+                } else {
                     throw new Error(
-                        'Tome: you are not in the preset space-path (space and corresponding ship).'
+                        'Tome: `ship` and `space` must neither or both be specified when using Realm.'
                     )
                 }
-                locked = true
-                tomeShip = options.ship
-                space = options.space
+            }
+
+            if (!tomeShip.startsWith('~')) {
+                tomeShip = `~${tomeShip}`
             }
             // save api.ship so we know who we are.
             const ourShip = `~${api.ship}`
@@ -130,7 +129,7 @@ export class Tome {
             }
             const perm = options.permissions
                 ? options.permissions
-                : ({ read: 'space', write: 'our', admin: 'our' } as const)
+                : ({ read: 'our', write: 'our', admin: 'our' } as const)
             await Tome.initTomePoke(api, tomeShip, space, app)
             return new Tome({
                 api,
@@ -174,6 +173,7 @@ export class Tome {
             bucket: options.bucket ? options.bucket : 'def',
             preload: options.preload !== undefined ? options.preload : true,
             onReadyChange: options.onReadyChange,
+            onLoadChange: options.onLoadChange,
             onWriteChange: options.onWriteChange,
             onAdminChange: options.onAdminChange,
             onDataChange: options.onDataChange,

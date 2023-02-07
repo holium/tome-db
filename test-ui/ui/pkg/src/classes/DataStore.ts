@@ -28,6 +28,7 @@ export abstract class DataStore extends Tome {
     protected loaded: boolean
     protected ready: boolean // if false, we are switching spaces.
     protected onReadyChange: (ready: boolean) => void
+    protected onLoadChange: (loaded: boolean) => void
     protected onWriteChange: (write: boolean) => void
     protected onAdminChange: (admin: boolean) => void
     protected onDataChange: (data: any) => void
@@ -92,6 +93,7 @@ export abstract class DataStore extends Tome {
                 admin,
                 preload,
                 onReadyChange,
+                onLoadChange,
                 onWriteChange,
                 onAdminChange,
                 onDataChange,
@@ -106,6 +108,7 @@ export abstract class DataStore extends Tome {
             this.order = []
             this.preload = preload
             this.onReadyChange = onReadyChange
+            this.onLoadChange = onLoadChange
             this.onWriteChange = onWriteChange
             this.onAdminChange = onAdminChange
             this.onDataChange = onDataChange
@@ -116,7 +119,7 @@ export abstract class DataStore extends Tome {
                 this.isLog = false
             }
             if (preload) {
-                this.loaded = false
+                this.setLoaded(false)
                 this.subscribeAll()
             }
             if (this.inRealm) {
@@ -170,7 +173,7 @@ export abstract class DataStore extends Tome {
                 if (tomeShip !== this.tomeShip || space !== this.space) {
                     if (this.locked) {
                         throw new Error(
-                            `Tome-${this.type}: the space has been switched for a locked Tome.`
+                            `Tome-${this.type}: spaces cannot be switched while using a locked Tome.`
                         )
                     }
                     await this._wipeAndChangeSpace(tomeShip, space)
@@ -221,7 +224,7 @@ export abstract class DataStore extends Tome {
         this.space = space
         this.wipeLocalValues()
         if (this.preload) {
-            this.loaded = false
+            this.setLoaded(false)
             await this.subscribeAll()
         }
 
@@ -400,8 +403,8 @@ export abstract class DataStore extends Tome {
                         update as FeedlogEntry[] | FeedlogUpdate
                     )
                 }
-                this.loaded = true
                 this.dataUpdateCallback()
+                this.setLoaded(true)
             },
             quit: async () => await this.subscribeAll(),
         })
@@ -525,6 +528,15 @@ export abstract class DataStore extends Tome {
             this.ready = ready
             if (this.onReadyChange) {
                 this.onReadyChange(ready)
+            }
+        }
+    }
+
+    protected setLoaded(loaded: boolean): void {
+        if (loaded !== this.loaded) {
+            this.loaded = loaded
+            if (this.onLoadChange) {
+                this.onLoadChange(loaded)
             }
         }
     }

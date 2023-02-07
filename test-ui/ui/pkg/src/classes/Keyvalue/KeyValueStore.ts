@@ -223,6 +223,7 @@ export class KeyValueStore extends DataStore {
                 app: agent,
                 path: this.dataPath(key),
             })
+            // TODO value is null when it shouldn't be.
             if (value === null) {
                 this.cache.delete(key)
                 return undefined
