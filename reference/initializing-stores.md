@@ -96,9 +96,9 @@ options: {
   * `read` can read any key-value pairs from the bucket.
   * `write` can create new key-value pairs or update their own values.
   * `admin` can create or overwrite any values in the bucket.
-* `preload` is whether the JS client should fetch and cache all key-value pairs in the bucket, and subscribe to live updates.  This helps with responsiveness when using an application, since most requests won't go to Urbit.  Defaults to `true`.
+* `preload` is whether the client should fetch and cache all key-value pairs in the bucket, and subscribe to live updates.  This helps with responsiveness when using an application, since most requests won't go to Urbit.  Defaults to `true`.
 * `onDataChange` is called whenever data in the key-value store changes, and can be used to re-render an application with new data.
-* `onReadyChange` is called whenever the store changes `ready` state: after initial app configuration, and whenever a user changes between spaces in Realm.  Use combined with `preload` set to false to know when to show a loading screen, and when to start making requests.
+* `onReadyChange` is called whenever the store changes `ready` state: after initial app configuration, and whenever a user changes between spaces in Realm.  Use combined with `preload` set to `false` to know when to show a loading screen, and when to start making requests.
 * If preload is `true`, use `onLoadChange` instead to be notified when all data has been loaded and is addressable.  This also handles the case of switching between Realm spaces.
 * `onWriteChange` and `onAdminChange` are called when the current user's `write` and `admin` permissions have been detected to change.
 
@@ -181,7 +181,7 @@ const feed = await db.feed({
     bucket: 'posts',
     preload: true,
     permissions: { read: 'space', write: 'space', admin: 'our' },
-    onReadyChange: setReady,
+    onLoadChange: setLoaded,
     onDataChange: (data) => {
         // newest records first.
         // if you want a different order, you can sort the data here.
