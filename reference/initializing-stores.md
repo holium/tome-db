@@ -29,18 +29,25 @@ interface Perm {
 
 <summary>options</summary>
 
-Optional `ship`, `space`, and `permissions` for initializing a Tome.
+Optional `ship`, `space`, `permissions`, and `realm` flag for initializing a Tome.
 
 ```typescript
 options: {
+    realm?: boolean,
     ship?: string,
     space?: string,
     permissions?: Perm
 }
 ```
 
-* If `ship` and `space` are not specified, Tome will automatically detect and use the current Realm space and corresponding host ship.  This is useful for building applications that share data between groups.  If not running on a Realm ship, Tome will use the current ship and `'our'` space.
-* To create a "locked" Tome, specify `ship` and `space` together.  Locked means that it works only for that specific ship + space.  Internal DAO tooling would be one potential use case.  `ship` can be specified with or without the `~`.
+* `ship` can be specified with or without the `~`.
+* If `realm` is `false` , Tome will use `ship` and `space` as specified, with defaults of the current ship and `'our'` space respectively.
+* If `realm` is `true`, `ship` and `space` must be either set together or not at all. &#x20;
+  * If neither are set, Tome will automatically detect and use the current Realm space and corresponding host ship, as well as handle switching application data when a user changes spaces in Realm.
+  * To create a "locked" Tome, specify `ship` and `space` together.  A locked Tome will work only in that specific space (think internal DAO tooling).
+
+<!---->
+
 * `permissions` is a default permissions level to be used by sub-classes.  When creating many store instances with the same permissions, simply specify them once here.
 
 </details>
@@ -54,6 +61,7 @@ const api = new Urbit('', '', window.desk)
 api.ship = window.ship
 
 const db = await Tome.init(api, 'demo', {
+    realm: true,
     ship: 'lomder-librun',
     space: 'Realm Forerunners',
     permissions: { read: 'space', write: 'space', admin: 'our' }
@@ -76,6 +84,7 @@ options: {
     permissions?: Perm
     preload?: boolean,
     onDataChange?: (data: Map<string, Value>()) => void
+    onLoadChange?: (loaded: boolean) => void
     onReadyChange?: (ready: boolean) => void
     onWriteChange?: (write: boolean) => void
     onAdminChange?: (admin: boolean) => void
@@ -87,10 +96,11 @@ options: {
   * `read` can read any key-value pairs from the bucket.
   * `write` can create new key-value pairs or update their own values.
   * `admin` can create or overwrite any values in the bucket.
-* `preload` is whether the JS client should fetch and cache all key-value pairs in the bucket, and subscribe to live updates.  This helps with responsiveness when using an application, since most requests won't go to Urbit.  Defaults to `true`.
+* `preload` is whether the client should fetch and cache all key-value pairs in the bucket, and subscribe to live updates.  This helps with responsiveness when using an application, since most requests won't go to Urbit.  Defaults to `true`.
 * `onDataChange` is called whenever data in the key-value store changes, and can be used to re-render an application with new data.
-* `onReadyChange` is called whenever the store changes `ready` state: after initial app load, and whenever a user changes between spaces in Realm.  This can be used to show loading screens at the proper times.
-* `onWriteChange` and `onAdminChange` are called when the user's `write` and `admin` permissions have been detected to change.
+* `onReadyChange` is called whenever the store changes `ready` state: after initial app configuration, and whenever a user changes between spaces in Realm.  Use combined with `preload` set to `false` to know when to show a loading screen, and when to start making requests.
+* If preload is `true`, use `onLoadChange` instead to be notified when all data has been loaded and is addressable.  This also handles the case of switching between Realm spaces.
+* `onWriteChange` and `onAdminChange` are called when the current user's `write` and `admin` permissions have been detected to change.
 
 </details>
 
@@ -99,7 +109,9 @@ options: {
 Initialize or connect to a key-value store.  It uses [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) if the corresponding `Tome` has no Urbit connection.
 
 ```typescript
-const db = await Tome.init(api)
+const db = await Tome.init(api, 'demo', {
+    realm: true
+})
 
 const kv = await db.keyvalue({
     bucket: 'preferences',
@@ -132,6 +144,7 @@ options: {
     permissions?: Perm
     preload?: boolean,
     onDataChange?: (data: FeedlogEntry[]) => void
+    onLoadChange?: (loaded: boolean) => void
     onReadyChange?: (ready: boolean) => void
     onWriteChange?: (write: boolean) => void
     onAdminChange?: (admin: boolean) => void
@@ -160,13 +173,15 @@ Initialize a feed or log store.  These must be created from a `Tome` with a vali
 {% endhint %}
 
 ```typescript
-const db = await Tome.init(api)
+const db = await Tome.init(api, 'demo', {
+    realm: true
+})
 
 const feed = await db.feed({
-    bucket: '
+    bucket: 'posts',
     preload: true,
     permissions: { read: 'space', write: 'space', admin: 'our' },
-    onReadyChange: setReady,
+    onLoadChange: setLoaded,
     onDataChange: (data) => {
         // newest records first.
         // if you want a different order, you can sort the data here.

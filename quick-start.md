@@ -48,7 +48,9 @@ If you want to develop a spaces-enabled application for [Realm](https://www.holi
 ### Key-value
 
 ```typescript
-const db = await Tome.init(api, 'lexicon')
+const db = await Tome.init(api, 'lexicon', {
+    realm: true
+})
 const kv = await db.keyvalue({
     bucket: 'preferences',
     permissions: { read: 'open', write: 'space', admin: 'our' },
@@ -69,7 +71,9 @@ await kv.clear()
 // ... React app boilerplate
 const [data, setData] = useState([])
 
-const db = await Tome.init(api, 'racket')
+const db = await Tome.init(api, 'racket', {
+    realm: true
+})
 // use db.log(...) for a log
 const feed = await db.feed({
     preload: true,
