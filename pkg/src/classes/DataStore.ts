@@ -653,6 +653,7 @@ export abstract class DataStore extends Tome {
                         ship: this.tomeShip,
                         json: JSON.stringify(json),
                     },
+                    desk: 'tome',
                 })
                 success = result === 'success'
             } catch (e) {}
