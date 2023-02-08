@@ -1,6 +1,6 @@
 ::  Tome DB - a Holium collaboration
 ::  by ~larryx-woldyr
-::  TODO: add link to docs
+::  see https://tomedb.gitbook.io/tomedb/ for docs
 ::   
 /-  *tome, s-p=spaces-path
 /+  r-l=realm-lib
