@@ -264,6 +264,7 @@ export abstract class DataStore extends Tome {
                     ship: tomeShip,
                     json: JSON.stringify(body),
                 },
+                desk: 'tome',
             })
             const success = result === 'success'
             if (!success) {
