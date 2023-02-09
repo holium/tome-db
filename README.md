@@ -42,6 +42,7 @@ const value = await store.get('foo')
 
 ## Quick Links
 
+* [How to install](https://tomedb.gitbook.io/tomedb/quick-start)
 * [GitHub](https://github.com/holium/tome-db)
 * [Documentation](https://tomedb.gitbook.io/tomedb/)
 * [Report bugs or request new features](https://github.com/holium/tome-db/issues)

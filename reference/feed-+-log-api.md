@@ -18,7 +18,7 @@ interface FeedlogEntry = {
 }
 ```
 
-## Common Methods
+## Feedlog Methods
 
 ### `post`
 
