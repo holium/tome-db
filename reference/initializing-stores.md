@@ -33,15 +33,15 @@ Optional `ship`, `space`, `permissions`, and `realm` flag for initializing a Tom
 
 ```typescript
 options: {
-    realm?: boolean,
-    ship?: string,
-    space?: string,
+    realm?: boolean = false
+    ship?: string = api.ship
+    space?: string = 'our'
     permissions?: Perm
 }
 ```
 
 * `ship` can be specified with or without the `~`.
-* If `realm` is `false` , Tome will use `ship` and `space` as specified, with defaults of the current ship and `'our'` space respectively.
+* If `realm` is `false` , Tome will use `ship` and `space` as specified.
 * If `realm` is `true`, `ship` and `space` must be either set together or not at all. &#x20;
   * If neither are set, Tome will automatically detect and use the current Realm space and corresponding host ship, as well as handle switching application data when a user changes spaces in Realm.
   * To create a "locked" Tome, specify `ship` and `space` together.  A locked Tome will work only in that specific space (think internal DAO tooling).
@@ -80,9 +80,9 @@ Optional `bucket`, `permissions`, `preload` flag, and callbacks for the key-valu
 
 ```typescript
 options: {
-    bucket?: string,
+    bucket?: string = 'def'
+    preload?: boolean = true
     permissions?: Perm
-    preload?: boolean,
     onDataChange?: (data: Map<string, Value>()) => void
     onLoadChange?: (loaded: boolean) => void
     onReadyChange?: (ready: boolean) => void
@@ -91,12 +91,12 @@ options: {
 }
 ```
 
-* `bucket` is the bucket name to store key-value pairs under.  If your app needs multiple key-value stores with different permissions, they should be different buckets.  Separating buckets can also save on download sizes depending on the application.  Defaults to `'def'`.
+* `bucket` is the bucket name to store key-value pairs under.  If your app needs multiple key-value stores with different permissions, they should be different buckets.  Separating buckets can also save on download sizes depending on the application.
+* `preload` is whether the client should fetch and cache all key-value pairs in the bucket, and subscribe to live updates.  This helps with responsiveness when using an application, since most requests won't go to Urbit.
 * `permissions` is the permissions for the key-value store.  If not set, defaults to the Tome-level permissions.
   * `read` can read any key-value pairs from the bucket.
   * `write` can create new key-value pairs or update their own values.
   * `admin` can create or overwrite any values in the bucket.
-* `preload` is whether the client should fetch and cache all key-value pairs in the bucket, and subscribe to live updates.  This helps with responsiveness when using an application, since most requests won't go to Urbit.  Defaults to `true`.
 * `onDataChange` is called whenever data in the key-value store changes, and can be used to re-render an application with new data.
 * `onReadyChange` is called whenever the store changes `ready` state: after initial app configuration, and whenever a user changes between spaces in Realm.  Use combined with `preload` set to `false` to know when to show a loading screen, and when to start making requests.
 * If preload is `true`, use `onLoadChange` instead to be notified when all data has been loaded and is addressable.  This also handles the case of switching between Realm spaces.
@@ -140,9 +140,9 @@ Optional `bucket`, `permissions`, `preload` flag, and callbacks for the log or f
 
 ```typescript
 options: {
-    bucket?: string,
+    bucket?: string = 'def'
+    preload?: boolean = true
     permissions?: Perm
-    preload?: boolean,
     onDataChange?: (data: FeedlogEntry[]) => void
     onLoadChange?: (loaded: boolean) => void
     onReadyChange?: (ready: boolean) => void
