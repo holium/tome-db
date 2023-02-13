@@ -4,7 +4,7 @@ description: Urbit's web3 and composability bridge
 
 # TomeDB
 
-TomeDB is an **Urbit database and JavaScript client package** with native permissioning and subscription support.  With TomeDB, developers can full-stack Urbit applications entirely in JavaScript **(no Hoon)**.  Tome currently supports multiple storage types, including key-value, log, and feed.
+TomeDB is an **Urbit database and JavaScript client package** with native permissioning and subscription support.  With TomeDB, developers can build full-stack Urbit applications entirely in JavaScript **(no Hoon)**.  Tome currently supports multiple storage types, including key-value, log, and feed.
 
 ## **Features**
 
