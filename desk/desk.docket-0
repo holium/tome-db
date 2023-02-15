@@ -1,7 +1,7 @@
 :~  title+'Tome DB'
     info+'Composable database primitive for Urbit'
     color+0xce.bef0
-    version+[0 0 1]
+    version+[1 0 3]
     website+'https://tomedb.gitbook.io/tomedb/'
     license+'MIT'
     glob-http+['https://holium-app-globs.nyc3.digitaloceanspaces.com/realm/glob-0v3.ijtsa.kqfsm.f71li.n99kg.etthr.glob' 0v3.ijtsa.kqfsm.f71li.n99kg.etthr]

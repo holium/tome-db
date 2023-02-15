@@ -113,16 +113,18 @@
   ^+  dat
   ?+    pol  ~|(bad-watch-path/pol !!)
       [%kv ship=@ space=@ app=@ bucket=@ rest=*]
-    =/  ship  `@p`(slav %p ship.pol)
+    =/  ship   `@p`(slav %p ship.pol)
+    =/  space  `@t`(slav %uv space.pol)
     =^  cards  state
-      kv-abet:(kv-watch:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
+      kv-abet:(kv-watch:(kv-abed:kv [ship space app.pol bucket.pol]) rest.pol)
     (emil cards)
   ::
       [%feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
-    =/  ship    `@p`(slav %p ship.pol)
-    =/  log=?   =(log.pol 'log')
+    =/  ship   `@p`(slav %p ship.pol)
+    =/  space  `@t`(slav %uv space.pol)
+    =/  log=?  =(log.pol 'log')
     =^  cards  state
-      fe-abet:(fe-watch:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
+      fe-abet:(fe-watch:(fe-abed:fe [ship space app.pol bucket.pol log]) rest.pol)
     (emil cards)
   ==
 ::  +dude: handle on-agent
@@ -279,13 +281,15 @@
   ^-  (unit (unit cage))
   ?+    pol  ~|(bad-tome-peek-path/pol !!)
       [%x %kv ship=@ space=@ app=@ bucket=@ rest=*]
-    =/  ship  `@p`(slav %p ship.pol)
-    (kv-peek:(kv-abed:kv [ship space.pol app.pol bucket.pol]) rest.pol)
+    =/  ship   `@p`(slav %p ship.pol)
+    =/  space  `@t`(slav %uv space.pol)
+    (kv-peek:(kv-abed:kv [ship space app.pol bucket.pol]) rest.pol)
   ::
       [%x %feed ship=@ space=@ app=@ bucket=@ log=@ rest=*]
-    =/  ship  `@p`(slav %p ship.pol)
-    =/  log=?   =(log.pol 'log')
-    (fe-peek:(fe-abed:fe [ship space.pol app.pol bucket.pol log]) rest.pol)
+    =/  ship   `@p`(slav %p ship.pol)
+    =/  space  `@t`(slav %uv space.pol)
+    =/  log=?  =(log.pol 'log')
+    (fe-peek:(fe-abed:fe [ship space app.pol bucket.pol log]) rest.pol)
   ::
   ==
 ::
@@ -319,8 +323,7 @@
     =/  tod       (~(got bi tome) [p s] a)
     =/  sto       (~(got by store.tod) b)
     =/  pp        `@tas`(scot %p p)
-    =/  data-pax  /kv/[pp]/[s]/[a]/[b]/data/all
-    =/  perm-pax  /kv/[pp]/[s]/[a]/[b]/perm
+    =/  suv       `@tas`(scot %uv s)
     %=  kv
       shi       p
       spa       s
@@ -331,8 +334,8 @@
       inv       invites.sto
       meta      meta.sto
       data      data.sto
-      data-pax  data-pax
-      perm-pax  perm-pax
+      data-pax  /kv/[pp]/[suv]/[a]/[b]/data/all
+      perm-pax  /kv/[pp]/[suv]/[a]/[b]/perm
     ==
   ::  +kv-dude: handle foreign kv updates (facts)
   ::
@@ -594,6 +597,7 @@
     =/  tod       (~(got bi tome) [p s] a)
     =/  fee       (~(got by feed.tod) [b l])
     =/  pp        `@tas`(scot %p p)
+    =/  suv       `@tas`(scot %uv s)
     =/  type      ?:(=(l %.y) %log %feed)
     %=  fe
       shi       p
@@ -606,8 +610,8 @@
       ids       ids.fee
       inv       invites.fee
       data      data.fee
-      data-pax  /feed/[pp]/[s]/[a]/[b]/[type]/data/all
-      perm-pax  /feed/[pp]/[s]/[a]/[b]/[type]/perm
+      data-pax  /feed/[pp]/[suv]/[a]/[b]/[type]/data/all
+      perm-pax  /feed/[pp]/[suv]/[a]/[b]/[type]/perm
     ==
   ::  +fe-dude: handle foreign feed updates (facts)
   ::
