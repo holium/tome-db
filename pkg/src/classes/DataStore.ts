@@ -165,18 +165,24 @@ export abstract class DataStore extends Tome {
                     `Tome-${this.type}: unable to watch current space in spaces agent.  Is Realm installed and configured?`
                 )
             },
-            event: async (current: JSON) => {
-                // @ts-expect-error
-                const spacePath = current.current.path.split('/')
-                const tomeShip = spacePath[1]
-                const space = spacePath[2]
+            event: async (current: {
+                current: { path: string; space: string }
+            }) => {
+                const space = current.current.space
+                const path = current.current.path.split('/')
+                const tomeShip = path[1]
+                const spaceForPath = path[2]
                 if (tomeShip !== this.tomeShip || space !== this.space) {
                     if (this.locked) {
                         throw new Error(
                             `Tome-${this.type}: spaces cannot be switched while using a locked Tome.`
                         )
                     }
-                    await this._wipeAndChangeSpace(tomeShip, space)
+                    await this._wipeAndChangeSpace(
+                        tomeShip,
+                        space,
+                        spaceForPath
+                    )
                 }
             },
             quit: async () => await this.watchCurrentSpace(),
@@ -186,7 +192,8 @@ export abstract class DataStore extends Tome {
     // this seems like pretty dirty update method, is there a better way?
     private async _wipeAndChangeSpace(
         tomeShip: string,
-        space: string
+        space: string,
+        spaceForPath: string
     ): Promise<void> {
         this.setReady(false)
         if (this.storeSubscriptionID) {
@@ -222,6 +229,7 @@ export abstract class DataStore extends Tome {
 
         this.tomeShip = tomeShip
         this.space = space
+        this.spaceForPath = spaceForPath
         this.wipeLocalValues()
         if (this.preload) {
             this.setLoaded(false)
@@ -502,7 +510,7 @@ export abstract class DataStore extends Tome {
     }
 
     protected dataPath(key?: string): string {
-        let path = `/${this.type}/${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
+        let path = `/${this.type}/${this.tomeShip}/${this.spaceForPath}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
             path += this.isLog ? 'log/' : 'feed/'
         }
@@ -516,7 +524,7 @@ export abstract class DataStore extends Tome {
     }
 
     protected permsPath(): string {
-        let path = `/${this.type}/${this.tomeShip}/${this.space}/${this.app}/${this.bucket}/`
+        let path = `/${this.type}/${this.tomeShip}/${this.spaceForPath}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
             path += this.isLog ? 'log/' : 'feed/'
         }

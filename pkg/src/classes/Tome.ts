@@ -19,6 +19,7 @@ export class Tome {
     protected ourShip: string
     protected tomeShip: string
     protected space: string
+    protected spaceForPath: string // space name encoded as @uv
     protected app: string
     protected perm: Perm
     protected locked: boolean // if true, Tome is locked to the initial ship and space.
@@ -57,6 +58,7 @@ export class Tome {
                 tomeShip,
                 ourShip,
                 space,
+                spaceForPath,
                 app,
                 perm,
                 locked,
@@ -66,6 +68,7 @@ export class Tome {
             this.tomeShip = tomeShip
             this.ourShip = ourShip
             this.space = space
+            this.spaceForPath = spaceForPath
             this.app = app
             this.perm = perm
             this.locked = locked
@@ -93,6 +96,10 @@ export class Tome {
             const inRealm = options.realm !== undefined ? options.realm : false
             let tomeShip = options.ship !== undefined ? options.ship : api.ship
             let space = options.space !== undefined ? options.space : 'our'
+            let spaceForPath = options.space
+            if (space === 'our') {
+                spaceForPath = '0v74tbf'
+            }
 
             if (inRealm) {
                 if (options.ship && options.space) {
@@ -103,9 +110,11 @@ export class Tome {
                             app: 'spaces',
                             path: '/current',
                         })
-                        const spacePath = current.current.path.split('/')
-                        tomeShip = spacePath[1]
-                        space = spacePath[2]
+                        space = current.current.space
+
+                        const path = current.current.path.split('/')
+                        tomeShip = path[1]
+                        spaceForPath = path[2]
                     } catch (e) {
                         throw new Error(
                             'Tome: no current space found. Make sure Realm is installed / configured, ' +
@@ -115,6 +124,13 @@ export class Tome {
                 } else {
                     throw new Error(
                         'Tome: `ship` and `space` must neither or both be specified when using Realm.'
+                    )
+                }
+            } else {
+                if (spaceForPath !== '0v74tbf') {
+                    throw new Error(
+                        "Tome: only the 'our' space is currently supported when not using Realm. " +
+                            'If this is needed, please open an issue.'
                     )
                 }
             }
@@ -136,6 +152,7 @@ export class Tome {
                 tomeShip,
                 ourShip,
                 space,
+                spaceForPath,
                 app,
                 perm,
                 locked,
@@ -167,6 +184,7 @@ export class Tome {
             tomeShip: this.tomeShip,
             ourShip: this.ourShip,
             space: this.space,
+            spaceForPath: this.spaceForPath,
             app: this.app,
             perm: permissions,
             locked: this.locked,
