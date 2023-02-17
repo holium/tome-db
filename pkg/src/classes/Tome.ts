@@ -74,9 +74,10 @@ export class Tome {
             this.locked = locked
             this.inRealm = inRealm
         } else {
-            const { app } = options ?? {}
+            const { app, ourShip } = options ?? {}
             this.mars = false
             this.app = app
+            this.ourShip = ourShip
         }
     }
 
@@ -155,7 +156,7 @@ export class Tome {
                 inRealm,
             })
         }
-        return new Tome({ app: appName })
+        return new Tome({ app: appName, ourShip: 'zod' })
     }
 
     private async _initStore(
@@ -200,7 +201,7 @@ export class Tome {
      * Initialize or connect to a key-value store.
      *
      * @param options  Optional bucket, permissions, preload flag, and callbacks for the store. `permisssions`
-     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to `true`.
      * @returns A `KeyValueStore`.
      */
     public async keyvalue(options: StoreOptions = {}): Promise<KeyValueStore> {
@@ -225,7 +226,7 @@ export class Tome {
      * Initialize or connect to a feed store.
      *
      * @param options  Optional bucket, permissions, preload flag, and callbacks for the feed. `permisssions`
-     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to `true`.
      * @returns A `FeedStore`.
      */
     public async feed(options: StoreOptions = {}): Promise<FeedStore> {
@@ -248,7 +249,7 @@ export class Tome {
      * Initialize or connect to a log store.
      *
      * @param options  Optional bucket, permissions, preload flag, and callbacks for the log. `permisssions`
-     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to `true`.
      * @returns A `LogStore`.
      */
     public async log(options: StoreOptions = {}): Promise<LogStore> {
