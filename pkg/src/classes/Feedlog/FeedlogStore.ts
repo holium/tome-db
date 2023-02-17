@@ -63,6 +63,27 @@ export abstract class FeedlogStore extends DataStore {
      * @returns The post ID on success, undefined on failure.
      */
     public async post(content: Content): Promise<string | undefined> {
+        if (!this.mars) {
+            const now = new Date().getTime()
+            const id = uuid()
+            this.order.unshift(id)
+            const entry = {
+                id,
+                createdAt: now,
+                updatedAt: now,
+                createdBy: this.ourShip,
+                updatedBy: this.ourShip,
+                content,
+                links: {},
+            }
+            this.feedlog.unshift(entry)
+            localStorage.setItem(
+                this.localDataPrefix(),
+                JSON.stringify(this.feedlog)
+            )
+            this.dataUpdateCallback()
+            return id
+        }
         return await this._postOrEdit(content)
     }
 
@@ -78,7 +99,26 @@ export abstract class FeedlogStore extends DataStore {
         id: string,
         newContent: Content
     ): Promise<string | undefined> {
-        return await this._postOrEdit(newContent, id)
+        if (!this.mars) {
+            const index = this.order.indexOf(id)
+            if (index === -1) {
+                console.error('ID not found.')
+                return undefined
+            }
+            this.feedlog[index] = {
+                ...this.feedlog[index],
+                updatedAt: new Date().getTime(),
+                content: newContent,
+            }
+            localStorage.setItem(
+                this.localDataPrefix(),
+                JSON.stringify(this.feedlog)
+            )
+            this.dataUpdateCallback()
+            return id
+        } else {
+            return await this._postOrEdit(newContent, id)
+        }
     }
 
     /**
@@ -91,6 +131,20 @@ export abstract class FeedlogStore extends DataStore {
         if (!validate(id)) {
             console.error('Invalid ID.')
             return false
+        }
+        if (!this.mars) {
+            const index = this.order.indexOf(id)
+            if (index === -1) {
+                return true
+            }
+            this.order.splice(index, 1)
+            this.feedlog.splice(index, 1)
+            localStorage.setItem(
+                this.localDataPrefix(),
+                JSON.stringify(this.feedlog)
+            )
+            this.dataUpdateCallback()
+            return true
         }
         const json = {
             'delete-post': {
@@ -124,6 +178,12 @@ export abstract class FeedlogStore extends DataStore {
      * @returns true on success, false on failure.
      */
     public async clear(): Promise<boolean> {
+        if (!this.mars) {
+            this.wipeLocalValues()
+            localStorage.removeItem(this.localDataPrefix())
+            this.dataUpdateCallback()
+            return true
+        }
         const json = {
             'clear-feed': {
                 ship: this.tomeShip,
@@ -161,6 +221,11 @@ export abstract class FeedlogStore extends DataStore {
         id: string,
         allowCachedValue: boolean = true
     ): Promise<Content | undefined> {
+        if (!this.mars) {
+            throw new Error(
+                'Tome: get() is not supported in local mode.  Please create an issue on GitHub if you need this feature.'
+            )
+        }
         if (!validate(id)) {
             console.error('Invalid ID.')
             return undefined
@@ -193,6 +258,13 @@ export abstract class FeedlogStore extends DataStore {
      * @returns A FeedlogEntry on success, undefined on failure.
      */
     public async all(useCache: boolean = false): Promise<Content[]> {
+        if (!this.mars) {
+            const posts = localStorage.getItem(this.localDataPrefix())
+            if (posts === null) {
+                return undefined
+            }
+            return JSON.parse(posts)
+        }
         await this.waitForReady()
         if (this.preload) {
             await this.waitForLoaded()

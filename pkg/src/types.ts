@@ -21,7 +21,7 @@ export interface FeedlogEntry {
     updatedAt: number
     createdBy: string
     updatedBy: string
-    content: string
+    content: Content
     links: object
     ship?: string
     time?: number

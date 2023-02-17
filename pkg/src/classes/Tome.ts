@@ -210,16 +210,15 @@ export class Tome {
                 'kv',
                 false
             )) as KeyValueStore
-        } else {
-            return new KeyValueStore({
-                app: this.app,
-                bucket: options.bucket ?? 'def',
-                preload: options.preload ?? true,
-                onDataChange: options.onDataChange,
-                onLoadChange: options.onLoadChange,
-                type: 'kv',
-            })
         }
+        return new KeyValueStore({
+            app: this.app,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
+            onDataChange: options.onDataChange,
+            onLoadChange: options.onLoadChange,
+            type: 'kv',
+        })
     }
 
     /**
@@ -232,11 +231,17 @@ export class Tome {
     public async feed(options: StoreOptions = {}): Promise<FeedStore> {
         if (this.mars) {
             return (await this._initStore(options, 'feed', false)) as FeedStore
-        } else {
-            throw new Error(
-                'Tome-feed: Feed can only be used with Urbit. Try using `keyvalue` instead.'
-            )
         }
+        return new FeedStore({
+            app: this.app,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
+            onDataChange: options.onDataChange,
+            onLoadChange: options.onLoadChange,
+            isLog: false,
+            type: 'feed',
+            ourShip: 'zod',
+        })
     }
 
     /**
@@ -249,11 +254,17 @@ export class Tome {
     public async log(options: StoreOptions = {}): Promise<LogStore> {
         if (this.mars) {
             return (await this._initStore(options, 'feed', true)) as LogStore
-        } else {
-            throw new Error(
-                'Tome-log: Log can only be used with Urbit. Try using `keyvalue` instead.'
-            )
         }
+        return new LogStore({
+            app: this.app,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
+            onDataChange: options.onDataChange,
+            onLoadChange: options.onLoadChange,
+            isLog: true,
+            type: 'feed',
+            ourShip: 'zod',
+        })
     }
 
     public isOurStore(): boolean {

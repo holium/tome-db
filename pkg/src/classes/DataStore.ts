@@ -438,6 +438,13 @@ export abstract class DataStore extends Tome {
             this.cache = map
             this.dataUpdateCallback()
             this.setLoaded(true)
+        } else if (this.type === 'feed') {
+            const feedlog = localStorage.getItem(this.localDataPrefix())
+            if (feedlog !== null) {
+                this.feedlog = JSON.parse(feedlog)
+                this.dataUpdateCallback()
+            }
+            this.setLoaded(true)
         }
     }
 
@@ -546,7 +553,7 @@ export abstract class DataStore extends Tome {
     }
 
     protected localDataPrefix(key?: string): string {
-        let type = this.type
+        let type: string = this.type
         if (this.isLog) {
             type = 'log'
         }
@@ -649,7 +656,7 @@ export abstract class DataStore extends Tome {
     }
 
     // called when switching spaces
-    private wipeLocalValues(): void {
+    protected wipeLocalValues(): void {
         this.cache.clear()
         this.order.length = 0
         this.feedlog.length = 0
@@ -659,6 +666,7 @@ export abstract class DataStore extends Tome {
     protected parseFeedlogEntry(entry: FeedlogEntry): FeedlogEntry {
         entry.createdBy = entry.createdBy.slice(1)
         entry.updatedBy = entry.updatedBy.slice(1)
+        // @ts-expect-error
         entry.content = JSON.parse(entry.content)
         entry.links = Object.fromEntries(
             Object.entries(entry.links).map(([k, v]) => [
@@ -744,6 +752,7 @@ export abstract class DataStore extends Tome {
                     updatedAt: update.body.time,
                     createdBy: ship,
                     updatedBy: ship,
+                    // @ts-expect-error
                     content: JSON.parse(update.body.content),
                     links: {},
                 }
@@ -755,6 +764,7 @@ export abstract class DataStore extends Tome {
                 if (index > -1) {
                     this.feedlog[index] = {
                         ...this.feedlog[index],
+                        // @ts-expect-error
                         content: JSON.parse(update.body.content),
                         updatedAt: update.body.time,
                         updatedBy: update.body.ship.slice(1),
