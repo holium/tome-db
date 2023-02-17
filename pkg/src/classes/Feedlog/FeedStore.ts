@@ -11,7 +11,9 @@ export class FeedStore extends FeedlogStore {
             return false
         }
         const action =
-            content !== undefined ? 'set-post-link' : 'remove-post-link'
+            typeof content !== 'undefined'
+                ? 'set-post-link'
+                : 'remove-post-link'
         if (action === 'set-post-link') {
             if (!this.canStore(content)) {
                 console.error('value is an invalid type.')

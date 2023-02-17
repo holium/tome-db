@@ -1,15 +1,7 @@
-import { DataStore, InitStoreOptions, Value } from '../../index'
-import { agent, localKvPrefix } from '../constants'
+import { DataStore, Value } from '../../index'
+import { agent } from '../constants'
 
 export class KeyValueStore extends DataStore {
-    public constructor(options?: InitStoreOptions) {
-        if (options !== undefined) {
-            super(options)
-        } else {
-            super()
-        }
-    }
-
     /**
      * Set a key-value pair in the store.
      *
@@ -30,7 +22,9 @@ export class KeyValueStore extends DataStore {
 
         if (!this.mars) {
             try {
-                localStorage.setItem(localKvPrefix + key, valueStr)
+                localStorage.setItem(this.localDataPrefix(key), valueStr)
+                this.cache.set(key, value)
+                this.dataUpdateCallback()
                 return true
             } catch (error) {
                 console.error(error)
@@ -75,7 +69,9 @@ export class KeyValueStore extends DataStore {
             return false
         }
         if (!this.mars) {
-            localStorage.removeItem(localKvPrefix + key)
+            localStorage.removeItem(this.localDataPrefix(key))
+            this.cache.delete(key)
+            this.dataUpdateCallback()
             return true
         } else {
             const json = {
@@ -112,7 +108,10 @@ export class KeyValueStore extends DataStore {
      */
     public async clear(): Promise<boolean> {
         if (!this.mars) {
+            // TODO - only clear certain keys
             localStorage.clear()
+            this.cache.clear()
+            this.dataUpdateCallback()
             return true
         } else {
             const json = {
@@ -157,7 +156,7 @@ export class KeyValueStore extends DataStore {
         }
 
         if (!this.mars) {
-            const value = localStorage.getItem(localKvPrefix + key)
+            const value = localStorage.getItem(this.localDataPrefix(key))
             if (value === null) {
                 console.error(`key ${key} not found`)
                 return undefined
@@ -168,14 +167,14 @@ export class KeyValueStore extends DataStore {
             // first check cache if allowed
             if (allowCachedValue) {
                 const value = this.cache.get(key)
-                if (value !== undefined) {
+                if (typeof value !== 'undefined') {
                     return value
                 }
             }
             if (this.preload) {
                 await this.waitForLoaded()
                 const value = this.cache.get(key)
-                if (value === undefined) {
+                if (typeof value === 'undefined') {
                     console.error(`key ${key} not found`)
                 }
                 return value
@@ -195,10 +194,10 @@ export class KeyValueStore extends DataStore {
         if (!this.mars) {
             const map = new Map<string, Value>()
             const len = localStorage.length
-            const startIndex = localKvPrefix.length
+            const startIndex = this.localDataPrefix().length
             for (let i = 0; i < len; i++) {
                 const key = localStorage.key(i)
-                if (key.startsWith(localKvPrefix)) {
+                if (key.startsWith(this.localDataPrefix())) {
                     const keyName = key.substring(startIndex) // get key without prefix
                     map.set(keyName, JSON.parse(localStorage.getItem(key)))
                 }

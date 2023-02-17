@@ -51,7 +51,7 @@ export class Tome {
 
     // maybe use a different (sub) type here?
     protected constructor(options?: InitStoreOptions) {
-        if (options !== undefined) {
+        if (typeof options.api !== 'undefined') {
             this.mars = true
             const {
                 api,
@@ -74,8 +74,9 @@ export class Tome {
             this.locked = locked
             this.inRealm = inRealm
         } else {
+            const { app } = options ?? {}
             this.mars = false
-            this.app = 'tome-db'
+            this.app = app
         }
     }
 
@@ -90,12 +91,13 @@ export class Tome {
         app?: string,
         options: TomeOptions = {}
     ): Promise<Tome> {
-        const mars = api !== undefined
+        const mars = typeof api !== 'undefined'
+        const appName = app ?? 'all'
         if (mars) {
             let locked = false
-            const inRealm = options.realm !== undefined ? options.realm : false
-            let tomeShip = options.ship !== undefined ? options.ship : api.ship
-            let space = options.space !== undefined ? options.space : 'our'
+            const inRealm = options.realm ?? false
+            let tomeShip = options.ship ?? api.ship
+            let space = options.space ?? 'our'
             let spaceForPath = space
 
             if (inRealm) {
@@ -137,9 +139,6 @@ export class Tome {
             }
             // save api.ship so we know who we are.
             const ourShip = `~${api.ship}`
-            if (app === undefined) {
-                app = 'all'
-            }
             const perm = options.permissions
                 ? options.permissions
                 : ({ read: 'our', write: 'our', admin: 'our' } as const)
@@ -150,13 +149,13 @@ export class Tome {
                 ourShip,
                 space,
                 spaceForPath,
-                app,
+                app: appName,
                 perm,
                 locked,
                 inRealm,
             })
         }
-        return new Tome()
+        return new Tome({ app: appName })
     }
 
     private async _initStore(
@@ -185,8 +184,8 @@ export class Tome {
             app: this.app,
             perm: permissions,
             locked: this.locked,
-            bucket: options.bucket ? options.bucket : 'def',
-            preload: options.preload !== undefined ? options.preload : true,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
             onReadyChange: options.onReadyChange,
             onLoadChange: options.onLoadChange,
             onWriteChange: options.onWriteChange,
@@ -212,7 +211,13 @@ export class Tome {
                 false
             )) as KeyValueStore
         } else {
-            return new KeyValueStore()
+            return new KeyValueStore({
+                app: this.app,
+                bucket: options.bucket ?? 'def',
+                preload: options.preload ?? true,
+                onDataChange: options.onDataChange,
+                type: 'kv',
+            })
         }
     }
 

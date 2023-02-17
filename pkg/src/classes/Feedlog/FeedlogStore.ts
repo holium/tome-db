@@ -14,7 +14,7 @@ export abstract class FeedlogStore extends DataStore {
         content: Content,
         id?: string
     ): Promise<string | undefined> {
-        const action = id === undefined ? 'new-post' : 'edit-post'
+        const action = typeof id === 'undefined' ? 'new-post' : 'edit-post'
         if (action === 'new-post') {
             id = uuid()
         } else {

@@ -53,11 +53,11 @@ export interface StoreOptions {
 }
 
 export interface InitStoreOptions {
-    api: Urbit
-    tomeShip: string
-    space: string
+    api?: Urbit
+    tomeShip?: string
+    space?: string
     spaceForPath?: string
-    app: string
+    app?: string
     bucket?: string
     type?: StoreType
     isLog?: boolean
