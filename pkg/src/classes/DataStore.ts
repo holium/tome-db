@@ -442,6 +442,10 @@ export abstract class DataStore extends Tome {
             const feedlog = localStorage.getItem(this.localDataPrefix())
             if (feedlog !== null) {
                 this.feedlog = JSON.parse(feedlog)
+                this.feedlog.map((entry: FeedlogEntry) => {
+                    this.order.push(entry.id)
+                    return entry
+                })
                 this.dataUpdateCallback()
             }
             this.setLoaded(true)
@@ -666,7 +670,7 @@ export abstract class DataStore extends Tome {
     protected parseFeedlogEntry(entry: FeedlogEntry): FeedlogEntry {
         entry.createdBy = entry.createdBy.slice(1)
         entry.updatedBy = entry.updatedBy.slice(1)
-        // @ts-expect-error
+        //  @ts-ignore
         entry.content = JSON.parse(entry.content)
         entry.links = Object.fromEntries(
             Object.entries(entry.links).map(([k, v]) => [
@@ -752,7 +756,7 @@ export abstract class DataStore extends Tome {
                     updatedAt: update.body.time,
                     createdBy: ship,
                     updatedBy: ship,
-                    // @ts-expect-error
+                    // @ts-ignore
                     content: JSON.parse(update.body.content),
                     links: {},
                 }
@@ -764,7 +768,7 @@ export abstract class DataStore extends Tome {
                 if (index > -1) {
                     this.feedlog[index] = {
                         ...this.feedlog[index],
-                        // @ts-expect-error
+                        // @ts-ignore
                         content: JSON.parse(update.body.content),
                         updatedAt: update.body.time,
                         updatedBy: update.body.ship.slice(1),
@@ -800,7 +804,7 @@ export abstract class DataStore extends Tome {
                 if (index > -1) {
                     this.feedlog[index] = {
                         ...this.feedlog[index],
-                        // @ts-expect-error
+                        // @ts-ignore
                         links: (({ [update.body.ship.slice(1)]: _, ...o }) =>
                             o)(this.feedlog[index].links), // remove data.body.ship
                     }
