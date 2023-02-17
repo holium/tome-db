@@ -216,6 +216,7 @@ export class Tome {
                 bucket: options.bucket ?? 'def',
                 preload: options.preload ?? true,
                 onDataChange: options.onDataChange,
+                onLoadChange: options.onLoadChange,
                 type: 'kv',
             })
         }
