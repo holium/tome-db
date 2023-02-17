@@ -19,7 +19,7 @@ export class Tome {
     protected ourShip: string
     protected tomeShip: string
     protected space: string
-    protected spaceForPath: string // space name encoded as @uv
+    protected spaceForPath: string // space name as woad (encoded)
     protected app: string
     protected perm: Perm
     protected locked: boolean // if true, Tome is locked to the initial ship and space.
@@ -96,10 +96,7 @@ export class Tome {
             const inRealm = options.realm !== undefined ? options.realm : false
             let tomeShip = options.ship !== undefined ? options.ship : api.ship
             let space = options.space !== undefined ? options.space : 'our'
-            let spaceForPath = options.space
-            if (space === 'our') {
-                spaceForPath = '0v74tbf'
-            }
+            let spaceForPath = space
 
             if (inRealm) {
                 if (options.ship && options.space) {
@@ -127,7 +124,7 @@ export class Tome {
                     )
                 }
             } else {
-                if (spaceForPath !== '0v74tbf') {
+                if (spaceForPath !== 'our') {
                     throw new Error(
                         "Tome: only the 'our' space is currently supported when not using Realm. " +
                             'If this is needed, please open an issue.'
