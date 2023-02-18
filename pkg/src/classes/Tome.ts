@@ -51,7 +51,7 @@ export class Tome {
 
     // maybe use a different (sub) type here?
     protected constructor(options?: InitStoreOptions) {
-        if (options !== undefined) {
+        if (typeof options.api !== 'undefined') {
             this.mars = true
             const {
                 api,
@@ -74,8 +74,10 @@ export class Tome {
             this.locked = locked
             this.inRealm = inRealm
         } else {
+            const { app, ourShip } = options ?? {}
             this.mars = false
-            this.app = 'tome-db'
+            this.app = app
+            this.ourShip = ourShip
         }
     }
 
@@ -90,12 +92,13 @@ export class Tome {
         app?: string,
         options: TomeOptions = {}
     ): Promise<Tome> {
-        const mars = api !== undefined
+        const mars = typeof api !== 'undefined'
+        const appName = app ?? 'all'
         if (mars) {
             let locked = false
-            const inRealm = options.realm !== undefined ? options.realm : false
-            let tomeShip = options.ship !== undefined ? options.ship : api.ship
-            let space = options.space !== undefined ? options.space : 'our'
+            const inRealm = options.realm ?? false
+            let tomeShip = options.ship ?? api.ship
+            let space = options.space ?? 'our'
             let spaceForPath = space
 
             if (inRealm) {
@@ -137,9 +140,6 @@ export class Tome {
             }
             // save api.ship so we know who we are.
             const ourShip = `~${api.ship}`
-            if (app === undefined) {
-                app = 'all'
-            }
             const perm = options.permissions
                 ? options.permissions
                 : ({ read: 'our', write: 'our', admin: 'our' } as const)
@@ -150,13 +150,13 @@ export class Tome {
                 ourShip,
                 space,
                 spaceForPath,
-                app,
+                app: appName,
                 perm,
                 locked,
                 inRealm,
             })
         }
-        return new Tome()
+        return new Tome({ app: appName, ourShip: 'zod' })
     }
 
     private async _initStore(
@@ -185,8 +185,8 @@ export class Tome {
             app: this.app,
             perm: permissions,
             locked: this.locked,
-            bucket: options.bucket ? options.bucket : 'def',
-            preload: options.preload !== undefined ? options.preload : true,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
             onReadyChange: options.onReadyChange,
             onLoadChange: options.onLoadChange,
             onWriteChange: options.onWriteChange,
@@ -201,7 +201,7 @@ export class Tome {
      * Initialize or connect to a key-value store.
      *
      * @param options  Optional bucket, permissions, preload flag, and callbacks for the store. `permisssions`
-     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to `true`.
      * @returns A `KeyValueStore`.
      */
     public async keyvalue(options: StoreOptions = {}): Promise<KeyValueStore> {
@@ -211,43 +211,61 @@ export class Tome {
                 'kv',
                 false
             )) as KeyValueStore
-        } else {
-            return new KeyValueStore()
         }
+        return new KeyValueStore({
+            app: this.app,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
+            onDataChange: options.onDataChange,
+            onLoadChange: options.onLoadChange,
+            type: 'kv',
+        })
     }
 
     /**
      * Initialize or connect to a feed store.
      *
      * @param options  Optional bucket, permissions, preload flag, and callbacks for the feed. `permisssions`
-     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to `true`.
      * @returns A `FeedStore`.
      */
     public async feed(options: StoreOptions = {}): Promise<FeedStore> {
         if (this.mars) {
             return (await this._initStore(options, 'feed', false)) as FeedStore
-        } else {
-            throw new Error(
-                'Tome-feed: Feed can only be used with Urbit. Try using `keyvalue` instead.'
-            )
         }
+        return new FeedStore({
+            app: this.app,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
+            onDataChange: options.onDataChange,
+            onLoadChange: options.onLoadChange,
+            isLog: false,
+            type: 'feed',
+            ourShip: 'zod',
+        })
     }
 
     /**
      * Initialize or connect to a log store.
      *
      * @param options  Optional bucket, permissions, preload flag, and callbacks for the log. `permisssions`
-     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to true.
+     * defaults to the Tome's permissions, `bucket` to `'def'`, and `preload` to `true`.
      * @returns A `LogStore`.
      */
     public async log(options: StoreOptions = {}): Promise<LogStore> {
         if (this.mars) {
             return (await this._initStore(options, 'feed', true)) as LogStore
-        } else {
-            throw new Error(
-                'Tome-log: Log can only be used with Urbit. Try using `keyvalue` instead.'
-            )
         }
+        return new LogStore({
+            app: this.app,
+            bucket: options.bucket ?? 'def',
+            preload: options.preload ?? true,
+            onDataChange: options.onDataChange,
+            onLoadChange: options.onLoadChange,
+            isLog: true,
+            type: 'feed',
+            ourShip: 'zod',
+        })
     }
 
     public isOurStore(): boolean {

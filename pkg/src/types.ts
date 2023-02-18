@@ -21,7 +21,7 @@ export interface FeedlogEntry {
     updatedAt: number
     createdBy: string
     updatedBy: string
-    content: string
+    content: Content
     links: object
     ship?: string
     time?: number
@@ -53,11 +53,11 @@ export interface StoreOptions {
 }
 
 export interface InitStoreOptions {
-    api: Urbit
-    tomeShip: string
-    space: string
+    api?: Urbit
+    tomeShip?: string
+    space?: string
     spaceForPath?: string
-    app: string
+    app?: string
     bucket?: string
     type?: StoreType
     isLog?: boolean

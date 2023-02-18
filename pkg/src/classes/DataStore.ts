@@ -85,41 +85,43 @@ export abstract class DataStore extends Tome {
     }
 
     constructor(options?: InitStoreOptions) {
-        if (typeof options !== 'undefined') {
-            super(options)
-            const {
-                bucket,
-                write,
-                admin,
-                preload,
-                onReadyChange,
-                onLoadChange,
-                onWriteChange,
-                onAdminChange,
-                onDataChange,
-                type,
-                isLog,
-            } = options
-            this.bucket = bucket
-            this.write = write
-            this.admin = admin
-            this.cache = new Map<string, Value>()
-            this.feedlog = []
-            this.order = []
-            this.preload = preload
-            this.onReadyChange = onReadyChange
-            this.onLoadChange = onLoadChange
-            this.onWriteChange = onWriteChange
-            this.onAdminChange = onAdminChange
-            this.onDataChange = onDataChange
-            this.type = type
-            if (type === 'feed') {
-                this.isLog = isLog
-            } else {
-                this.isLog = false
-            }
+        super(options)
+        const {
+            bucket,
+            write,
+            admin,
+            preload,
+            onReadyChange,
+            onLoadChange,
+            onWriteChange,
+            onAdminChange,
+            onDataChange,
+            type,
+            isLog,
+        } = options ?? {}
+        this.bucket = bucket
+        this.preload = preload
+        this.type = type
+        this.write = write
+        this.admin = admin
+        this.onDataChange = onDataChange
+        this.onLoadChange = onLoadChange
+        this.onReadyChange = onReadyChange
+        this.onWriteChange = onWriteChange
+        this.onAdminChange = onAdminChange
+        this.cache = new Map<string, Value>()
+        this.feedlog = []
+        this.order = []
+        if (preload) {
+            this.setLoaded(false)
+        }
+        if (type === 'feed') {
+            this.isLog = isLog
+        } else {
+            this.isLog = false
+        }
+        if (this.mars) {
             if (preload) {
-                this.setLoaded(false)
                 this.subscribeAll()
             }
             if (this.inRealm) {
@@ -128,8 +130,9 @@ export abstract class DataStore extends Tome {
             this.watchPerms()
             this.setReady(true)
         } else {
-            // This should only be called by KeyValueStore.
-            super()
+            if (preload) {
+                this.getAllLocalValues()
+            }
         }
     }
 
@@ -419,6 +422,36 @@ export abstract class DataStore extends Tome {
         })
     }
 
+    // TODO duplicate logic in KV ALL method
+    protected getAllLocalValues(): void {
+        if (this.type === 'kv') {
+            const map = new Map<string, Value>()
+            const len = localStorage.length
+            const startIndex = this.localDataPrefix().length
+            for (let i = 0; i < len; i++) {
+                const key = localStorage.key(i)
+                if (key.startsWith(this.localDataPrefix())) {
+                    const keyName = key.substring(startIndex) // get key without prefix
+                    map.set(keyName, JSON.parse(localStorage.getItem(key)))
+                }
+            }
+            this.cache = map
+            this.dataUpdateCallback()
+            this.setLoaded(true)
+        } else if (this.type === 'feed') {
+            const feedlog = localStorage.getItem(this.localDataPrefix())
+            if (feedlog !== null) {
+                this.feedlog = JSON.parse(feedlog)
+                this.feedlog.map((entry: FeedlogEntry) => {
+                    this.order.push(entry.id)
+                    return entry
+                })
+                this.dataUpdateCallback()
+            }
+            this.setLoaded(true)
+        }
+    }
+
     /**
      * Set new permission levels for a store after initialization.
      *
@@ -523,6 +556,18 @@ export abstract class DataStore extends Tome {
         return path
     }
 
+    protected localDataPrefix(key?: string): string {
+        let type: string = this.type
+        if (this.isLog) {
+            type = 'log'
+        }
+        let path = `/tome-db/${type}/${this.app}/${this.bucket}/`
+        if (key) {
+            path += key
+        }
+        return path
+    }
+
     protected permsPath(): string {
         let path = `/${this.type}/${this.tomeShip}/${this.spaceForPath}/${this.app}/${this.bucket}/`
         if (this.type === 'feed') {
@@ -614,7 +659,8 @@ export abstract class DataStore extends Tome {
         }
     }
 
-    private wipeLocalValues(): void {
+    // called when switching spaces
+    protected wipeLocalValues(): void {
         this.cache.clear()
         this.order.length = 0
         this.feedlog.length = 0
@@ -624,6 +670,7 @@ export abstract class DataStore extends Tome {
     protected parseFeedlogEntry(entry: FeedlogEntry): FeedlogEntry {
         entry.createdBy = entry.createdBy.slice(1)
         entry.updatedBy = entry.updatedBy.slice(1)
+        //  @ts-ignore
         entry.content = JSON.parse(entry.content)
         entry.links = Object.fromEntries(
             Object.entries(entry.links).map(([k, v]) => [
@@ -709,6 +756,7 @@ export abstract class DataStore extends Tome {
                     updatedAt: update.body.time,
                     createdBy: ship,
                     updatedBy: ship,
+                    // @ts-ignore
                     content: JSON.parse(update.body.content),
                     links: {},
                 }
@@ -720,6 +768,7 @@ export abstract class DataStore extends Tome {
                 if (index > -1) {
                     this.feedlog[index] = {
                         ...this.feedlog[index],
+                        // @ts-ignore
                         content: JSON.parse(update.body.content),
                         updatedAt: update.body.time,
                         updatedBy: update.body.ship.slice(1),
@@ -755,7 +804,7 @@ export abstract class DataStore extends Tome {
                 if (index > -1) {
                     this.feedlog[index] = {
                         ...this.feedlog[index],
-                        // @ts-expect-error
+                        // @ts-ignore
                         links: (({ [update.body.ship.slice(1)]: _, ...o }) =>
                             o)(this.feedlog[index].links), // remove data.body.ship
                     }

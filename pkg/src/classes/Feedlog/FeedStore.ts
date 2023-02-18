@@ -6,12 +6,10 @@ export class FeedStore extends FeedlogStore {
         id: string,
         content?: Content
     ): Promise<boolean> {
-        if (!validate(id)) {
-            console.error('Invalid ID.')
-            return false
-        }
         const action =
-            content !== undefined ? 'set-post-link' : 'remove-post-link'
+            typeof content !== 'undefined'
+                ? 'set-post-link'
+                : 'remove-post-link'
         if (action === 'set-post-link') {
             if (!this.canStore(content)) {
                 console.error('value is an invalid type.')
@@ -56,6 +54,30 @@ export class FeedStore extends FeedlogStore {
      * @returns true on success, false on failure.
      */
     public async setLink(id: string, content: Content): Promise<boolean> {
+        if (!validate(id)) {
+            console.error('Invalid ID.')
+            return false
+        }
+        if (!this.mars) {
+            const index = this.order.indexOf(id)
+            if (index === -1) {
+                console.error('Post does not exist.')
+                return false
+            }
+            this.feedlog[index] = {
+                ...this.feedlog[index],
+                links: {
+                    ...this.feedlog[index].links,
+                    [this.ourShip]: content,
+                },
+            }
+            localStorage.setItem(
+                this.localDataPrefix(),
+                JSON.stringify(this.feedlog)
+            )
+            this.dataUpdateCallback()
+            return true
+        }
         return await this._setOrRemoveLink(id, content)
     }
 
@@ -66,6 +88,30 @@ export class FeedStore extends FeedlogStore {
      * @returns true on success, false on failure.  If the post with ID does not exist, returns true.
      */
     public async removeLink(id: string): Promise<boolean> {
+        if (!validate(id)) {
+            console.error('Invalid ID.')
+            return false
+        }
+        if (!this.mars) {
+            const index = this.order.indexOf(id)
+            if (index === -1) {
+                console.error('Post does not exist.')
+                return false
+            }
+            this.feedlog[index] = {
+                ...this.feedlog[index],
+                // @ts-expect-error
+                links: (({ [this.ourShip]: _, ...o }) => o)(
+                    this.feedlog[index].links
+                ), // remove data.body.ship
+            }
+            localStorage.setItem(
+                this.localDataPrefix(),
+                JSON.stringify(this.feedlog)
+            )
+            this.dataUpdateCallback()
+            return true
+        }
         return await this._setOrRemoveLink(id)
     }
 }
