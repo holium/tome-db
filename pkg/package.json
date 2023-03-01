@@ -34,7 +34,7 @@
         "typescript": "^4.9.3"
     },
     "dependencies": {
-        "@holium/urbit-http-api": "^2.4.0",
+        "@holium/urbit-http-api": "^2.4.3",
         "uuid": "^9.0.0"
     }
 }

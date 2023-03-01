@@ -27,8 +27,8 @@ describe('basic remote Tome tests', () => {
         expect(db.isOurStore()).toBe(true)
     })
 
-    // need to update urbit-http-api to support this
-    // afterAll(async () => {
-    //     api.delete()
-    // })
+    // this doesn't work yet
+    afterAll(async () => {
+        await api.delete()
+    })
 })
