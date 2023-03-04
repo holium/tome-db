@@ -35,10 +35,11 @@ $ git clone https://github.com/holium/tome-db
 $ cp -R tome-db/desk/* zod/tome/
 ```
 
-Finally, commit the Tome back-end:
+Finally, start the Tome back-end:
 
 ```hoon
 ~zod:dojo> |commit %tome
+~zod:dojo> |revive %tome
 ```
 
 If you want to develop a spaces-enabled application for [Realm](https://www.holium.com/) (currently in private alpha), you'll also need to configure the ship with Realm's desks.
