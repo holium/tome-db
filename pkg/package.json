@@ -1,6 +1,6 @@
 {
     "name": "@holium/tome-db",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Urbit's composable database primitive",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
@@ -8,7 +8,8 @@
         "lib"
     ],
     "scripts": {
-        "prepublish": "tsc"
+        "prepublish": "tsc",
+        "test": "jest --forceExit"
     },
     "repository": {
         "type": "git",
@@ -24,11 +25,16 @@
     "license": "MIT",
     "homepage": "https://github.com/holium/tome-db#readme",
     "devDependencies": {
+        "@types/jest": "^29.4.0",
         "@types/uuid": "^9.0.0",
+        "jest": "^29.4.3",
+        "ts-jest": "^29.0.5",
+        "ts-node": "^10.9.1",
+        "ts-node-dev": "^2.0.0",
         "typescript": "^4.9.3"
     },
     "dependencies": {
-        "@urbit/http-api": "^2.3.0",
+        "@holium/urbit-http-api": "^2.4.3",
         "uuid": "^9.0.0"
     }
 }
