@@ -27,6 +27,13 @@ describe('basic remote Tome tests', () => {
         expect(db.isOurStore()).toBe(true)
     })
 
+    test('realm tome', async () => {
+        const db = await Tome.init(api, 'racket', {
+            realm: true,
+        })
+        expect(db.isOurStore()).toBe(true)
+    })
+
     // this doesn't work yet
     afterAll(async () => {
         await api.delete()
