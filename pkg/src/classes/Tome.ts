@@ -1,4 +1,4 @@
-import Urbit from '@holium/urbit-http-api'
+import Urbit from '@urbit/http-api'
 import {
     InviteLevel,
     StoreType,

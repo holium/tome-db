@@ -1,5 +1,5 @@
 import Tome from '../src'
-import Urbit from '@holium/urbit-http-api'
+import Urbit from '@urbit/http-api'
 import { describe, expect, test, beforeAll, afterAll } from '@jest/globals'
 
 describe('basic local Tome tests', () => {
