@@ -22,5 +22,5 @@
 =/  act  (kv-action:dejs:tomelib (need (de-json:html +.input)))
 ::
 ::  This returns nothing on failure, 'success' on success.
-;<  ~  bind:m  (poke [ship %tome-api] [%kv-action !>(act)])
+;<  ~  bind:m  (poke [ship %tome] [%kv-action !>(act)])
 (pure:m !>(s+'success'))

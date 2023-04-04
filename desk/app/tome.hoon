@@ -30,19 +30,19 @@
       eng   ~(. +> [bowl ~])
   ++  on-init
     ^-  (quip card _this)
-    ~>  %bout.[0 '%tome-api +on-init']
+    ~>  %bout.[0 '%tome +on-init']
     =^  cards  state
       abet:init:eng
     [cards this]
   ::
   ++  on-save
     ^-  vase
-    ~>  %bout.[0 '%tome-api +on-save']
+    ~>  %bout.[0 '%tome +on-save']
     !>(state)
   ::
   ++  on-load
     |=  ole=vase
-    ~>  %bout.[0 '%tome-api +on-load']
+    ~>  %bout.[0 '%tome +on-load']
     ^-  (quip card _this)
     =^  cards  state
       abet:(load:eng ole)
@@ -50,43 +50,43 @@
   ::
   ++  on-poke
     |=  cag=cage
-    ~>  %bout.[0 '%tome-api +on-poke']
+    ~>  %bout.[0 '%tome +on-poke']
     ^-  (quip card _this)
     =^  cards  state  abet:(poke:eng cag)
     [cards this]
   ::
   ++  on-peek
     |=  =path
-    ~>  %bout.[0 '%tome-api +on-peek']
+    ~>  %bout.[0 '%tome +on-peek']
     ^-  (unit (unit cage))
     (peek:eng path)
   ::
   ++  on-agent
     |=  [pol=(pole knot) sig=sign:agent:gall]
-    ~>  %bout.[0 '%tome-api +on-agent']
+    ~>  %bout.[0 '%tome +on-agent']
     ^-  (quip card _this)
     =^  cards  state  abet:(dude:eng pol sig)
     [cards this]
   ::
   ++  on-arvo
     |=  [wir=wire sig=sign-arvo]
-    ~>  %bout.[0 '%tome-api +on-arvo']
+    ~>  %bout.[0 '%tome +on-arvo']
     ^-  (quip card _this)
     `this
   ::
   ++  on-watch
   |=  =path
-  ~>  %bout.[0 '%tome-api +on-watch']
+  ~>  %bout.[0 '%tome +on-watch']
   ^-  (quip card _this)
   =^  cards  state  abet:(watch:eng path)
   [cards this]
   ::
   ++  on-fail
-    ~>  %bout.[0 '%tome-api +on-fail']
+    ~>  %bout.[0 '%tome +on-fail']
     on-fail:def
   ::
   ++  on-leave
-    ~>  %bout.[0 '%tome-api +on-leave']
+    ~>  %bout.[0 '%tome +on-leave']
     on-leave:def
   --
 |_  [bol=bowl:gall dek=(list card)]
@@ -373,7 +373,7 @@
       ::
           %perm
         =/  lc  :~  [%give %fact ~[perm-pax] %kv-update !>(upd)]
-                    [%pass perm-pax %agent [shi %tome-api] %leave ~]
+                    [%pass perm-pax %agent [shi %tome] %leave ~]
                 ==
         %=  kv
           per   [read=%yes +.upd]
@@ -495,11 +495,11 @@
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
-      (kv-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
+      (kv-emit [%pass perm-pax %agent [shi %tome] %watch perm-pax])
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  kv
-      (kv-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
+      (kv-emit [%pass data-pax %agent [shi %tome] %watch data-pax])
     ::
     ==
   ::  +kv-perm: check a permission level, return true if allowed
@@ -700,7 +700,7 @@
       ::
           %perm
         =/  lc  :~  [%give %fact ~[perm-pax] %feed-update !>(upd)]
-                    [%pass perm-pax %agent [shi %tome-api] %leave ~]
+                    [%pass perm-pax %agent [shi %tome] %leave ~]
                 ==
         %=  fe
           per   [read=%yes +.upd]
@@ -857,11 +857,11 @@
     ^+  fe
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
-      (fe-emit [%pass perm-pax %agent [shi %tome-api] %watch perm-pax])
+      (fe-emit [%pass perm-pax %agent [shi %tome] %watch perm-pax])
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  fe
-      (fe-emit [%pass data-pax %agent [shi %tome-api] %watch data-pax])
+      (fe-emit [%pass data-pax %agent [shi %tome] %watch data-pax])
     ::
     ==
   ::  +fe-perm: check a permission level, return true if allowed
