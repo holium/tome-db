@@ -479,6 +479,7 @@ export abstract class DataStore extends Tome {
             tomeShip,
             space,
             app: this.app,
+            agent: this.agent,
             bucket: this.bucket,
             type: this.type,
             isLog: this.isLog,
@@ -539,6 +540,7 @@ export abstract class DataStore extends Tome {
                 threadName: `${type}-poke-tunnel`,
                 body: {
                     ship: tomeShip,
+                    agent: agent,
                     json: JSON.stringify(body),
                 },
                 desk: agent,
@@ -976,6 +978,7 @@ export abstract class DataStore extends Tome {
                     threadName: this.type === 'kv' ? kvThread : feedThread,
                     body: {
                         ship: this.tomeShip,
+                        agent: this.agent,
                         json: JSON.stringify(json),
                     },
                     desk: this.agent,
