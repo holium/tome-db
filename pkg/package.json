@@ -1,6 +1,6 @@
 {
     "name": "@holium/tome-db",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "description": "Urbit's composable database primitive",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",

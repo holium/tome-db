@@ -1,5 +1,3 @@
-export const agent = 'tome-api'
-
 export const tomeMark = 'tome-action'
 export const kvMark = 'kv-action'
 export const feedMark = 'feed-action'
