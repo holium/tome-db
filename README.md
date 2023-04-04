@@ -42,8 +42,8 @@ const value = await store.get('foo')
 
 ## Quick Links
 
-* [Documentation](https://tomedb.gitbook.io/tomedb/)
-* [Quick start / how to install](https://holium.gitbook.io/tomedb/quick-start)
+* [Documentation](https://docs.holium.com/tomedb/)
+* [Quick start / how to install](https://docs.holium.com/tomedb/quick-start/)
 * [Example application](https://github.com/ajlamarc/racket)
 * [TomeDB + Replit demo](https://replit.com/@ajlamarc/Urbit-on-Replit?v=1)
 * [Source code](https://github.com/holium/tome-db)
