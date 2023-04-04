@@ -1,4 +1,4 @@
-import Urbit from '@holium/urbit-http-api'
+import Urbit from '@urbit/http-api'
 import {
     InviteLevel,
     StoreType,
@@ -12,14 +12,7 @@ import {
     TomeOptions,
     InitStoreOptions,
 } from '../types'
-import {
-    agent,
-    tomeMark,
-    kvMark,
-    feedMark,
-    kvThread,
-    feedThread,
-} from './constants'
+import { tomeMark, kvMark, feedMark, kvThread, feedThread } from './constants'
 import { v4 as uuid, validate } from 'uuid'
 
 export class Tome {
@@ -31,6 +24,7 @@ export class Tome {
     protected space: string
     protected spaceForPath: string // space name as woad (encoded)
     protected app: string
+    protected agent: string
     protected perm: Perm
     protected locked: boolean // if true, Tome is locked to the initial ship and space.
     protected inRealm: boolean
@@ -39,7 +33,8 @@ export class Tome {
         api: Urbit,
         ship: string,
         space: string,
-        app: string
+        app: string,
+        agent: string
     ) {
         await api.poke({
             app: agent,
@@ -70,6 +65,7 @@ export class Tome {
                 space,
                 spaceForPath,
                 app,
+                agent,
                 perm,
                 locked,
                 inRealm,
@@ -80,6 +76,7 @@ export class Tome {
             this.space = space
             this.spaceForPath = spaceForPath
             this.app = app
+            this.agent = agent
             this.perm = perm
             this.locked = locked
             this.inRealm = inRealm
@@ -95,7 +92,7 @@ export class Tome {
     /**
      * @param api The optional Urbit connection to be used for requests.
      * @param app An optional app name to store under. Defaults to `'all'`.
-     * @param options Optional ship, space, and permissions for initializing a Tome.
+     * @param options Optional ship, space, agent name, and permissions for initializing a Tome.
      * @returns A new Tome instance.
      */
     static async init(
@@ -110,6 +107,7 @@ export class Tome {
             const inRealm = options.realm ?? false
             let tomeShip = options.ship ?? api.ship
             let space = options.space ?? 'our'
+            const agent = options.agent ?? 'tome'
             let spaceForPath = space
 
             if (inRealm) {
@@ -154,7 +152,7 @@ export class Tome {
             const perm = options.permissions
                 ? options.permissions
                 : ({ read: 'our', write: 'our', admin: 'our' } as const)
-            await Tome.initTomePoke(api, tomeShip, space, app)
+            await Tome.initTomePoke(api, tomeShip, space, app, agent)
             return new Tome({
                 api,
                 tomeShip,
@@ -162,6 +160,7 @@ export class Tome {
                 space,
                 spaceForPath,
                 app: appName,
+                agent,
                 perm,
                 locked,
                 inRealm,
@@ -194,6 +193,7 @@ export class Tome {
             space: this.space,
             spaceForPath: this.spaceForPath,
             app: this.app,
+            agent: this.agent,
             perm: permissions,
             locked: this.locked,
             bucket: options.bucket ?? 'def',
@@ -403,7 +403,7 @@ export abstract class DataStore extends Tome {
 
     private async watchPerms(): Promise<void> {
         await this.api.subscribe({
-            app: agent,
+            app: this.agent,
             path: this.permsPath(),
             err: () => {
                 console.error(
@@ -468,7 +468,7 @@ export abstract class DataStore extends Tome {
             await this.api.unsubscribe(this.storeSubscriptionID)
         }
         // changing the top level tome, so we reinitialize
-        await Tome.initTomePoke(this.api, tomeShip, space, this.app)
+        await Tome.initTomePoke(this.api, tomeShip, space, this.app, this.agent)
         const perm =
             tomeShip === this.ourShip
                 ? this.perm
@@ -516,7 +516,8 @@ export abstract class DataStore extends Tome {
     protected static async checkExistsAndCanRead(
         options: InitStoreOptions
     ): Promise<void> {
-        const { api, tomeShip, space, app, bucket, type, isLog } = options
+        const { api, tomeShip, space, app, agent, bucket, type, isLog } =
+            options
         const action = `verify-${type}`
         const body = {
             [action]: {
@@ -540,7 +541,7 @@ export abstract class DataStore extends Tome {
                     ship: tomeShip,
                     json: JSON.stringify(body),
                 },
-                desk: 'tome',
+                desk: agent,
             })
             const success = result === 'success'
             if (!success) {
@@ -558,7 +559,8 @@ export abstract class DataStore extends Tome {
     protected static async initBucket(
         options: InitStoreOptions
     ): Promise<void> {
-        const { api, tomeShip, space, app, bucket, type, isLog, perm } = options
+        const { api, tomeShip, space, app, agent, bucket, type, isLog, perm } =
+            options
         const action = `init-${type}`
         const body = {
             [action]: {
@@ -588,7 +590,8 @@ export abstract class DataStore extends Tome {
     protected static async startWatchingForeignBucket(
         options: InitStoreOptions
     ): Promise<void> {
-        const { api, tomeShip, space, app, bucket, type, isLog } = options
+        const { api, tomeShip, space, app, agent, bucket, type, isLog } =
+            options
         const action = `watch-${type}`
         const mark = type === 'kv' ? kvMark : feedMark
         const body = {
@@ -635,7 +638,8 @@ export abstract class DataStore extends Tome {
     private static async _getCurrentForeignPerms(
         options: InitStoreOptions
     ): Promise<void> {
-        const { api, tomeShip, space, app, bucket, type, isLog } = options
+        const { api, tomeShip, space, app, agent, bucket, type, isLog } =
+            options
         const action = `team-${type}`
         const mark = type === 'kv' ? kvMark : feedMark
         const body = {
@@ -665,7 +669,7 @@ export abstract class DataStore extends Tome {
     // subscribe to all values in the store, and keep cache synced.
     protected async subscribeAll(): Promise<void> {
         this.storeSubscriptionID = await this.api.subscribe({
-            app: agent,
+            app: this.agent,
             path: this.dataPath(),
             err: () => {
                 throw new Error(
@@ -744,7 +748,7 @@ export abstract class DataStore extends Tome {
             body[action].log = this.isLog
         }
         await this.api.poke({
-            app: agent,
+            app: this.agent,
             mark,
             json: body,
             onError: (error) => {
@@ -787,7 +791,7 @@ export abstract class DataStore extends Tome {
             body[action].log = this.isLog
         }
         await this.api.poke({
-            app: agent,
+            app: this.agent,
             mark,
             json: body,
             onError: (error) => {
@@ -952,7 +956,7 @@ export abstract class DataStore extends Tome {
         if (this.isOurStore()) {
             let result: any // what onSuccess or onError returns
             await this.api.poke({
-                app: agent,
+                app: this.agent,
                 mark: this.type === 'kv' ? kvMark : feedMark,
                 json,
                 onSuccess: () => {
@@ -974,7 +978,7 @@ export abstract class DataStore extends Tome {
                         ship: this.tomeShip,
                         json: JSON.stringify(json),
                     },
-                    desk: 'tome',
+                    desk: this.agent,
                 })
                 success = result === 'success'
             } catch (e) {}
@@ -1368,7 +1372,7 @@ export abstract class FeedlogStore extends DataStore {
     private async _getValueFromUrbit(id: string): Promise<Content> {
         try {
             let post = await this.api.scry({
-                app: agent,
+                app: this.agent,
                 path: this.dataPath(id),
             })
             if (post === null) {
@@ -1394,7 +1398,7 @@ export abstract class FeedlogStore extends DataStore {
     private async _getAllFromUrbit(): Promise<Content[]> {
         try {
             const data = await this.api.scry({
-                app: agent,
+                app: this.agent,
                 path: this.dataPath(),
             })
             // wipe and replace feedlog
@@ -1751,7 +1755,7 @@ export class KeyValueStore extends DataStore {
     private async _getValueFromUrbit(key: string): Promise<Value> {
         try {
             let value = await this.api.scry({
-                app: agent,
+                app: this.agent,
                 path: this.dataPath(key),
             })
             // TODO value is null when it shouldn't be.
@@ -1772,7 +1776,7 @@ export class KeyValueStore extends DataStore {
     private async _getAllFromUrbit(): Promise<Map<string, Value>> {
         try {
             const data = await this.api.scry({
-                app: agent,
+                app: this.agent,
                 path: this.dataPath(),
             })
             this.cache.clear()

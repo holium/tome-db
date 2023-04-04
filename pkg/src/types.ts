@@ -1,4 +1,4 @@
-import Urbit from '@holium/urbit-http-api'
+import Urbit from '@urbit/http-api'
 
 type PermLevel = 'our' | 'space' | 'open' | 'unset' | 'yes' | 'no'
 export type InviteLevel = 'read' | 'write' | 'admin' | 'block'
@@ -38,6 +38,7 @@ export interface TomeOptions {
     realm?: boolean
     ship?: string
     space?: string
+    agent?: string
     permissions?: Perm
 }
 
@@ -58,6 +59,7 @@ export interface InitStoreOptions {
     space?: string
     spaceForPath?: string
     app?: string
+    agent?: string
     bucket?: string
     type?: StoreType
     isLog?: boolean
