@@ -56,6 +56,7 @@
       [%remove path=space-path]
       [%join path=space-path]
       [%leave path=space-path]
+      [%current path=space-path]  :: set the currently opened space
       :: [%kicked path=space-path ship=ship]
   ==
 ::
@@ -81,11 +82,12 @@
 ::  Reaction via watch paths
 ::
 +$  reaction
-  $%  [%initial =spaces =membership:membership =invitations:visas]
+  $%  [%initial =spaces =membership:membership =invitations:visas current=space-path]
       [%add =space members=members:membership]
       [%replace =space]
       [%remove path=space-path]
       [%remote-space path=space-path =space =members:membership]
+      [%current path=space-path]
   ==
 ::
 ::  Scry views
