@@ -372,7 +372,7 @@
       ::
           %perm
         =/  lc  :~  [%give %fact ~[perm-pax] %kv-update !>(upd)]
-                    [%pass perm-pax %agent [shi %tome] %leave ~]
+                    [%pass perm-pax %agent [shi dap.bol] %leave ~]
                 ==
         %=  kv
           per   [read=%yes +.upd]
@@ -494,11 +494,11 @@
     ^+  kv
     ?+    rest  ~|(bad-kv-watch-path/rest !!)
         [%perm ~]
-      (kv-emit [%pass perm-pax %agent [shi %tome] %watch perm-pax])
+      (kv-emit [%pass perm-pax %agent [shi dap.bol] %watch perm-pax])
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  kv
-      (kv-emit [%pass data-pax %agent [shi %tome] %watch data-pax])
+      (kv-emit [%pass data-pax %agent [shi dap.bol] %watch data-pax])
     ::
     ==
   ::  +kv-perm: check a permission level, return true if allowed
@@ -699,7 +699,7 @@
       ::
           %perm
         =/  lc  :~  [%give %fact ~[perm-pax] %feed-update !>(upd)]
-                    [%pass perm-pax %agent [shi %tome] %leave ~]
+                    [%pass perm-pax %agent [shi dap.bol] %leave ~]
                 ==
         %=  fe
           per   [read=%yes +.upd]
@@ -856,11 +856,11 @@
     ^+  fe
     ?+    rest  ~|(bad-feed-watch-path/rest !!)
         [%perm ~]
-      (fe-emit [%pass perm-pax %agent [shi %tome] %watch perm-pax])
+      (fe-emit [%pass perm-pax %agent [shi dap.bol] %watch perm-pax])
     ::
         [%data %all ~]
       ?:  (~(has in subs) data-pax)  fe
-      (fe-emit [%pass data-pax %agent [shi %tome] %watch data-pax])
+      (fe-emit [%pass data-pax %agent [shi dap.bol] %watch data-pax])
     ::
     ==
   ::  +fe-perm: check a permission level, return true if allowed
